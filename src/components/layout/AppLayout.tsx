@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Sidebar,
@@ -19,6 +18,7 @@ import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, Se
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useLocation } from 'react-router-dom';
+import { cn } from "@/lib/utils";
 
 const menuItems = [
   {
