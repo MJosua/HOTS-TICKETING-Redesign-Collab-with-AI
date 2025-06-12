@@ -9,6 +9,9 @@ import Index from "./pages/Index";
 import ServiceCatalog from "./pages/ServiceCatalog";
 import TaskList from "./pages/TaskList";
 import GoodsRequest from "./pages/GoodsRequest";
+import SystemSettings from "./pages/admin/SystemSettings";
+import UserManagement from "./pages/admin/UserManagement";
+import DivisionManagement from "./pages/admin/DivisionManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +61,21 @@ const App = () => (
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">My Tickets</h1>
                 <p className="text-gray-600">This page is under development</p>
               </div>
+            </AppLayout>
+          } />
+          <Route path="/admin/settings" element={
+            <AppLayout>
+              <SystemSettings />
+            </AppLayout>
+          } />
+          <Route path="/admin/users" element={
+            <AppLayout>
+              <UserManagement />
+            </AppLayout>
+          } />
+          <Route path="/admin/divisions" element={
+            <AppLayout>
+              <DivisionManagement />
             </AppLayout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
