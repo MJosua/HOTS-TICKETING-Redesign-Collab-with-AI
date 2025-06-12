@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -15,8 +15,10 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, CreditCard } from 'lucide-react';
+import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const menuItems = [
   {
@@ -62,9 +64,20 @@ const adminItems = [
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
 }
 
 export function AppSidebar() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    navigate('/login');
+  };
+
   return (
     <Sidebar collapsible="icon" className="border-r border-gray-200">
       <SidebarHeader className="border-b border-gray-200 p-4">
@@ -89,7 +102,13 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.url} className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-50 hover:text-blue-700">
+                    <a 
+                      href={item.url} 
+                      className={cn(
+                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-50 hover:text-blue-700",
+                        location.pathname === item.url && "bg-blue-100 text-blue-700"
+                      )}
+                    >
                       <item.icon className="w-5 h-5" />
                       <span>{item.title}</span>
                       {item.badge && (
@@ -114,7 +133,13 @@ export function AppSidebar() {
               {adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.url} className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50 hover:text-gray-700">
+                    <a 
+                      href={item.url} 
+                      className={cn(
+                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50 hover:text-gray-700",
+                        location.pathname === item.url && "bg-gray-100 text-gray-700"
+                      )}
+                    >
                       <item.icon className="w-5 h-5" />
                       <span>{item.title}</span>
                     </a>
@@ -134,7 +159,12 @@ export function AppSidebar() {
             <p className="text-xs text-gray-500 truncate">International Operation</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="w-full justify-start group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:px-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full justify-start group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:px-2"
+          onClick={handleLogout}
+        >
           <LogOut className="w-4 h-4 group-data-[collapsible=icon]:mr-0 mr-2" />
           <span className="group-data-[collapsible=icon]:hidden">Log Out</span>
         </Button>
@@ -143,7 +173,7 @@ export function AppSidebar() {
   );
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, searchValue, onSearchChange, searchPlaceholder = "Search..." }: AppLayoutProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
@@ -163,14 +193,16 @@ export function AppLayout({ children }: AppLayoutProps) {
               </div>
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <input
+                  <Input
                     type="text"
-                    placeholder="Search services..."
+                    placeholder={searchPlaceholder}
+                    value={searchValue || ''}
+                    onChange={(e) => onSearchChange?.(e.target.value)}
                     className="w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <button className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <List className="w-5 h-5 text-gray-400" />
-                  </button>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <Search className="w-5 h-5 text-gray-400" />
+                  </div>
                 </div>
               </div>
             </div>

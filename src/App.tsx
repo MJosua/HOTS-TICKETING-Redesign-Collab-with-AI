@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,8 @@ import SystemSettings from "./pages/admin/SystemSettings";
 import UserManagement from "./pages/admin/UserManagement";
 import DivisionManagement from "./pages/admin/DivisionManagement";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -23,60 +24,75 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Index />
+            </ProtectedRoute>
+          } />
           <Route path="/service-catalog" element={
-            <AppLayout>
-              <ServiceCatalog />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <ServiceCatalog />
+              </AppLayout>
+            </ProtectedRoute>
           } />
           <Route path="/task-list" element={
-            <AppLayout>
+            <ProtectedRoute>
               <TaskList />
-            </AppLayout>
+            </ProtectedRoute>
           } />
           <Route path="/goods-request" element={
-            <AppLayout>
-              <GoodsRequest />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <GoodsRequest />
+              </AppLayout>
+            </ProtectedRoute>
           } />
           <Route path="/asset-request" element={
-            <AppLayout>
-              <div className="text-center py-12">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Asset Request Form</h1>
-                <p className="text-gray-600">This form is under development</p>
-              </div>
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <div className="text-center py-12">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-4">Asset Request Form</h1>
+                  <p className="text-gray-600">This form is under development</p>
+                </div>
+              </AppLayout>
+            </ProtectedRoute>
           } />
           <Route path="/it-support" element={
-            <AppLayout>
-              <div className="text-center py-12">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">IT Support Request</h1>
-                <p className="text-gray-600">This form is under development</p>
-              </div>
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <div className="text-center py-12">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-4">IT Support Request</h1>
+                  <p className="text-gray-600">This form is under development</p>
+                </div>
+              </AppLayout>
+            </ProtectedRoute>
           } />
           <Route path="/my-tickets" element={
-            <AppLayout>
-              <div className="text-center py-12">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">My Tickets</h1>
-                <p className="text-gray-600">This page is under development</p>
-              </div>
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <div className="text-center py-12">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-4">My Tickets</h1>
+                  <p className="text-gray-600">This page is under development</p>
+                </div>
+              </AppLayout>
+            </ProtectedRoute>
           } />
           <Route path="/admin/settings" element={
-            <AppLayout>
+            <ProtectedRoute>
               <SystemSettings />
-            </AppLayout>
+            </ProtectedRoute>
           } />
           <Route path="/admin/users" element={
-            <AppLayout>
+            <ProtectedRoute>
               <UserManagement />
-            </AppLayout>
+            </ProtectedRoute>
           } />
           <Route path="/admin/divisions" element={
-            <AppLayout>
+            <ProtectedRoute>
               <DivisionManagement />
-            </AppLayout>
+            </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
