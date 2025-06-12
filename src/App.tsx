@@ -14,6 +14,7 @@ import DivisionManagement from "./pages/admin/DivisionManagement";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import TicketDetail from "./pages/TicketDetail";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,11 @@ const App = () => (
           <Route path="/task-list" element={
             <ProtectedRoute>
               <TaskList />
+            </ProtectedRoute>
+          } />
+          <Route path="/ticket/:id" element={
+            <ProtectedRoute>
+              <TicketDetail />
             </ProtectedRoute>
           } />
           <Route path="/goods-request" element={

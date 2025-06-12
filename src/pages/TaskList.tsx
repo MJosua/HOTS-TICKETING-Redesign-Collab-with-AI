@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CheckSquare, Clock, User, Calendar, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { useNavigate } from 'react-router-dom';
 import ProgressionBar from "@/components/ui/ProgressionBar";
 
 const approvalSteps = [
@@ -93,6 +93,7 @@ const completedTasks = [
 ];
 
 const TaskList = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("pending");
   const [searchValue, setSearchValue] = useState("");
 
@@ -132,6 +133,10 @@ const TaskList = () => {
       part.toLowerCase() === highlight.toLowerCase() ? 
         <mark key={index} className="bg-yellow-200">{part}</mark> : part
     );
+  };
+
+  const handleViewTicket = (ticketId: string) => {
+    navigate(`/ticket/${ticketId}`);
   };
 
   return (
@@ -226,7 +231,7 @@ const TaskList = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleViewTicket(task.id)}>
                             <Eye className="w-4 h-4 mr-1" />
                             View
                           </Button>
@@ -292,7 +297,7 @@ const TaskList = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleViewTicket(task.id)}>
                             <Eye className="w-4 h-4 mr-1" />
                             View
                           </Button>
