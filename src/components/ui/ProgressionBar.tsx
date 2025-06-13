@@ -8,14 +8,45 @@ interface ApprovalStep {
   name: string;
   status: 'approved' | 'rejected' | 'pending' | 'waiting';
   date?: string;
+  approver?: string;
 }
 
 interface ProgressionBarProps {
   steps: ApprovalStep[];
   className?: string;
+  showDetails?: boolean;
 }
 
-const ProgressionBar = ({ steps, className }: ProgressionBarProps) => {
+const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBarProps) => {
+  const approvedCount = steps.filter(step => step.status === 'approved').length;
+  const totalSteps = steps.length;
+
+  if (!showDetails) {
+    // Simple progress bar view
+    return (
+      <div className={cn("flex items-center space-x-1", className)}>
+        <span className="text-sm font-medium text-muted-foreground mr-2">
+          {approvedCount}/{totalSteps}
+        </span>
+        {steps.map((step, index) => (
+          <div
+            key={step.id}
+            className={cn(
+              "h-2 w-8 rounded-full",
+              {
+                "bg-primary": step.status === 'approved',
+                "bg-destructive": step.status === 'rejected',
+                "bg-orange-500": step.status === 'pending',
+                "bg-muted": step.status === 'waiting'
+              }
+            )}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Detailed view (for ticket detail page)
   return (
     <div className={cn("flex items-center space-x-2", className)}>
       {steps.map((step, index) => (
@@ -25,10 +56,10 @@ const ProgressionBar = ({ steps, className }: ProgressionBarProps) => {
               className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium",
                 {
-                  "bg-blue-500 text-white": step.status === 'approved',
-                  "bg-red-500 text-white": step.status === 'rejected',
+                  "bg-primary text-primary-foreground": step.status === 'approved',
+                  "bg-destructive text-destructive-foreground": step.status === 'rejected',
                   "bg-orange-500 text-white": step.status === 'pending',
-                  "bg-gray-200 text-gray-500": step.status === 'waiting'
+                  "bg-muted text-muted-foreground": step.status === 'waiting'
                 }
               )}
             >
@@ -37,18 +68,23 @@ const ProgressionBar = ({ steps, className }: ProgressionBarProps) => {
               {step.status === 'pending' && <Clock className="w-4 h-4" />}
               {step.status === 'waiting' && (index + 1)}
             </div>
-            <span className="text-xs text-gray-600 mt-1 text-center max-w-16 truncate">
+            <span className="text-xs text-muted-foreground mt-1 text-center max-w-16 truncate">
               {step.name}
             </span>
+            {showDetails && step.approver && (
+              <span className="text-xs text-muted-foreground text-center max-w-20 truncate">
+                {step.approver}
+              </span>
+            )}
           </div>
           {index < steps.length - 1 && (
             <div
               className={cn(
                 "h-0.5 w-8 flex-shrink-0",
                 {
-                  "bg-blue-500": step.status === 'approved',
-                  "bg-red-500": step.status === 'rejected',
-                  "bg-gray-200": step.status === 'waiting' || step.status === 'pending'
+                  "bg-primary": step.status === 'approved',
+                  "bg-destructive": step.status === 'rejected',
+                  "bg-muted": step.status === 'waiting' || step.status === 'pending'
                 }
               )}
             />

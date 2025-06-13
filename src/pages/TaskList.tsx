@@ -1,101 +1,75 @@
 import React, { useState } from 'react';
-import { CheckSquare, Clock, User, Calendar, Eye } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
+import { CheckSquare, FileText, List, Settings, LogOut, Monitor, Users, Search, Home } from 'lucide-react';
 import ProgressionBar from "@/components/ui/ProgressionBar";
-
-const approvalSteps = [
-  { id: '1', name: 'Supervisor', status: 'approved' as const, date: '2024-06-10' },
-  { id: '2', name: 'Manager', status: 'pending' as const },
-  { id: '3', name: 'Director', status: 'waiting' as const },
-];
-
-const pendingTasks = [
-  {
-    id: "SPB-2024-001",
-    type: "Surat Permintaan Barang",
-    requester: "Ahmad Rahman",
-    department: "Produksi",
-    priority: "High",
-    created: "2024-06-10",
-    amount: "Rp 2,500,000",
-    status: "Pending Approval",
-    approvalSteps: approvalSteps
-  },
-  {
-    id: "AR-2024-015",
-    type: "Asset Request",
-    requester: "Siti Nurhaliza",
-    department: "Marketing",
-    priority: "Medium",
-    created: "2024-06-09", 
-    amount: "Rp 15,000,000",
-    status: "Pending Approval",
-    approvalSteps: [
-      { id: '1', name: 'Supervisor', status: 'approved' as const, date: '2024-06-09' },
-      { id: '2', name: 'Manager', status: 'approved' as const, date: '2024-06-10' },
-      { id: '3', name: 'Director', status: 'pending' as const },
-    ]
-  },
-  {
-    id: "IT-2024-089",
-    type: "IT Support",
-    requester: "Budi Santoso",
-    department: "Finance",
-    priority: "Low",
-    created: "2024-06-08",
-    amount: "-",
-    status: "Pending Review",
-    approvalSteps: [
-      { id: '1', name: 'IT Head', status: 'pending' as const },
-      { id: '2', name: 'CTO', status: 'waiting' as const },
-    ]
-  }
-];
-
-const completedTasks = [
-  {
-    id: "SPB-2024-002",
-    type: "Surat Permintaan Barang", 
-    requester: "John Doe",
-    department: "Gudang",
-    priority: "Medium",
-    created: "2024-06-05",
-    completed: "2024-06-07",
-    amount: "Rp 1,200,000",
-    status: "Approved",
-    approvalSteps: [
-      { id: '1', name: 'Supervisor', status: 'approved' as const, date: '2024-06-05' },
-      { id: '2', name: 'Manager', status: 'approved' as const, date: '2024-06-06' },
-      { id: '3', name: 'Director', status: 'approved' as const, date: '2024-06-07' },
-    ]
-  },
-  {
-    id: "AR-2024-014",
-    type: "Asset Request",
-    requester: "Jane Smith",
-    department: "HR",
-    priority: "High",
-    created: "2024-06-03",
-    completed: "2024-06-06",
-    amount: "Rp 8,500,000", 
-    status: "Rejected",
-    approvalSteps: [
-      { id: '1', name: 'Supervisor', status: 'approved' as const, date: '2024-06-03' },
-      { id: '2', name: 'Manager', status: 'rejected' as const, date: '2024-06-06' },
-    ]
-  }
-];
+import { cn } from "@/lib/utils";
 
 const TaskList = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("pending");
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+
+  // Mock data with approval steps
+  const [tasks] = useState([
+    {
+      id: "SPB-2024-001",
+      type: "Surat Permintaan Barang",
+      requester: "Ahmad Rahman",
+      department: "Produksi",
+      priority: "High",
+      created: "2024-06-10",
+      amount: "Rp 2,500,000",
+      status: "Pending Approval",
+      approvalSteps: [
+        { id: '1', name: 'Supervisor', status: 'approved' as const },
+        { id: '2', name: 'Manager', status: 'pending' as const },
+        { id: '3', name: 'Director', status: 'waiting' as const },
+      ]
+    },
+    {
+      id: "IT-2024-045",
+      type: "IT Support Request",
+      requester: "Sari Dewi",
+      department: "Finance",
+      priority: "Medium",
+      created: "2024-06-11",
+      amount: "-",
+      status: "In Progress",
+      approvalSteps: [
+        { id: '1', name: 'IT Manager', status: 'approved' as const },
+        { id: '2', name: 'Head of IT', status: 'approved' as const },
+      ]
+    },
+    {
+      id: "AST-2024-078",
+      type: "Asset Request",
+      requester: "Budi Santoso",
+      department: "HR",
+      priority: "Low",
+      created: "2024-06-09",
+      amount: "Rp 1,200,000",
+      status: "Approved",
+      approvalSteps: [
+        { id: '1', name: 'HR Manager', status: 'approved' as const },
+        { id: '2', name: 'Finance Manager', status: 'approved' as const },
+        { id: '3', name: 'Director', status: 'approved' as const },
+      ]
+    }
+  ]);
+
+  const filteredTasks = tasks.filter(task => {
+    const searchRegex = new RegExp(searchValue, 'i');
+    const statusFilter = filterStatus === 'all' || task.status === filterStatus;
+    const priorityFilter = filterPriority === 'all' || task.priority === filterPriority;
+
+    return searchRegex.test(task.id) && statusFilter && priorityFilter;
+  });
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -108,208 +82,120 @@ const TaskList = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "Pending Approval": return "bg-orange-100 text-orange-800";
+      case "In Progress": return "bg-blue-100 text-blue-800";
       case "Approved": return "bg-green-100 text-green-800";
       case "Rejected": return "bg-red-100 text-red-800";
-      case "Pending Approval": return "bg-orange-100 text-orange-800";
-      case "Pending Review": return "bg-blue-100 text-blue-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const filterTasks = (tasks: any[]) => {
-    if (!searchValue) return tasks;
-    return tasks.filter(task => 
-      task.id.toLowerCase().includes(searchValue.toLowerCase()) ||
-      task.type.toLowerCase().includes(searchValue.toLowerCase()) ||
-      task.requester.toLowerCase().includes(searchValue.toLowerCase()) ||
-      task.department.toLowerCase().includes(searchValue.toLowerCase())
-    );
-  };
+  const navigate = useNavigate();
 
-  const highlightText = (text: string, highlight: string) => {
-    if (!highlight) return text;
-    const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
-    return parts.map((part, index) => 
-      part.toLowerCase() === highlight.toLowerCase() ? 
-        <mark key={index} className="bg-yellow-200">{part}</mark> : part
-    );
-  };
-
-  const handleViewTicket = (ticketId: string) => {
-    navigate(`/ticket/${ticketId}`);
+  const handleRowClick = (taskId: string) => {
+    navigate(`/ticket/${taskId}`);
   };
 
   return (
-    <AppLayout 
-      searchValue={searchValue} 
-      onSearchChange={setSearchValue}
-      searchPlaceholder="Search tasks..."
-    >
+    <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search tasks...">
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Task List</h1>
-            <p className="text-gray-600">Review and approve pending requests</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Card className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Pending Tasks</p>
-                  <p className="text-xl font-semibold text-gray-900">{filterTasks(pendingTasks).length}</p>
-                </div>
-              </div>
-            </Card>
+          <h1 className="text-3xl font-bold text-foreground">Task List</h1>
+          <div className="flex items-center space-x-2">
+            <Badge variant="secondary" className="px-3 py-1">
+              {filteredTasks.length} Tasks
+            </Badge>
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pending" className="flex items-center space-x-2">
-              <Clock className="w-4 h-4" />
-              <span>Pending ({filterTasks(pendingTasks).length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="flex items-center space-x-2">
-              <CheckSquare className="w-4 h-4" />
-              <span>Completed ({filterTasks(completedTasks).length})</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Filters */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="status-filter">Status:</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="Pending Approval">Pending Approval</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <TabsContent value="pending" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Clock className="w-5 h-5" />
-                  <span>Pending Approvals</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Request ID</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Requester</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Approval Progress</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filterTasks(pendingTasks).map((task) => (
-                      <TableRow key={task.id}>
-                        <TableCell className="font-mono font-medium">
-                          {highlightText(task.id, searchValue)}
-                        </TableCell>
-                        <TableCell>{highlightText(task.type, searchValue)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <User className="w-4 h-4 text-gray-400" />
-                            <span>{highlightText(task.requester, searchValue)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{highlightText(task.department, searchValue)}</TableCell>
-                        <TableCell>
-                          <Badge className={getPriorityColor(task.priority)}>
-                            {task.priority}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{task.amount}</TableCell>
-                        <TableCell>
-                          <ProgressionBar steps={task.approvalSteps} />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            <span>{task.created}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm" onClick={() => handleViewTicket(task.id)}>
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="priority-filter">Priority:</Label>
+                <Select value={filterPriority} onValueChange={setFilterPriority}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Priorities</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="completed" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CheckSquare className="w-5 h-5" />
-                  <span>Completed Tasks</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Request ID</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Requester</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Final Status</TableHead>
-                      <TableHead>Completed</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filterTasks(completedTasks).map((task) => (
-                      <TableRow key={task.id}>
-                        <TableCell className="font-mono font-medium">
-                          {highlightText(task.id, searchValue)}
-                        </TableCell>
-                        <TableCell>{highlightText(task.type, searchValue)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <User className="w-4 h-4 text-gray-400" />
-                            <span>{highlightText(task.requester, searchValue)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{highlightText(task.department, searchValue)}</TableCell>
-                        <TableCell>{task.amount}</TableCell>
-                        <TableCell>
-                          <ProgressionBar steps={task.approvalSteps} />
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(task.status)}>
-                            {task.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            <span>{task.completed}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm" onClick={() => handleViewTicket(task.id)}>
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {/* Tasks Table */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Ticket ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Requester</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Department</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Priority</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Progress</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredTasks.map((task) => (
+                    <tr 
+                      key={task.id} 
+                      className="hover:bg-muted/30 cursor-pointer"
+                      onClick={() => handleRowClick(task.id)}
+                    >
+                      <td className="px-6 py-4 font-medium text-primary">{task.id}</td>
+                      <td className="px-6 py-4 text-muted-foreground">{task.type}</td>
+                      <td className="px-6 py-4 text-muted-foreground">{task.requester}</td>
+                      <td className="px-6 py-4 text-muted-foreground">{task.department}</td>
+                      <td className="px-6 py-4">
+                        <Badge className={getPriorityColor(task.priority)}>
+                          {task.priority}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <ProgressionBar steps={task.approvalSteps} />
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge className={getStatusColor(task.status)}>
+                          {task.status}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 font-medium text-foreground">{task.amount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );

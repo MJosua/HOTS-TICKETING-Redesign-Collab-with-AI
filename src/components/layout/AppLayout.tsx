@@ -14,11 +14,12 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, Search } from 'lucide-react';
+import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, Search, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from "@/lib/utils";
+import ProfileModal from "@/components/modals/ProfileModal";
 
 const menuItems = [
   {
@@ -72,6 +73,7 @@ interface AppLayoutProps {
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
@@ -79,22 +81,22 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-gray-200">
-      <SidebarHeader className="border-b border-gray-200 p-4">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
+      <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">HOTS</span>
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+            <span className="text-primary-foreground font-bold text-sm">HOTS</span>
           </div>
           <div className="group-data-[collapsible=icon]:hidden">
-            <h3 className="font-semibold text-gray-900">HOTS</h3>
-            <p className="text-sm text-gray-500">Helpdesk System</p>
+            <h3 className="font-semibold text-sidebar-foreground">HOTS</h3>
+            <p className="text-sm text-sidebar-foreground/70">Helpdesk System</p>
           </div>
         </div>
       </SidebarHeader>
       
       <SidebarContent className="p-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-2">
+          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider px-3 py-2">
             Main Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -105,14 +107,14 @@ export function AppSidebar() {
                     <a 
                       href={item.url} 
                       className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-50 hover:text-blue-700",
-                        location.pathname === item.url && "bg-blue-100 text-blue-700"
+                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-primary/10 hover:text-primary",
+                        location.pathname === item.url && "bg-primary/10 text-primary"
                       )}
                     >
-                      <item.icon className="w-5 h-5" />
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
                       <span>{item.title}</span>
                       {item.badge && (
-                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5 group-data-[collapsible=icon]:hidden">
+                        <span className="ml-auto bg-destructive text-destructive-foreground text-xs rounded-full px-2 py-0.5 group-data-[collapsible=icon]:hidden">
                           {item.badge}
                         </span>
                       )}
@@ -125,7 +127,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-2">
+          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider px-3 py-2">
             Administration
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -136,11 +138,11 @@ export function AppSidebar() {
                     <a 
                       href={item.url} 
                       className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-50 hover:text-gray-700",
-                        location.pathname === item.url && "bg-gray-100 text-gray-700"
+                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
                       )}
                     >
-                      <item.icon className="w-5 h-5" />
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
                       <span>{item.title}</span>
                     </a>
                   </SidebarMenuButton>
@@ -151,12 +153,19 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-gray-200 p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center space-x-3 mb-3 group-data-[collapsible=icon]:justify-center">
-          <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-8 h-8 p-0 bg-muted rounded-full group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8"
+            onClick={() => setIsProfileModalOpen(true)}
+          >
+            <User className="w-4 h-4" />
+          </Button>
           <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-            <p className="text-sm font-medium text-gray-900 truncate">Yosua Gultom</p>
-            <p className="text-xs text-gray-500 truncate">International Operation</p>
+            <p className="text-sm font-medium text-sidebar-foreground truncate">Yosua Gultom</p>
+            <p className="text-xs text-sidebar-foreground/70 truncate">International Operation</p>
           </div>
         </div>
         <Button 
@@ -168,6 +177,11 @@ export function AppSidebar() {
           <LogOut className="w-4 h-4 group-data-[collapsible=icon]:mr-0 mr-2" />
           <span className="group-data-[collapsible=icon]:hidden">Log Out</span>
         </Button>
+        
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+        />
       </SidebarFooter>
     </Sidebar>
   );
@@ -176,18 +190,18 @@ export function AppSidebar() {
 export function AppLayout({ children, searchValue, onSearchChange, searchPlaceholder = "Search..." }: AppLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset>
-          <header className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4">
+          <header className="sticky top-0 z-40 bg-card border-b border-border px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <SidebarTrigger />
                 <div className="flex items-center space-x-3">
                   <img src="/lovable-uploads/8053d08a-8b10-4050-a1e7-713b251adcdb.png" alt="Indofood CBP" className="h-8" />
                   <div>
-                    <h1 className="text-lg font-semibold text-gray-900">PT INDOFOOD CBP SUKSES MAKMUR</h1>
-                    <p className="text-sm text-gray-500">Divisi Noodle</p>
+                    <h1 className="text-lg font-semibold text-foreground">PT INDOFOOD CBP SUKSES MAKMUR</h1>
+                    <p className="text-sm text-muted-foreground">Divisi Noodle</p>
                   </div>
                 </div>
               </div>
@@ -198,10 +212,10 @@ export function AppLayout({ children, searchValue, onSearchChange, searchPlaceho
                     placeholder={searchPlaceholder}
                     value={searchValue || ''}
                     onChange={(e) => onSearchChange?.(e.target.value)}
-                    className="w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-64 pl-4 pr-10 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <Search className="w-5 h-5 text-gray-400" />
+                    <Search className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
               </div>

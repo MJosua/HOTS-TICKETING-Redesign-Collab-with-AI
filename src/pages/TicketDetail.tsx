@@ -34,9 +34,9 @@ const TicketDetail = () => {
       { name: "Packaging Material", quantity: 1000, unit: "pcs", price: "Rp 2,500" }
     ],
     approvalSteps: [
-      { id: '1', name: 'Supervisor', status: 'approved' as const, date: '2024-06-10' },
-      { id: '2', name: 'Manager', status: 'pending' as const },
-      { id: '3', name: 'Director', status: 'waiting' as const },
+      { id: '1', name: 'Supervisor', status: 'approved' as const, date: '2024-06-10', approver: 'Budi Santoso' },
+      { id: '2', name: 'Manager', status: 'pending' as const, approver: 'Sari Indah' },
+      { id: '3', name: 'Director', status: 'waiting' as const, approver: 'Dr. Ahmad Wijaya' },
     ]
   };
 
@@ -84,19 +84,19 @@ const TicketDetail = () => {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{ticket.id}</h1>
-              <p className="text-gray-600">{ticket.type}</p>
+              <h1 className="text-2xl font-bold text-foreground">{ticket.id}</h1>
+              <p className="text-muted-foreground">{ticket.type}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button onClick={handleApprove} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleApprove} className="bg-primary hover:bg-primary/90">
               <CheckSquare className="w-4 h-4 mr-2" />
               Approve
             </Button>
             <Button 
               variant="outline" 
               onClick={() => setIsRejectModalOpen(true)}
-              className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+              className="text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50"
             >
               <X className="w-4 h-4 mr-2" />
               Reject
@@ -108,32 +108,32 @@ const TicketDetail = () => {
           {/* Main Form Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Request Information */}
-            <Card className="bg-white shadow-sm border">
-              <CardHeader className="bg-gray-50 border-b">
+            <Card className="bg-card shadow-sm border">
+              <CardHeader className="bg-muted/50 border-b">
                 <CardTitle className="text-lg">Request Information</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4 text-gray-400" />
+                    <User className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-gray-600">Requester</p>
+                      <p className="text-sm text-muted-foreground">Requester</p>
                       <p className="font-medium">{ticket.requester}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-gray-600">Created Date</p>
+                      <p className="text-sm text-muted-foreground">Created Date</p>
                       <p className="font-medium">{ticket.created}</p>
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Department</p>
+                    <p className="text-sm text-muted-foreground">Department</p>
                     <p className="font-medium">{ticket.department}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Priority</p>
+                    <p className="text-sm text-muted-foreground">Priority</p>
                     <Badge className={getPriorityColor(ticket.priority)}>
                       {ticket.priority}
                     </Badge>
@@ -141,15 +141,15 @@ const TicketDetail = () => {
                 </div>
                 
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">Description</p>
-                  <p className="text-gray-800 bg-gray-50 p-3 rounded-md">{ticket.description}</p>
+                  <p className="text-sm text-muted-foreground mb-2">Description</p>
+                  <p className="text-foreground bg-muted/50 p-3 rounded-md">{ticket.description}</p>
                 </div>
               </CardContent>
             </Card>
 
             {/* Items Requested */}
-            <Card className="bg-white shadow-sm border">
-              <CardHeader className="bg-gray-50 border-b">
+            <Card className="bg-card shadow-sm border">
+              <CardHeader className="bg-muted/50 border-b">
                 <CardTitle className="text-lg flex items-center space-x-2">
                   <DollarSign className="w-5 h-5" />
                   <span>Items Requested</span>
@@ -158,23 +158,23 @@ const TicketDetail = () => {
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50 border-b">
+                    <thead className="bg-muted/50 border-b">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit Price</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Item Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Quantity</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Unit</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Unit Price</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Total</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-border">
                       {ticket.items.map((item, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 font-medium text-gray-900">{item.name}</td>
-                          <td className="px-6 py-4 text-gray-700">{item.quantity}</td>
-                          <td className="px-6 py-4 text-gray-700">{item.unit}</td>
-                          <td className="px-6 py-4 text-gray-700">{item.price}</td>
-                          <td className="px-6 py-4 font-medium text-gray-900">
+                        <tr key={index} className="hover:bg-muted/30">
+                          <td className="px-6 py-4 font-medium text-foreground">{item.name}</td>
+                          <td className="px-6 py-4 text-muted-foreground">{item.quantity}</td>
+                          <td className="px-6 py-4 text-muted-foreground">{item.unit}</td>
+                          <td className="px-6 py-4 text-muted-foreground">{item.price}</td>
+                          <td className="px-6 py-4 font-medium text-foreground">
                             {new Intl.NumberFormat('id-ID', { 
                               style: 'currency', 
                               currency: 'IDR' 
@@ -183,7 +183,7 @@ const TicketDetail = () => {
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-gray-50">
+                    <tfoot className="bg-muted/50">
                       <tr>
                         <td colSpan={4} className="px-6 py-4 font-bold text-right">Total Amount:</td>
                         <td className="px-6 py-4 font-bold text-lg">{ticket.amount}</td>
@@ -203,7 +203,7 @@ const TicketDetail = () => {
                 <CardTitle className="text-lg">Approval Progress</CardTitle>
               </CardHeader>
               <CardContent>
-                <ProgressionBar steps={ticket.approvalSteps} className="flex-col space-y-4 space-x-0" />
+                <ProgressionBar steps={ticket.approvalSteps} showDetails={true} className="flex-col space-y-4 space-x-0" />
               </CardContent>
             </Card>
 
@@ -218,8 +218,8 @@ const TicketDetail = () => {
                     <div key={msg.id} className={`flex ${msg.isRequester ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
                         msg.isRequester 
-                          ? 'bg-blue-500 text-white' 
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-muted text-foreground'
                       }`}>
                         <p className="text-xs font-medium mb-1">{msg.user}</p>
                         <p className="text-sm">{msg.message}</p>
