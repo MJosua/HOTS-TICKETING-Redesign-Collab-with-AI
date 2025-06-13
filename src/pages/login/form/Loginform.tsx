@@ -53,7 +53,7 @@ const Loginform = ({
                     toast({
                         title: "Login Successful",
                         description: "Welcome back to HOTS",
-                        variant: "default", // or "destructive"
+                        variant: "success", // or "destructive"
                     });
                     setError("")
                     // navigate("/service-catalog");

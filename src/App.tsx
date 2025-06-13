@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/login/Loginpage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import TicketDetail from "./pages/TicketDetail";
+import RecoveryForm from "./pages/login/form/Recoveryform";
 
 // Create QueryClient instance outside of component to avoid recreation
 const queryClient = new QueryClient({
@@ -43,6 +44,14 @@ const App = () => {
                 <Index />
               </ProtectedRoute>
             } />
+
+            <Route path="/forgot-password/:token" element={<RecoveryForm />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
+
             <Route path="/service-catalog" element={
               <ProtectedRoute>
                 <ServiceCatalog />
