@@ -7,44 +7,49 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 210 12% 16%;
+    --background: 48 100% 95%; /* #FFF8E3 */
+    --foreground: 230 86% 12%; /* #01063D */
 
-    --card: 0 0% 100%;
-    --card-foreground: 210 12% 16%;
+    --card: 36 31% 93%; /* #F3F1EC */
+    --card-foreground: 230 86% 12%; /* #01063D */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 12% 16%;
+    --popover: 0 0% 100%; /* #fff */
+    --popover-foreground: 230 86% 12%; /* #01063D */
 
-    --primary: 210 100% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 39 86% 70%; /* #f5b971 */
+    --primary-foreground: 206 75% 14%; /* #011B2F */
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 210 12% 16%;
+    --secondary: 0 0% 93%; /* #EDEDED */
+    --secondary-foreground: 206 75% 14%; /* #011B2F */
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 210 12% 50%;
+    --muted: 0 0% 93%; /* #EDEDED */
+    --muted-foreground: 206 75% 14%; /* #011B2F */
 
-    --accent: 210 40% 94%;
-    --accent-foreground: 210 12% 16%;
+    --accent: 50 100% 79%; /* #FFEB99 */
+    --accent-foreground: 206 75% 14%; /* #011B2F */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 210 100% 45%;
+    --border: 0 0% 88%; /* #E0E0E0 */
+    --input: 0 0% 88%; /* #E0E0E0 */
+    --ring: 230 93% 42%; /* #0817ba */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 210 17% 98%;
-    --sidebar-foreground: 210 12% 16%;
-    --sidebar-primary: 210 100% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 94%;
-    --sidebar-accent-foreground: 210 12% 16%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 210 100% 45%;
+    --sidebar-background: 0 0% 93%; /* #EDEDED */
+    --sidebar-foreground: 230 86% 12%; /* #01063D */
+    --sidebar-primary: 39 86% 70%; /* #f5b971 */
+    --sidebar-primary-foreground: 206 75% 14%; /* #011B2F */
+    --sidebar-accent: 50 100% 79%; /* #FFEB99 */
+    --sidebar-accent-foreground: 206 75% 14%; /* #011B2F */
+    --sidebar-border: 0 0% 88%; /* #E0E0E0 */
+    --sidebar-ring: 230 93% 42%; /* #0817ba */
+
+    /* Custom colors for buttons and specific elements */
+    --button-yellow: 44 100% 54%; /* #FFB916 */
+    --hover-gray: 0 0% 88%; /* #E0E0E0 */
+    --text-link: 230 93% 42%; /* #0817ba */
   }
 
   .dark {
@@ -57,7 +62,7 @@
     --popover: 222 84% 5%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
+    --primary: 39 86% 70%;
     --primary-foreground: 222 47% 11%;
 
     --secondary: 217 33% 17%;
@@ -77,12 +82,12 @@
     --ring: 213 27% 84%;
     --sidebar-background: 220 9% 7%;
     --sidebar-foreground: 220 14% 96%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 39 86% 70%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 9% 15%;
     --sidebar-accent-foreground: 220 14% 96%;
     --sidebar-border: 220 9% 15%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: 39 86% 70%;
   }
 }
 
@@ -98,8 +103,22 @@
 
 /* Search highlight styles */
 .search-highlight {
-  background-color: rgb(255 255 0 / 0.6);
+  background-color: hsl(var(--accent));
   padding: 1px 2px;
   border-radius: 2px;
   font-weight: 500;
+  color: hsl(var(--accent-foreground));
+}
+
+/* Custom utility classes for the new color palette */
+.bg-button-yellow {
+  background-color: hsl(var(--button-yellow));
+}
+
+.text-link {
+  color: hsl(var(--text-link));
+}
+
+.hover-gray:hover {
+  background-color: hsl(var(--hover-gray));
 }
