@@ -9,6 +9,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import ServiceCatalog from "./pages/ServiceCatalog";
 import TaskList from "./pages/TaskList";
+import MyTickets from "./pages/MyTickets";
 import GoodsRequest from "./pages/GoodsRequest";
 import SystemSettings from "./pages/admin/SystemSettings";
 import UserManagement from "./pages/admin/UserManagement";
@@ -54,6 +55,13 @@ const App = () => {
                 <TaskList />
               </ProtectedRoute>
             } />
+            <Route path="/my-tickets" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MyTickets />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/ticket/:id" element={
               <ProtectedRoute>
                 <TicketDetail />
@@ -82,16 +90,6 @@ const App = () => {
                   <div className="text-center py-12">
                     <h1 className="text-2xl font-bold text-gray-900 mb-4">IT Support Request</h1>
                     <p className="text-gray-600">This form is under development</p>
-                  </div>
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/my-tickets" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <div className="text-center py-12">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-4">My Tickets</h1>
-                    <p className="text-gray-600">This page is under development</p>
                   </div>
                 </AppLayout>
               </ProtectedRoute>

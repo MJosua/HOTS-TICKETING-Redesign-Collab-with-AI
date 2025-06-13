@@ -1,5 +1,5 @@
+
 import React, { useState } from 'react';
-import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -11,19 +11,19 @@ import { highlightSearchTerm, searchInObject } from "@/utils/searchUtils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Grid, List } from 'lucide-react';
 
-const TaskList = () => {
+const MyTickets = () => {
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
-  // Mock data with approval steps
-  const [tasks] = useState([
+  // Mock data
+  const [tickets] = useState([
     {
       id: "SPB-2024-001",
       type: "Surat Permintaan Barang",
-      requester: "Ahmad Rahman",
-      department: "Produksi",
+      requester: "Yosua Gultom",
+      department: "International Operation",
       priority: "High",
       created: "2024-06-10",
       amount: "Rp 2,500,000",
@@ -37,8 +37,8 @@ const TaskList = () => {
     {
       id: "IT-2024-045",
       type: "IT Support Request",
-      requester: "Sari Dewi",
-      department: "Finance",
+      requester: "Yosua Gultom",
+      department: "International Operation",
       priority: "Medium",
       created: "2024-06-11",
       amount: "-",
@@ -51,8 +51,8 @@ const TaskList = () => {
     {
       id: "AST-2024-078",
       type: "Asset Request",
-      requester: "Budi Santoso",
-      department: "HR",
+      requester: "Yosua Gultom",
+      department: "International Operation",
       priority: "Low",
       created: "2024-06-09",
       amount: "Rp 1,200,000",
@@ -65,10 +65,10 @@ const TaskList = () => {
     }
   ]);
 
-  const filteredTasks = tasks.filter(task => {
-    const statusFilter = filterStatus === 'all' || task.status === filterStatus;
-    const priorityFilter = filterPriority === 'all' || task.priority === filterPriority;
-    const searchFilter = searchInObject(task, searchValue);
+  const filteredTickets = tickets.filter(ticket => {
+    const statusFilter = filterStatus === 'all' || ticket.status === filterStatus;
+    const priorityFilter = filterPriority === 'all' || ticket.priority === filterPriority;
+    const searchFilter = searchInObject(ticket, searchValue);
 
     return statusFilter && priorityFilter && searchFilter;
   });
@@ -94,8 +94,8 @@ const TaskList = () => {
 
   const navigate = useNavigate();
 
-  const handleRowClick = (taskId: string) => {
-    navigate(`/ticket/${taskId}`);
+  const handleRowClick = (ticketId: string) => {
+    navigate(`/ticket/${ticketId}`);
   };
 
   const renderHighlightedText = (text: string) => {
@@ -117,8 +117,6 @@ const TaskList = () => {
               <TableRow className="bg-muted/50 border-b border-border">
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Ticket ID</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Type</TableHead>
-                <TableHead className="text-xs font-medium text-muted-foreground uppercase">Requester</TableHead>
-                <TableHead className="text-xs font-medium text-muted-foreground uppercase">Department</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Priority</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Progress</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Status</TableHead>
@@ -126,39 +124,33 @@ const TaskList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTasks.map((task) => (
+              {filteredTickets.map((ticket) => (
                 <TableRow 
-                  key={task.id}
+                  key={ticket.id}
                   className="hover:bg-muted/30 cursor-pointer transition-colors"
-                  onClick={() => handleRowClick(task.id)}
+                  onClick={() => handleRowClick(ticket.id)}
                 >
                   <TableCell className="font-medium text-primary">
-                    {renderHighlightedText(task.id)}
+                    {renderHighlightedText(ticket.id)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {renderHighlightedText(task.type)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {renderHighlightedText(task.requester)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {renderHighlightedText(task.department)}
+                    {renderHighlightedText(ticket.type)}
                   </TableCell>
                   <TableCell>
-                    <Badge className={`${getPriorityColor(task.priority)} border`}>
-                      {renderHighlightedText(task.priority)}
+                    <Badge className={`${getPriorityColor(ticket.priority)} border`}>
+                      {renderHighlightedText(ticket.priority)}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <ProgressionBar steps={task.approvalSteps} />
+                    <ProgressionBar steps={ticket.approvalSteps} />
                   </TableCell>
                   <TableCell>
-                    <Badge className={`${getStatusColor(task.status)} border`}>
-                      {renderHighlightedText(task.status)}
+                    <Badge className={`${getStatusColor(ticket.status)} border`}>
+                      {renderHighlightedText(ticket.status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium text-foreground">
-                    {renderHighlightedText(task.amount)}
+                    {renderHighlightedText(ticket.amount)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -171,46 +163,43 @@ const TaskList = () => {
 
   const CardView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {filteredTasks.map((task) => (
+      {filteredTickets.map((ticket) => (
         <Card 
-          key={task.id} 
+          key={ticket.id} 
           className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => handleRowClick(task.id)}
+          onClick={() => handleRowClick(ticket.id)}
         >
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium text-primary">
-                {renderHighlightedText(task.id)}
+                {renderHighlightedText(ticket.id)}
               </CardTitle>
-              <Badge className={`${getPriorityColor(task.priority)} border text-xs`}>
-                {renderHighlightedText(task.priority)}
+              <Badge className={`${getPriorityColor(ticket.priority)} border text-xs`}>
+                {renderHighlightedText(ticket.priority)}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
               <p className="text-sm font-medium text-foreground">
-                {renderHighlightedText(task.type)}
+                {renderHighlightedText(ticket.type)}
               </p>
               <p className="text-xs text-muted-foreground">
-                Requester: {renderHighlightedText(task.requester)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Department: {renderHighlightedText(task.department)}
+                Created: {renderHighlightedText(ticket.created)}
               </p>
             </div>
             
             <div>
               <p className="text-xs text-muted-foreground mb-1">Progress</p>
-              <ProgressionBar steps={task.approvalSteps} />
+              <ProgressionBar steps={ticket.approvalSteps} />
             </div>
 
             <div className="flex items-center justify-between">
-              <Badge className={`${getStatusColor(task.status)} border text-xs`}>
-                {renderHighlightedText(task.status)}
+              <Badge className={`${getStatusColor(ticket.status)} border text-xs`}>
+                {renderHighlightedText(ticket.status)}
               </Badge>
               <span className="text-sm font-medium text-foreground">
-                {renderHighlightedText(task.amount)}
+                {renderHighlightedText(ticket.amount)}
               </span>
             </div>
           </CardContent>
@@ -220,92 +209,90 @@ const TaskList = () => {
   );
 
   return (
-    <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search tasks...">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-foreground">Task List</h1>
-          <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
-              {filteredTasks.length} Tasks
-            </Badge>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-foreground">My Tickets</h1>
+        <div className="flex items-center space-x-2">
+          <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
+            {filteredTickets.length} Tickets
+          </Badge>
         </div>
+      </div>
 
-        {/* Filters and View Toggle */}
-        <Card className="border-border shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="status-filter" className="text-muted-foreground">Status:</Label>
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-40 border-input">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="Pending Approval">Pending Approval</SelectItem>
-                      <SelectItem value="In Progress">In Progress</SelectItem>
-                      <SelectItem value="Approved">Approved</SelectItem>
-                      <SelectItem value="Rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="priority-filter" className="text-muted-foreground">Priority:</Label>
-                  <Select value={filterPriority} onValueChange={setFilterPriority}>
-                    <SelectTrigger className="w-40 border-input">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Priorities</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="Low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+      {/* Filters and View Toggle */}
+      <Card className="border-border shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="status-filter" className="text-muted-foreground">Status:</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-40 border-input">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="Pending Approval">Pending Approval</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex items-center space-x-2">
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="px-3"
-                >
-                  <List className="w-4 h-4 mr-1" />
-                  Table
-                </Button>
-                <Button
-                  variant={viewMode === 'card' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('card')}
-                  className="px-3"
-                >
-                  <Grid className="w-4 h-4 mr-1" />
-                  Cards
-                </Button>
+                <Label htmlFor="priority-filter" className="text-muted-foreground">Priority:</Label>
+                <Select value={filterPriority} onValueChange={setFilterPriority}>
+                  <SelectTrigger className="w-40 border-input">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Priorities</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+                className="px-3"
+              >
+                <List className="w-4 h-4 mr-1" />
+                Table
+              </Button>
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('card')}
+                className="px-3"
+              >
+                <Grid className="w-4 h-4 mr-1" />
+                Cards
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Content */}
+      {viewMode === 'table' ? <TableView /> : <CardView />}
+
+      {filteredTickets.length === 0 && (
+        <Card className="border-border">
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">No tickets found matching your search criteria.</p>
           </CardContent>
         </Card>
-
-        {/* Content */}
-        {viewMode === 'table' ? <TableView /> : <CardView />}
-
-        {filteredTasks.length === 0 && (
-          <Card className="border-border">
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">No tasks found matching your search criteria.</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </AppLayout>
+      )}
+    </div>
   );
 };
 
-export default TaskList;
+export default MyTickets;

@@ -18,7 +18,7 @@ import {
 import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, Search, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import ProfileModal from "@/components/modals/ProfileModal";
 
@@ -105,8 +105,8 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <a 
-                      href={item.url} 
+                    <Link 
+                      to={item.url} 
                       className={cn(
                         "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-primary/10 hover:text-primary",
                         location.pathname === item.url && "bg-primary/10 text-primary"
@@ -119,7 +119,7 @@ export function AppSidebar() {
                           {item.badge}
                         </span>
                       )}
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -136,8 +136,8 @@ export function AppSidebar() {
               {adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <a 
-                      href={item.url} 
+                    <Link 
+                      to={item.url} 
                       className={cn(
                         "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                         location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -145,7 +145,7 @@ export function AppSidebar() {
                     >
                       <item.icon className="w-5 h-5 flex-shrink-0" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -199,7 +199,6 @@ export function AppLayout({ children, searchValue, onSearchChange, searchPlaceho
               <div className="flex items-center space-x-4">
                 <SidebarTrigger className="text-background hover:bg-background/10" />
                 <div className="flex items-center space-x-3">
-                  <img src="/lovable-uploads/8053d08a-8b10-4050-a1e7-713b251adcdb.png" alt="Indofood CBP" className="h-8" />
                   <div>
                     <h1 className="text-lg font-semibold text-background">PT INDOFOOD CBP SUKSES MAKMUR</h1>
                     <p className="text-sm text-background/80">Divisi Noodle</p>
