@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Sidebar,
@@ -193,15 +194,15 @@ export function AppLayout({ children, searchValue, onSearchChange, searchPlaceho
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset>
-          <header className="sticky top-0 z-40 bg-primary border-b border-primary-foreground/20 px-6 py-4">
+          <header className="sticky top-0 z-40 bg-foreground border-b border-border px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10" />
+                <SidebarTrigger className="text-background hover:bg-background/10" />
                 <div className="flex items-center space-x-3">
                   <img src="/lovable-uploads/8053d08a-8b10-4050-a1e7-713b251adcdb.png" alt="Indofood CBP" className="h-8" />
                   <div>
-                    <h1 className="text-lg font-semibold text-primary-foreground">PT INDOFOOD CBP SUKSES MAKMUR</h1>
-                    <p className="text-sm text-primary-foreground/80">Divisi Noodle</p>
+                    <h1 className="text-lg font-semibold text-background">PT INDOFOOD CBP SUKSES MAKMUR</h1>
+                    <p className="text-sm text-background/80">Divisi Noodle</p>
                   </div>
                 </div>
               </div>
@@ -212,10 +213,10 @@ export function AppLayout({ children, searchValue, onSearchChange, searchPlaceho
                     placeholder={searchPlaceholder}
                     value={searchValue || ''}
                     onChange={(e) => onSearchChange?.(e.target.value)}
-                    className="w-64 pl-4 pr-10 py-2 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/60 focus:bg-primary-foreground focus:text-foreground focus:ring-2 focus:ring-primary-foreground focus:border-transparent"
+                    className="w-64 pl-4 pr-10 py-2 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground focus-visible:ring-2 focus-visible:border-foreground"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <Search className="w-5 h-5 text-primary-foreground/60" />
+                    <Search className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
               </div>

@@ -16,8 +16,8 @@
     --popover: 0 0% 100%; /* #fff */
     --popover-foreground: 230 86% 12%; /* #01063D */
 
-    --primary: 39 86% 70%; /* #f5b971 */
-    --primary-foreground: 206 75% 14%; /* #011B2F */
+    --primary: 230 86% 12%; /* #01063D - changed from yellow to dark blue */
+    --primary-foreground: 0 0% 100%; /* white text on dark background */
 
     --secondary: 0 0% 93%; /* #EDEDED */
     --secondary-foreground: 206 75% 14%; /* #011B2F */
@@ -25,29 +25,29 @@
     --muted: 0 0% 93%; /* #EDEDED */
     --muted-foreground: 206 75% 14%; /* #011B2F */
 
-    --accent: 50 100% 79%; /* #FFEB99 */
-    --accent-foreground: 206 75% 14%; /* #011B2F */
+    --accent: 0 0% 88%; /* #E0E0E0 - changed from yellow to gray */
+    --accent-foreground: 230 86% 12%; /* #01063D */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 0 0% 88%; /* #E0E0E0 */
     --input: 0 0% 88%; /* #E0E0E0 */
-    --ring: 230 93% 42%; /* #0817ba */
+    --ring: 230 86% 12%; /* #01063D - changed from blue to dark */
 
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 93%; /* #EDEDED */
     --sidebar-foreground: 230 86% 12%; /* #01063D */
-    --sidebar-primary: 39 86% 70%; /* #f5b971 */
-    --sidebar-primary-foreground: 206 75% 14%; /* #011B2F */
-    --sidebar-accent: 50 100% 79%; /* #FFEB99 */
-    --sidebar-accent-foreground: 206 75% 14%; /* #011B2F */
+    --sidebar-primary: 230 86% 12%; /* #01063D - changed from yellow */
+    --sidebar-primary-foreground: 0 0% 100%; /* white */
+    --sidebar-accent: 0 0% 88%; /* #E0E0E0 - changed from yellow */
+    --sidebar-accent-foreground: 230 86% 12%; /* #01063D */
     --sidebar-border: 0 0% 88%; /* #E0E0E0 */
-    --sidebar-ring: 230 93% 42%; /* #0817ba */
+    --sidebar-ring: 230 86% 12%; /* #01063D */
 
     /* Custom colors for buttons and specific elements */
-    --button-yellow: 44 100% 54%; /* #FFB916 */
+    --button-primary: 230 86% 12%; /* #01063D - changed from yellow to dark */
     --hover-gray: 0 0% 88%; /* #E0E0E0 */
     --text-link: 230 93% 42%; /* #0817ba */
   }
@@ -62,8 +62,8 @@
     --popover: 222 84% 5%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 39 86% 70%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 230 86% 12%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -82,12 +82,12 @@
     --ring: 213 27% 84%;
     --sidebar-background: 220 9% 7%;
     --sidebar-foreground: 220 14% 96%;
-    --sidebar-primary: 39 86% 70%;
+    --sidebar-primary: 230 86% 12%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 9% 15%;
     --sidebar-accent-foreground: 220 14% 96%;
     --sidebar-border: 220 9% 15%;
-    --sidebar-ring: 39 86% 70%;
+    --sidebar-ring: 230 86% 12%;
   }
 }
 
@@ -111,8 +111,8 @@
 }
 
 /* Custom utility classes for the new color palette */
-.bg-button-yellow {
-  background-color: hsl(var(--button-yellow));
+.bg-button-primary {
+  background-color: hsl(var(--button-primary));
 }
 
 .text-link {
