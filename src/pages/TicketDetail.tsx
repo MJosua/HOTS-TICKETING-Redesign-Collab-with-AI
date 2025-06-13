@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarContent, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign } from 'lucide-react';
 import ProgressionBar from "@/components/ui/ProgressionBar";
 import RejectModal from "@/components/modals/RejectModal";
@@ -252,6 +252,7 @@ const TicketDetail = () => {
         isOpen={isRejectModalOpen}
         onClose={() => setIsRejectModalOpen(false)}
         onReject={handleReject}
+        taskId={ticket.id}
       />
     </AppLayout>
   );
