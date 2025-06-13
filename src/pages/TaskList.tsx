@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, FileText, List, Settings, LogOut, Monitor, Users, Search, Home } from 'lucide-react';
 import ProgressionBar from "@/components/ui/ProgressionBar";
-import { cn } from "@/lib/utils";
+import { highlightSearchTerm, searchInObject } from "@/utils/searchUtils";
 
 const TaskList = () => {
   const [searchValue, setSearchValue] = useState('');
@@ -64,29 +64,29 @@ const TaskList = () => {
   ]);
 
   const filteredTasks = tasks.filter(task => {
-    const searchRegex = new RegExp(searchValue, 'i');
     const statusFilter = filterStatus === 'all' || task.status === filterStatus;
     const priorityFilter = filterPriority === 'all' || task.priority === filterPriority;
+    const searchFilter = searchInObject(task, searchValue);
 
-    return searchRegex.test(task.id) && statusFilter && priorityFilter;
+    return statusFilter && priorityFilter && searchFilter;
   });
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "High": return "bg-red-100 text-red-800";
-      case "Medium": return "bg-yellow-100 text-yellow-800";
-      case "Low": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "High": return "bg-red-100 text-red-800 border-red-200";
+      case "Medium": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "Low": return "bg-green-100 text-green-800 border-green-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pending Approval": return "bg-orange-100 text-orange-800";
-      case "In Progress": return "bg-blue-100 text-blue-800";
-      case "Approved": return "bg-green-100 text-green-800";
-      case "Rejected": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "Pending Approval": return "bg-orange-100 text-orange-800 border-orange-200";
+      case "In Progress": return "bg-blue-100 text-blue-800 border-blue-200";
+      case "Approved": return "bg-green-100 text-green-800 border-green-200";
+      case "Rejected": return "bg-red-100 text-red-800 border-red-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -96,6 +96,16 @@ const TaskList = () => {
     navigate(`/ticket/${taskId}`);
   };
 
+  const renderHighlightedText = (text: string) => {
+    return (
+      <span 
+        dangerouslySetInnerHTML={{ 
+          __html: highlightSearchTerm(text, searchValue) 
+        }}
+      />
+    );
+  };
+
   return (
     <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search tasks...">
       <div className="space-y-6">
@@ -103,20 +113,20 @@ const TaskList = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-foreground">Task List</h1>
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="px-3 py-1">
+            <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
               {filteredTasks.length} Tasks
             </Badge>
           </div>
         </div>
 
         {/* Filters */}
-        <Card>
+        <Card className="border-border shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center space-x-2">
-                <Label htmlFor="status-filter">Status:</Label>
+                <Label htmlFor="status-filter" className="text-muted-foreground">Status:</Label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-40 border-input">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -130,9 +140,9 @@ const TaskList = () => {
               </div>
 
               <div className="flex items-center space-x-2">
-                <Label htmlFor="priority-filter">Priority:</Label>
+                <Label htmlFor="priority-filter" className="text-muted-foreground">Priority:</Label>
                 <Select value={filterPriority} onValueChange={setFilterPriority}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-40 border-input">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -148,11 +158,11 @@ const TaskList = () => {
         </Card>
 
         {/* Tasks Table */}
-        <Card>
+        <Card className="border-border shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-muted/50 border-b">
+                <thead className="bg-muted/50 border-b border-border">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Ticket ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Type</th>
@@ -168,27 +178,37 @@ const TaskList = () => {
                   {filteredTasks.map((task) => (
                     <tr 
                       key={task.id} 
-                      className="hover:bg-muted/30 cursor-pointer"
+                      className="hover:bg-muted/30 cursor-pointer transition-colors"
                       onClick={() => handleRowClick(task.id)}
                     >
-                      <td className="px-6 py-4 font-medium text-primary">{task.id}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{task.type}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{task.requester}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{task.department}</td>
+                      <td className="px-6 py-4 font-medium text-primary">
+                        {renderHighlightedText(task.id)}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {renderHighlightedText(task.type)}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {renderHighlightedText(task.requester)}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {renderHighlightedText(task.department)}
+                      </td>
                       <td className="px-6 py-4">
-                        <Badge className={getPriorityColor(task.priority)}>
-                          {task.priority}
+                        <Badge className={`${getPriorityColor(task.priority)} border`}>
+                          {renderHighlightedText(task.priority)}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
                         <ProgressionBar steps={task.approvalSteps} />
                       </td>
                       <td className="px-6 py-4">
-                        <Badge className={getStatusColor(task.status)}>
-                          {task.status}
+                        <Badge className={`${getStatusColor(task.status)} border`}>
+                          {renderHighlightedText(task.status)}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 font-medium text-foreground">{task.amount}</td>
+                      <td className="px-6 py-4 font-medium text-foreground">
+                        {renderHighlightedText(task.amount)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -196,6 +216,14 @@ const TaskList = () => {
             </div>
           </CardContent>
         </Card>
+
+        {filteredTasks.length === 0 && (
+          <Card className="border-border">
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">No tasks found matching your search criteria.</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AppLayout>
   );

@@ -84,8 +84,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-primary-foreground font-bold text-sm">HOTS</span>
+          <div className="w-10 h-10 bg-primary rounded flex items-center justify-center flex-shrink-0">
+            <span className="text-primary-foreground font-bold text-xs">HOTS</span>
           </div>
           <div className="group-data-[collapsible=icon]:hidden">
             <h3 className="font-semibold text-sidebar-foreground">HOTS</h3>
@@ -193,15 +193,15 @@ export function AppLayout({ children, searchValue, onSearchChange, searchPlaceho
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset>
-          <header className="sticky top-0 z-40 bg-card border-b border-border px-6 py-4">
+          <header className="sticky top-0 z-40 bg-primary border-b border-primary-foreground/20 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <SidebarTrigger />
+                <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10" />
                 <div className="flex items-center space-x-3">
                   <img src="/lovable-uploads/8053d08a-8b10-4050-a1e7-713b251adcdb.png" alt="Indofood CBP" className="h-8" />
                   <div>
-                    <h1 className="text-lg font-semibold text-foreground">PT INDOFOOD CBP SUKSES MAKMUR</h1>
-                    <p className="text-sm text-muted-foreground">Divisi Noodle</p>
+                    <h1 className="text-lg font-semibold text-primary-foreground">PT INDOFOOD CBP SUKSES MAKMUR</h1>
+                    <p className="text-sm text-primary-foreground/80">Divisi Noodle</p>
                   </div>
                 </div>
               </div>
@@ -212,10 +212,10 @@ export function AppLayout({ children, searchValue, onSearchChange, searchPlaceho
                     placeholder={searchPlaceholder}
                     value={searchValue || ''}
                     onChange={(e) => onSearchChange?.(e.target.value)}
-                    className="w-64 pl-4 pr-10 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
+                    className="w-64 pl-4 pr-10 py-2 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/60 focus:bg-primary-foreground focus:text-foreground focus:ring-2 focus:ring-primary-foreground focus:border-transparent"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <Search className="w-5 h-5 text-muted-foreground" />
+                    <Search className="w-5 h-5 text-primary-foreground/60" />
                   </div>
                 </div>
               </div>
