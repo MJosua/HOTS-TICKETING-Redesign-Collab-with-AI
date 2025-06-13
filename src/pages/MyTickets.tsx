@@ -10,6 +10,7 @@ import ProgressionBar from "@/components/ui/ProgressionBar";
 import { highlightSearchTerm, searchInObject } from "@/utils/searchUtils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Grid, List } from 'lucide-react';
+import { AppLayout } from "@/components/layout/AppLayout";
 
 const MyTickets = () => {
   const [searchValue, setSearchValue] = useState('');
@@ -100,9 +101,9 @@ const MyTickets = () => {
 
   const renderHighlightedText = (text: string) => {
     return (
-      <span 
-        dangerouslySetInnerHTML={{ 
-          __html: highlightSearchTerm(text, searchValue) 
+      <span
+        dangerouslySetInnerHTML={{
+          __html: highlightSearchTerm(text, searchValue)
         }}
       />
     );
@@ -125,7 +126,7 @@ const MyTickets = () => {
             </TableHeader>
             <TableBody>
               {filteredTickets.map((ticket) => (
-                <TableRow 
+                <TableRow
                   key={ticket.id}
                   className="hover:bg-muted/30 cursor-pointer transition-colors"
                   onClick={() => handleRowClick(ticket.id)}
@@ -164,8 +165,8 @@ const MyTickets = () => {
   const CardView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {filteredTickets.map((ticket) => (
-        <Card 
-          key={ticket.id} 
+        <Card
+          key={ticket.id}
           className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => handleRowClick(ticket.id)}
         >
@@ -188,7 +189,7 @@ const MyTickets = () => {
                 Created: {renderHighlightedText(ticket.created)}
               </p>
             </div>
-            
+
             <div>
               <p className="text-xs text-muted-foreground mb-1">Progress</p>
               <ProgressionBar steps={ticket.approvalSteps} />
@@ -209,89 +210,91 @@ const MyTickets = () => {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">My Tickets</h1>
-        <div className="flex items-center space-x-2">
-          <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
-            {filteredTickets.length} Tickets
-          </Badge>
-        </div>
-      </div>
-
-      {/* Filters and View Toggle */}
-      <Card className="border-border shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="status-filter" className="text-muted-foreground">Status:</Label>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-40 border-input">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Pending Approval">Pending Approval</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Approved">Approved</SelectItem>
-                    <SelectItem value="Rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="priority-filter" className="text-muted-foreground">Priority:</Label>
-                <Select value={filterPriority} onValueChange={setFilterPriority}>
-                  <SelectTrigger className="w-40 border-input">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Priorities</SelectItem>
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Low">Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('table')}
-                className="px-3"
-              >
-                <List className="w-4 h-4 mr-1" />
-                Table
-              </Button>
-              <Button
-                variant={viewMode === 'card' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('card')}
-                className="px-3"
-              >
-                <Grid className="w-4 h-4 mr-1" />
-                Cards
-              </Button>
-            </div>
+    <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search tasks...">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-foreground">My Tickets</h1>
+          <div className="flex items-center space-x-2">
+            <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
+              {filteredTickets.length} Tickets
+            </Badge>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Content */}
-      {viewMode === 'table' ? <TableView /> : <CardView />}
+        {/* Filters and View Toggle */}
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="status-filter" className="text-muted-foreground">Status:</Label>
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-40 border-input">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="Pending Approval">Pending Approval</SelectItem>
+                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Approved">Approved</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-      {filteredTickets.length === 0 && (
-        <Card className="border-border">
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">No tickets found matching your search criteria.</p>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="priority-filter" className="text-muted-foreground">Priority:</Label>
+                  <Select value={filterPriority} onValueChange={setFilterPriority}>
+                    <SelectTrigger className="w-40 border-input">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Priorities</SelectItem>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="px-3"
+                >
+                  <List className="w-4 h-4 mr-1" />
+                  Table
+                </Button>
+                <Button
+                  variant={viewMode === 'card' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('card')}
+                  className="px-3"
+                >
+                  <Grid className="w-4 h-4 mr-1" />
+                  Cards
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      )}
-    </div>
+
+        {/* Content */}
+        {viewMode === 'table' ? <TableView /> : <CardView />}
+
+        {filteredTickets.length === 0 && (
+          <Card className="border-border">
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">No tickets found matching your search criteria.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </AppLayout>
   );
 };
 

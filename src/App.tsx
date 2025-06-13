@@ -15,7 +15,7 @@ import SystemSettings from "./pages/admin/SystemSettings";
 import UserManagement from "./pages/admin/UserManagement";
 import DivisionManagement from "./pages/admin/DivisionManagement";
 import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
+import Login from "./pages/login/Loginpage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import TicketDetail from "./pages/TicketDetail";
 
@@ -45,9 +45,7 @@ const App = () => {
             } />
             <Route path="/service-catalog" element={
               <ProtectedRoute>
-                <AppLayout>
-                  <ServiceCatalog />
-                </AppLayout>
+                <ServiceCatalog />
               </ProtectedRoute>
             } />
             <Route path="/task-list" element={
@@ -57,9 +55,7 @@ const App = () => {
             } />
             <Route path="/my-tickets" element={
               <ProtectedRoute>
-                <AppLayout>
-                  <MyTickets />
-                </AppLayout>
+                <MyTickets />
               </ProtectedRoute>
             } />
             <Route path="/ticket/:id" element={

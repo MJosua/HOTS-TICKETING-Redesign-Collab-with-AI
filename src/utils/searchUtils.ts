@@ -3,7 +3,7 @@ export const highlightSearchTerm = (text: string, searchTerm: string): string =>
   if (!searchTerm.trim()) return text;
   
   const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  return text.replace(regex, '<span class="search-highlight">$1</span>');
+  return text.replace(regex, '<span class="search-highlight ">$1</span>');
 };
 
 export const matchesSearchTerm = (text: string, searchTerm: string): boolean => {

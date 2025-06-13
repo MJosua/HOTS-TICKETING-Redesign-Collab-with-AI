@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,49 +6,77 @@
 
 @layer base {
   :root {
-    --background: 48 100% 95%; /* #FFF8E3 */
-    --foreground: 230 86% 12%; /* #01063D */
+    --background: 37.75% 0.208 265.42;
+    /* #00549c */
+    --foreground: 230 86% 12%;
+    /* #01063D */
 
-    --card: 36 31% 93%; /* #F3F1EC */
-    --card-foreground: 230 86% 12%; /* #01063D */
+    --card: 32.3% 0.14 264;
+    /* #F3F1EC */
+    --card-foreground: 32.33% 0.14 265.38;
+    /* #1A2A6C */
 
-    --popover: 0 0% 100%; /* #fff */
-    --popover-foreground: 230 86% 12%; /* #01063D */
+    --popover: 0 0% 100%;
+    /* #fff */
+    --popover-foreground: 230 86% 12%;
+    /* #01063D */
 
-    --primary: 230 86% 12%; /* #01063D - changed from yellow to dark blue */
-    --primary-foreground: 0 0% 100%; /* white text on dark background */
+    --primary: 208, 100%, 31%;
+    /* #01063D - changed from yellow to dark blue */
+    --primary-foreground: 0 0% 100%;
+    /* white text on dark background */
 
-    --secondary: 0 0% 93%; /* #EDEDED */
-    --secondary-foreground: 206 75% 14%; /* #011B2F */
+    --secondary: 0 0% 93%;
+    /* #EDEDED */
+    --secondary-foreground: 206 75% 14%;
+    /* #011B2F */
 
-    --muted: 0 0% 93%; /* #EDEDED */
-    --muted-foreground: 206 75% 14%; /* #011B2F */
+    --muted: 0 0% 93%;
+    /* #EDEDED */
+    --muted-foreground: 206 75% 14%;
+    /* #011B2F */
 
-    --accent: 0 0% 88%; /* #E0E0E0 - changed from yellow to gray */
-    --accent-foreground: 230 86% 12%; /* #01063D */
+    --accent: 0 0% 88%;
+    /* #E0E0E0 - changed from yellow to gray */
+    --accent-foreground: 230 86% 12%;
+    /* #01063D */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 88%; /* #E0E0E0 */
-    --input: 0 0% 88%; /* #E0E0E0 */
-    --ring: 230 86% 12%; /* #01063D - changed from blue to dark */
+    --border: 0 0% 88%;
+    /* #E0E0E0 */
+    --input: 0 0% 88%;
+    /* #E0E0E0 */
+    --ring: 230 86% 12%;
+    /* #01063D - changed from blue to dark */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 93%; /* #EDEDED */
-    --sidebar-foreground: 230 86% 12%; /* #01063D */
-    --sidebar-primary: 230 86% 12%; /* #01063D - changed from yellow */
-    --sidebar-primary-foreground: 0 0% 100%; /* white */
-    --sidebar-accent: 0 0% 88%; /* #E0E0E0 - changed from yellow */
-    --sidebar-accent-foreground: 230 86% 12%; /* #01063D */
-    --sidebar-border: 0 0% 88%; /* #E0E0E0 */
-    --sidebar-ring: 230 86% 12%; /* #01063D */
+    --sidebar-background: 89.06% 0.074 253.53;
+    /* #EDEDED */
+    --sidebar-foreground: 230 86% 12%;
+    /* #01063D */
+    --sidebar-primary: 230 86% 12%;
+    /* #01063D - changed from yellow */
+    --sidebar-primary-foreground: 0 0% 100%;
+    /* white */
+    --sidebar-accent: 0 0% 88%;
+    /* #E0E0E0 - changed from yellow */
+    --sidebar-accent-foreground: 230 86% 12%;
+    /* #01063D */
+    --sidebar-border: 0 0% 88%;
+    /* #E0E0E0 */
+    --sidebar-ring: 230 86% 12%;
+    /* #01063D */
 
     /* Custom colors for buttons and specific elements */
-    --button-primary: 230 86% 12%; /* #01063D - changed from yellow to dark */
-    --hover-gray: 0 0% 88%; /* #E0E0E0 */
-    --text-link: 230 93% 42%; /* #0817ba */
+    --button-primary: 230 86% 12%;
+    /* #01063D - changed from yellow to dark */
+    --hover-gray: 0 0% 88%;
+    /* #E0E0E0 */
+    --text-link: 230 93% 42%;
+    /* #0817ba */
   }
 
   .dark {
@@ -106,7 +133,7 @@
   background-color: hsl(var(--accent));
   padding: 1px 2px;
   border-radius: 2px;
-  font-weight: 500;
+  font-weight: 900;
   color: hsl(var(--accent-foreground));
 }
 

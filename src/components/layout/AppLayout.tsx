@@ -84,17 +84,24 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary rounded flex items-center justify-center flex-shrink-0">
+        <div className="flex  items-center space-x-3" style={{ position: 'relative' }} >
+          {/* Show when collapsible != icon */}
+          <div className="w-6 h-6 bg-primary ms-1 mt-3 mb-3 rounded items-center justify-center flex-shrink-0 hidden group-data-[collapsible=icon]:flex">
+            <span className="text-primary-foreground  font-bold text-xs">H</span>
+          </div>
+
+          {/* Show when collapsible == icon */}
+          <div className="w-10 h-10  bg-primary rounded items-center justify-center flex-shrink-0 flex group-data-[collapsible=icon]:hidden">
             <span className="text-primary-foreground font-bold text-xs">HOTS</span>
           </div>
+
           <div className="group-data-[collapsible=icon]:hidden">
             <h3 className="font-semibold text-sidebar-foreground">HOTS</h3>
-            <p className="text-sm text-sidebar-foreground/70">Helpdesk System</p>
+            <p className="text-sm text-sidebar-foreground/70 mb-1">Helpdesk System</p>
           </div>
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent className="p-2">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider px-3 py-2">
@@ -105,8 +112,8 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <Link 
-                      to={item.url} 
+                    <Link
+                      to={item.url}
                       className={cn(
                         "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-primary/10 hover:text-primary",
                         location.pathname === item.url && "bg-primary/10 text-primary"
@@ -136,8 +143,8 @@ export function AppSidebar() {
               {adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <Link 
-                      to={item.url} 
+                    <Link
+                      to={item.url}
                       className={cn(
                         "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                         location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -169,16 +176,16 @@ export function AppSidebar() {
             <p className="text-xs text-sidebar-foreground/70 truncate">International Operation</p>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full justify-start group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:px-2"
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-start group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:px-0 "
           onClick={handleLogout}
         >
-          <LogOut className="w-4 h-4 group-data-[collapsible=icon]:mr-0 mr-2" />
+          <LogOut className="w-4 h-4 group-data-[collapsible=icon]:mr-0 mr-2 " />
           <span className="group-data-[collapsible=icon]:hidden">Log Out</span>
         </Button>
-        
+
         <ProfileModal
           isOpen={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
@@ -189,36 +196,43 @@ export function AppSidebar() {
 }
 
 export function AppLayout({ children, searchValue, onSearchChange, searchPlaceholder = "Search..." }: AppLayoutProps) {
+
+  const location = useLocation();
+  const hiddenSearchRoutes = ['/','/login', '/admin/settings'];
+  const shouldHideSearch = hiddenSearchRoutes.includes(location.pathname);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset>
-          <header className="sticky top-0 z-40 bg-foreground border-b border-border px-6 py-4">
+          <header className="sticky backdrop-blur-md top-0 z-1 bg-muted/30 border-b border-border px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <SidebarTrigger className="text-background hover:bg-background/10" />
+                <SidebarTrigger className="bg-secondary hover:bg-secondary/50" />
                 <div className="flex items-center space-x-3">
                   <div>
-                    <h1 className="text-lg font-semibold text-background">PT INDOFOOD CBP SUKSES MAKMUR</h1>
-                    <p className="text-sm text-background/80">Divisi Noodle</p>
+                    <h1 className="text-lg font-semibold text-primary  ">PT INDOFOOD CBP SUKSES MAKMUR</h1>
+                    <p className="text-sm text-primary">Divisi Noodle</p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder={searchPlaceholder}
-                    value={searchValue || ''}
-                    onChange={(e) => onSearchChange?.(e.target.value)}
-                    className="w-64 pl-4 pr-10 py-2 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground focus-visible:ring-2 focus-visible:border-foreground"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <Search className="w-5 h-5 text-muted-foreground" />
+              {!shouldHideSearch && (
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder={searchPlaceholder}
+                      value={searchValue || ''}
+                      onChange={(e) => onSearchChange?.(e.target.value)}
+                      className="w-64 pl-4 pr-10 py-2 bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground focus-visible:ring-2 focus-visible:border-foreground"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <Search className="w-5 h-5 text-muted-foreground" />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </header>
           <div className="flex-1 p-6">
