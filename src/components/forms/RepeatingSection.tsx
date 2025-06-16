@@ -5,28 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
 import { DynamicField } from './DynamicField';
-
-interface FormField {
-  label: string;
-  type: string;
-  placeholder?: string;
-  required?: boolean;
-  options?: string[];
-  readonly?: boolean;
-  value?: string;
-}
-
-interface FormSection {
-  title: string;
-  fields: FormField[];
-  repeatable?: boolean;
-  addButton?: string;
-  summary?: {
-    label: string;
-    type: string;
-    calculated: boolean;
-  };
-}
+import { FormSection, FormField } from '@/types/formTypes';
 
 interface RepeatingSectionProps {
   section: FormSection;
@@ -58,6 +37,9 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
     return total;
   };
 
+  // Use fields from section, fallback to empty array if not provided
+  const sectionFields = section.fields || [];
+
   return (
     <div className="space-y-4">
       {items.map((item, index) => (
@@ -76,7 +58,7 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
             )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {section.fields.map((field, fieldIndex) => {
+              {sectionFields.map((field, fieldIndex) => {
                 const fieldKey = `${section.title.toLowerCase()}_${index}_${field.label.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
                 
                 return (
