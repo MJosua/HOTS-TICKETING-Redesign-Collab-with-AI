@@ -46,7 +46,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   fieldKey, 
   onValueChange 
 }) => {
-  const isRequired = field.required === true || field.required === 'true' || field.required === true;
+  const isRequired = field.required === true;
   const hasAsterisk = field.label.includes('*');
   const cleanLabel = field.label.replace(/\*+$/, '');
 
