@@ -22,6 +22,15 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
   const removeItem = (id: number) => {
     if (items.length > 1) {
       setItems(items.filter(item => item.id !== id));
+      // Clean up form values for removed item
+      const itemIndex = items.findIndex(item => item.id === id);
+      if (itemIndex !== -1) {
+        const sectionFields = section.fields || [];
+        sectionFields.forEach(field => {
+          const fieldKey = `${section.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${itemIndex}_${field.name}`;
+          form.unregister(fieldKey);
+        });
+      }
     }
   };
 
@@ -29,9 +38,9 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
     if (!section.summary?.calculated) return null;
     
     const total = items.reduce((sum, item, index) => {
-      const quantityKey = `${section.title.toLowerCase()}_${index}_quantity`;
+      const quantityKey = `${section.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${index}_quantity`;
       const quantity = form.watch(quantityKey) || 0;
-      return sum + parseInt(quantity.toString()) || 0;
+      return sum + (parseInt(quantity.toString()) || 0);
     }, 0);
 
     return total;
@@ -59,7 +68,7 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {sectionFields.map((field, fieldIndex) => {
-                const fieldKey = `${section.title.toLowerCase()}_${index}_${field.label.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+                const fieldKey = `${section.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${index}_${field.name}`;
                 
                 return (
                   <DynamicField
@@ -67,6 +76,10 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
                     field={field}
                     form={form}
                     fieldKey={fieldKey}
+                    onValueChange={(value) => {
+                      // Handle value changes if needed for calculations
+                      console.log(`Field ${fieldKey} changed to:`, value);
+                    }}
                   />
                 );
               })}

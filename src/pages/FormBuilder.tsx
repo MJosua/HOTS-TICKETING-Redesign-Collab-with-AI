@@ -1,197 +1,345 @@
-
-import React from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { DynamicForm } from '@/components/forms/DynamicForm';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FormConfig } from '@/types/formTypes';
 
 const FormBuilder = () => {
-  const formConfigs = [
-    {
-      "url": "/it-support",
-      "title": "IT Support Request",
-      "fields": [
-        {
-          "label": "Type of Support*",
-          "placeholder": "Select Type of Support",
-          "type": "select",
-          "options": ["Hardware", "Account", "Software"],
-          "required": true
-        },
-        {
-          "label": "Issue Description",
-          "placeholder": "Please provide a detailed description of the issues you're experiencing",
-          "type": "textarea",
-          "required": true
-        },
-        {
-          "label": "Attachment",
-          "type": "file",
-          "accept": ["image/*", "pdf", "docx"]
-        }
-      ],
-      "approval": {
-        "steps": ["Supervisor", "IT Team"],
-        "mode": "sequential" as const
+  const [selectedForm, setSelectedForm] = useState<FormConfig | null>(null);
+
+  // Asset Request Form Configuration
+  const assetRequestForm: FormConfig = {
+    url: "/asset-request",
+    title: "Asset Request Form",
+    fields: [
+      {
+        name: "requestedBy",
+        label: "Requested By *",
+        type: "text",
+        placeholder: "Enter your name",
+        required: true
+      },
+      {
+        name: "division",
+        label: "Division *",
+        type: "select",
+        options: ["IT", "HR", "Finance", "Operations"],
+        required: true
+      },
+      {
+        name: "assetType",
+        label: "Asset Type *",
+        type: "select",
+        options: ["Laptop", "Desktop", "Monitor", "Printer", "Phone"],
+        required: true
+      },
+      {
+        name: "laptopSpecification",
+        label: "Laptop Specification *",
+        type: "textarea",
+        placeholder: "Specify laptop requirements",
+        required: true
+      },
+      {
+        name: "justification",
+        label: "Business Justification *",
+        type: "textarea",
+        placeholder: "Explain why this asset is needed",
+        required: true
+      },
+      {
+        name: "urgency",
+        label: "Urgency Level",
+        type: "select",
+        options: ["Low", "Medium", "High", "Critical"],
+        required: false
+      },
+      {
+        name: "preferredDeliveryDate",
+        label: "Preferred Delivery Date",
+        type: "date",
+        required: false
+      },
+      {
+        name: "additionalNotes",
+        label: "Additional Notes",
+        type: "textarea",
+        placeholder: "Any additional information",
+        required: false
+      },
+      {
+        name: "supportingDocuments",
+        label: "Supporting Documents",
+        type: "file",
+        accept: ["pdf", "doc", "docx"],
+        required: false
       }
-    },
-    {
-      "url": "/asset-request",
-      "title": "Laptop Asset Request",
-      "fields": [
-        {
-          "label": "Job Description**",
-          "placeholder": "Please describe your specific part of the job for why you need another laptop",
-          "type": "textarea",
-          "required": true
-        },
-        {
-          "label": "Laptop Specification *",
-          "type": "radio",
-          "required": true,
-          "options": ["Standard", "Analyst", "Marketing"]
-        },
-        {
-          "label": "Do you have an Indofood asset PC/Laptop that you are currently using?",
-          "type": "toggle",
-          "default": "off"
-        },
-        {
-          "label": "Date of Acquisition of the Used Asset *",
-          "type": "date",
-          "required": true,
-          "uiCondition": "show if toggle is on"
-        },
-        {
-          "label": "Used Laptop Specification**",
-          "type": "select",
-          "options": ["Standard", "Analyst", "Marketing"],
-          "required": false,
-          "uiCondition": "show if toggle is on"
-        }
-      ],
-      "approval": {
-        "steps": ["Supervisor", "IT Team"],
-        "mode": "sequential" as const
-      }
-    },
-    {
-      "url": "/idea-bank",
-      "title": "IDEA BANK",
-      "fields": [
-        {
-          "label": "Issue Detail*",
-          "placeholder": "Please provide a detailed description of the issues you're experiencing",
-          "type": "textarea",
-          "required": true
-        },
-        {
-          "label": "Issue Solution*",
-          "placeholder": "You may not have any solution, but if you have, please provide a detailed description of solution you're thinking",
-          "type": "textarea",
-          "required": true
-        },
-        {
-          "label": "Attachment*",
-          "note": "Attachment cannot exceed 5 MB in size.",
-          "type": "file",
-          "accept": ["image/*", "pdf", "docx"]
-        }
-      ]
-    },
-    {
-      "url": "/sample-request-form",
-      "title": "Sample Request Form",
-      "sections": [
-        {
-          "title": "Data",
-          "fields": [
-            { "label": "Request By", "type": "text", "readonly": true, "value": "Yosua Gultom", "required": true },
-            { "label": "Division", "type": "text", "readonly": true, "value": "IOD", "required": true },
-            { "label": "Location", "type": "text", "readonly": true, "value": "INDOFOOD TOWER LT.23", "required": true },
-            { "label": "Sample Category", "type": "select", "options": ["Category 1", "Category 2", "Category 3"], "required": true },
-            { "label": "Plant", "type": "select", "options": ["Plant A", "Plant B", "Plant C"], "required": true },
-            { "label": "Deliver To", "type": "select", "options": ["Location 1", "Location 2", "Location 3"], "required": true },
-            { "label": "SRF No", "type": "text", "value": "XXX", "required": true },
-            { "label": "Purpose", "type": "text", "placeholder": "purpose", "required": true }
-          ]
-        },
-        {
-          "title": "Item",
-          "repeatable": true,
-          "fields": [
-            { "label": "Item Name", "type": "text", "required": true },
-            { "label": "Quantity", "type": "number", "required": true }
-          ],
-          "addButton": "Add Item",
-          "summary": {
-            "label": "Total",
-            "type": "number",
-            "calculated": true
-          }
-        },
-        {
-          "title": "Notes",
-          "fields": [
-            { "label": "Notes", "type": "textarea", "placeholder": "notes", "required": false }
-          ]
-        },
-        {
-          "title": "Upload",
-          "fields": [
-            {
-              "label": "Upload Files",
-              "type": "file",
-              "accept": ["image/*", "pdf", "docx"],
-              "maxSizeMB": 5,
-              "multiple": true
-            }
-          ]
-        }
-      ],
-      "submit": {
-        "label": "Submit",
-        "type": "button",
-        "action": "/submit-sample-request"
-      }
+    ],
+    approval: {
+      steps: ["Direct Manager", "IT Department", "Finance Team"],
+      mode: "sequential"
     }
+  };
+
+  // Sample Request Form Configuration  
+  const sampleRequestForm: FormConfig = {
+    url: "/sample-request-form",
+    title: "Sample Request Form",
+    sections: [
+      {
+        title: "Request Information",
+        fields: [
+          { name: "requestBy", label: "Request By", type: "text", readonly: true, value: "Yosua Gultom", required: true, columnSpan: 1 },
+          { name: "division", label: "Division", type: "text", readonly: true, value: "IOD", required: true, columnSpan: 1 },
+          { name: "location", label: "Location", type: "text", readonly: true, value: "INDOFOOD TOWER LT.23", required: true, columnSpan: 1 },
+          { name: "sampleCategory", label: "Sample Category", type: "select", options: ["Category A", "Category B", "Category C"], required: true, columnSpan: 1 },
+          { name: "plant", label: "Plant", type: "select", options: ["Plant 1", "Plant 2", "Plant 3"], required: true, columnSpan: 1 },
+          { name: "deliverTo", label: "Deliver To", type: "select", options: ["Lab A", "Lab B", "Lab C"], required: true, columnSpan: 1 },
+          { name: "srfNo", label: "SRF No", type: "text", value: "XXX", required: true, columnSpan: 1 },
+          { name: "purpose", label: "Purpose", type: "text", placeholder: "purpose", required: true, columnSpan: 2 }
+        ]
+      },
+      {
+        title: "Items",
+        repeatable: true,
+        fields: [
+          { name: "itemName", label: "Item Name", type: "text", required: true },
+          { name: "quantity", label: "Quantity", type: "number", required: true }
+        ],
+        addButton: "Add Item",
+        summary: {
+          label: "Total Items",
+          type: "number",
+          calculated: true
+        }
+      },
+      {
+        title: "Additional Information",
+        fields: [
+          { name: "notes", label: "Notes", type: "textarea", placeholder: "Enter any additional notes", required: false, columnSpan: 3 }
+        ]
+      },
+      {
+        title: "File Upload",
+        fields: [
+          {
+            name: "uploadFiles",
+            label: "Upload Files",
+            type: "file",
+            accept: ["image/*", "pdf", "docx"],
+            maxSizeMB: 5,
+            multiple: true,
+            columnSpan: 3
+          }
+        ]
+      }
+    ],
+    submit: {
+      label: "Submit Request",
+      type: "button",
+      action: "/submit-sample-request"
+    }
+  };
+
+  const itSupportForm: FormConfig = {
+    url: "/it-support",
+    title: "IT Support Request",
+    fields: [
+      {
+        name: "requestorName",
+        label: "Requestor Name *",
+        type: "text",
+        placeholder: "Enter your full name",
+        required: true
+      },
+      {
+        name: "email",
+        label: "Email Address *",
+        type: "text",
+        placeholder: "your.email@company.com",
+        required: true
+      },
+      {
+        name: "department",
+        label: "Department *",
+        type: "select",
+        options: ["IT", "HR", "Finance", "Operations", "Marketing", "Sales"],
+        required: true
+      },
+      {
+        name: "issueType",
+        label: "Issue Type *",
+        type: "select",
+        options: ["Hardware", "Software", "Network", "Account Access", "Email", "Other"],
+        required: true
+      },
+      {
+        name: "priority",
+        label: "Priority Level *",
+        type: "select",
+        options: ["Low", "Medium", "High", "Critical"],
+        required: true
+      },
+      {
+        name: "subject",
+        label: "Subject *",
+        type: "text",
+        placeholder: "Brief description of the issue",
+        required: true
+      },
+      {
+        name: "description",
+        label: "Detailed Description *",
+        type: "textarea",
+        placeholder: "Please provide detailed information about the issue",
+        required: true
+      },
+      {
+        name: "screenshots",
+        label: "Screenshots/Attachments",
+        type: "file",
+        accept: ["image/*", "pdf", "doc", "docx"],
+        multiple: true,
+        required: false
+      }
+    ],
+    approval: {
+      steps: ["IT Support Team"],
+      mode: "sequential"
+    }
+  };
+
+  const leaveRequestForm: FormConfig = {
+    url: "/leave-request",
+    title: "Leave Request Form",
+    fields: [
+      {
+        name: "employeeName",
+        label: "Employee Name *",
+        type: "text",
+        placeholder: "Enter employee name",
+        required: true
+      },
+      {
+        name: "employeeId",
+        label: "Employee ID *",
+        type: "text",
+        placeholder: "Enter employee ID",
+        required: true
+      },
+      {
+        name: "leaveType",
+        label: "Leave Type *",
+        type: "select",
+        options: ["Annual Leave", "Sick Leave", "Personal Leave", "Maternity Leave", "Emergency Leave"],
+        required: true
+      },
+      {
+        name: "startDate",
+        label: "Start Date *",
+        type: "date",
+        required: true
+      },
+      {
+        name: "endDate",
+        label: "End Date *",
+        type: "date",
+        required: true
+      },
+      {
+        name: "reason",
+        label: "Reason for Leave *",
+        type: "textarea",
+        placeholder: "Please explain the reason for your leave",
+        required: true
+      },
+      {
+        name: "contactDuringLeave",
+        label: "Contact During Leave",
+        type: "text",
+        placeholder: "Phone number or alternative contact",
+        required: false
+      },
+      {
+        name: "workHandover",
+        label: "Work Handover Details",
+        type: "textarea",
+        placeholder: "Describe how your work will be handled during your absence",
+        required: false
+      }
+    ],
+    approval: {
+      steps: ["Direct Manager", "HR Department"],
+      mode: "sequential"
+    }
+  };
+
+  const formOptions = [
+    { id: 'asset-request', name: 'Asset Request Form', config: assetRequestForm },
+    { id: 'sample-request', name: 'Sample Request Form', config: sampleRequestForm },
+    { id: 'it-support', name: 'IT Support Request', config: itSupportForm },
+    { id: 'leave-request', name: 'Leave Request Form', config: leaveRequestForm }
   ];
 
-  const handleFormSubmit = (formData: any, formTitle: string) => {
-    console.log(`${formTitle} submitted:`, formData);
-    // Here you would typically send the data to your backend
-    alert(`${formTitle} submitted successfully! Check console for details.`);
+  const handleFormSubmit = (data: any) => {
+    console.log('Form submitted:', data);
+    alert('Form submitted successfully!');
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Dynamic Form Builder</CardTitle>
-          <CardDescription>
-            Generated forms based on JSON configurations with approval flows, conditional fields, and validation.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+    <AppLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Form Builder & Preview</h1>
+          <p className="text-muted-foreground">Select a form template to preview and test</p>
+        </div>
 
-      <Tabs defaultValue="0" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          {formConfigs.map((config, index) => (
-            <TabsTrigger key={index} value={index.toString()}>
-              {config.title}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Forms</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {formOptions.map((form) => (
+                  <Button
+                    key={form.id}
+                    variant={selectedForm?.url === form.config.url ? "default" : "outline"}
+                    className="w-full justify-start"
+                    onClick={() => setSelectedForm(form.config)}
+                  >
+                    {form.name}
+                  </Button>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
 
-        {formConfigs.map((config, index) => (
-          <TabsContent key={index} value={index.toString()} className="mt-8">
-            <DynamicForm
-              config={config}
-              onSubmit={(data) => handleFormSubmit(data, config.title)}
-            />
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
+          <div className="lg:col-span-2">
+            {selectedForm ? (
+              <DynamicForm 
+                config={selectedForm} 
+                onSubmit={handleFormSubmit}
+              />
+            ) : (
+              <Card>
+                <CardContent className="flex items-center justify-center h-96">
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold mb-2">Select a Form</h3>
+                    <p className="text-muted-foreground">Choose a form from the list to preview it</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    </AppLayout>
   );
 };
 
