@@ -58,26 +58,58 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
     );
   };
 
-  const renderFields = (fields: FormField[]) => {
-    return fields.map((field, index) => {
-      const fieldKey = field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
-      
-      if (!shouldShowField(field, watchedValues)) {
-        return null;
-      }
+  const renderFieldsInRows = (fields: FormField[]) => {
+    let currentRow: FormField[] = [];
+    let currentRowSpan = 0;
+    const rows: FormField[][] = [];
 
-      return (
-        <DynamicField
-          key={`${fieldKey}-${index}`}
-          field={field}
-          form={form}
-          fieldKey={fieldKey}
-          onValueChange={(value) => {
-            setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-          }}
-        />
-      );
+    fields.forEach(field => {
+      const span = field.columnSpan || 1;
+      
+      if (currentRowSpan + span > 3) {
+        if (currentRow.length > 0) {
+          rows.push([...currentRow]);
+        }
+        currentRow = [field];
+        currentRowSpan = span;
+      } else {
+        currentRow.push(field);
+        currentRowSpan += span;
+      }
     });
+
+    if (currentRow.length > 0) {
+      rows.push(currentRow);
+    }
+
+    return rows.map((row, rowIndex) => (
+      <div key={`row-${rowIndex}`} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {row.map((field, fieldIndex) => {
+          const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
+          
+          if (!shouldShowField(field, watchedValues)) {
+            return null;
+          }
+
+          return (
+            <div key={fieldKey} className={`col-span-1 md:col-span-${field.columnSpan || 1}`}>
+              <DynamicField
+                field={field}
+                form={form}
+                fieldKey={fieldKey}
+                onValueChange={(value) => {
+                  setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
+    ));
+  };
+
+  const renderFields = (fields: FormField[]) => {
+    return renderFieldsInRows(fields);
   };
 
   const renderRowGroups = (rowGroups: RowGroup[]) => {

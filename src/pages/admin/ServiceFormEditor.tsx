@@ -13,6 +13,7 @@ import { FormConfig, FormField, RowGroup } from '@/types/formTypes';
 import { DynamicForm } from '@/components/forms/DynamicForm';
 import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
 import { ApprovalFlowCard } from '@/components/ui/ApprovalFlowCard';
+import { DynamicFieldEditor } from '@/components/forms/DynamicFieldEditor';
 
 const ServiceFormEditor = () => {
   const { id } = useParams();
@@ -70,8 +71,10 @@ const ServiceFormEditor = () => {
   const addField = () => {
     const newField: FormField = {
       label: 'New Field',
+      name: `new_field_${Date.now()}`,
       type: 'text',
-      required: false
+      required: false,
+      columnSpan: 1
     };
     setConfig({
       ...config,
@@ -292,41 +295,15 @@ const ServiceFormEditor = () => {
               <CardContent>
                 <Tabs defaultValue="fields" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="fields">Individual Fields</TabsTrigger>
-                    <TabsTrigger value="rowGroups">Row Groups</TabsTrigger>
+                    <TabsTrigger value="fields">Dynamic Fields</TabsTrigger>
+                    <TabsTrigger value="rowGroups">Legacy Row Groups</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="fields" className="space-y-4 mt-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">Individual Fields</h3>
-                      <Button size="sm" onClick={addField}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Field
-                      </Button>
-                    </div>
-                    
-                    {config.fields?.map((field, index) => (
-                      <FieldEditor
-                        key={index}
-                        field={field}
-                        onUpdate={(updatedField) => updateField(index, updatedField)}
-                        onRemove={() => removeField(index)}
-                        onMoveUp={() => moveField(index, 'up')}
-                        onMoveDown={() => moveField(index, 'down')}
-                        canMoveUp={index > 0}
-                        canMoveDown={index < (config.fields?.length || 0) - 1}
-                      />
-                    ))}
-                    
-                    {(!config.fields || config.fields.length === 0) && (
-                      <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-                        <p className="text-muted-foreground mb-4">No individual fields created yet</p>
-                        <Button onClick={addField}>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add First Field
-                        </Button>
-                      </div>
-                    )}
+                    <DynamicFieldEditor
+                      fields={config.fields || []}
+                      onUpdate={(fields) => setConfig({ ...config, fields })}
+                    />
                   </TabsContent>
                   
                   <TabsContent value="rowGroups" className="mt-4">
@@ -342,98 +319,6 @@ const ServiceFormEditor = () => {
         </div>
       </div>
     </AppLayout>
-  );
-};
-
-interface FieldEditorProps {
-  field: FormField;
-  onUpdate: (field: FormField) => void;
-  onRemove: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
-}
-
-const FieldEditor: React.FC<FieldEditorProps> = ({
-  field,
-  onUpdate,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
-  canMoveUp,
-  canMoveDown
-}) => {
-  const updateField = (updates: Partial<FormField>) => {
-    onUpdate({ ...field, ...updates });
-  };
-
-  return (
-    <Card className="p-4 border-l-4 border-blue-500">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Input
-            value={field.label}
-            onChange={(e) => updateField({ label: e.target.value })}
-            placeholder="Field Label"
-            className="font-medium"
-          />
-          <div className="flex gap-1">
-            <Button size="sm" variant="outline" onClick={onMoveUp} disabled={!canMoveUp}>
-              <ArrowUp className="w-3 h-3" />
-            </Button>
-            <Button size="sm" variant="outline" onClick={onMoveDown} disabled={!canMoveDown}>
-              <ArrowDown className="w-3 h-3" />
-            </Button>
-            <Button size="sm" variant="outline" onClick={onRemove}>
-              <Trash2 className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <Select value={field.type} onValueChange={(value) => updateField({ type: value })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="text">Text</SelectItem>
-              <SelectItem value="textarea">Textarea</SelectItem>
-              <SelectItem value="select">Select</SelectItem>
-              <SelectItem value="radio">Radio</SelectItem>
-              <SelectItem value="checkbox">Checkbox</SelectItem>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="file">File</SelectItem>
-              <SelectItem value="toggle">Toggle</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={field.required}
-              onChange={(e) => updateField({ required: e.target.checked })}
-            />
-            <Label>Required</Label>
-          </div>
-        </div>
-
-        <Input
-          value={field.placeholder || ''}
-          onChange={(e) => updateField({ placeholder: e.target.value })}
-          placeholder="Placeholder text"
-        />
-
-        {(field.type === 'select' || field.type === 'radio') && (
-          <Textarea
-            value={field.options?.join('\n') || ''}
-            onChange={(e) => updateField({ options: e.target.value.split('\n').filter(o => o.trim()) })}
-            placeholder="Enter options (one per line)"
-            rows={3}
-          />
-        )}
-      </div>
-    </Card>
   );
 };
 

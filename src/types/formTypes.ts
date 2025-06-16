@@ -1,6 +1,7 @@
 
 export interface FormField {
   label: string;
+  name: string; // New field for API data mapping
   type: string;
   placeholder?: string;
   required?: boolean;
@@ -13,6 +14,7 @@ export interface FormField {
   default?: string;
   uiCondition?: string;
   note?: string;
+  columnSpan?: 1 | 2 | 3; // New field for dynamic column spans
 }
 
 export interface RowGroup {

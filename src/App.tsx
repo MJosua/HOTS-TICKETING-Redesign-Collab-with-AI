@@ -42,21 +42,35 @@ const itSupportConfig: FormConfig = {
   fields: [
     {
       label: "Type of Support*",
+      name: "support_type",
       placeholder: "Select Type of Support",
       type: "select",
       options: ["Hardware", "Account", "Software"],
-      required: true
+      required: true,
+      columnSpan: 2
+    },
+    {
+      label: "Priority",
+      name: "priority",
+      type: "select",
+      options: ["High", "Medium", "Low"],
+      required: true,
+      columnSpan: 1
     },
     {
       label: "Issue Description",
+      name: "issue_description",
       placeholder: "Please provide a detailed description of the issues you're experiencing",
       type: "textarea",
-      required: true
+      required: true,
+      columnSpan: 3
     },
     {
       label: "Attachment",
+      name: "attachment",
       type: "file",
-      accept: ["image/*", "pdf", "docx"]
+      accept: ["image/*", "pdf", "docx"],
+      columnSpan: 3
     }
   ],
   approval: {
@@ -71,33 +85,43 @@ const assetRequest: FormConfig = {
   fields: [
     {
       label: "Job Description**",
+      name: "job_description",
       placeholder: "Please describe your specific part of the job for why you need another laptop",
       type: "textarea",
-      required: true
+      required: true,
+      columnSpan: 3
     },
     {
       label: "Laptop Specification *",
+      name: "laptop_specification",
       type: "radio",
       required: true,
-      options: ["Standard", "Analyst", "Marketing"]
+      options: ["Standard", "Analyst", "Marketing"],
+      columnSpan: 2
     },
     {
-      label: "Do you have an Indofood asset PC/Laptop that you are currently using?",
+      label: "Current Asset",
+      name: "has_current_asset",
       type: "toggle",
-      default: "off"
+      default: "off",
+      columnSpan: 1
     },
     {
       label: "Date of Acquisition of the Used Asset *",
+      name: "acquisition_date",
       type: "date",
       required: true,
-      uiCondition: "show if toggle is on"
+      uiCondition: "show if toggle is on",
+      columnSpan: 2
     },
     {
       label: "Used Laptop Specification**",
+      name: "used_laptop_spec",
       type: "select",
       options: ["Standard", "Analyst", "Marketing"],
       required: false,
-      uiCondition: "show if toggle is on"
+      uiCondition: "show if toggle is on",
+      columnSpan: 1
     }
   ],
   approval: {
@@ -112,21 +136,27 @@ const ideaBank: FormConfig = {
   fields: [
     {
       label: "Issue Detail*",
+      name: "issue_detail",
       placeholder: "Please provide a detailed description of the issues you're experiencing",
       type: "textarea",
-      required: true
+      required: true,
+      columnSpan: 3
     },
     {
       label: "Issue Solution*",
+      name: "issue_solution",
       placeholder: "You may not have any solution, but if you have, please provide a detailed description of solution you're thinking",
       type: "textarea",
-      required: true
+      required: true,
+      columnSpan: 3
     },
     {
       label: "Attachment*",
+      name: "attachment",
       note: "Attachment cannot exceed 5 MB in size.",
       type: "file",
-      accept: ["image/*", "pdf", "docx"]
+      accept: ["image/*", "pdf", "docx"],
+      columnSpan: 3
     }
   ]
 };
@@ -134,63 +164,90 @@ const ideaBank: FormConfig = {
 const srForm: FormConfig = {
   url: "/sample-request-form",
   title: "Sample Request Form",
-  sections: [
+  fields: [
     {
-      title: "Data",
-      rowGroups: [
-        {
-          rowGroup: [
-            { label: "Request By", type: "text", readonly: true, value: "Yosua Gultom", required: true },
-            { label: "Division", type: "text", readonly: true, value: "IOD", required: true },
-            { label: "Location", type: "text", readonly: true, value: "INDOFOOD TOWER LT.23", required: true }
-          ]
-        },
-        {
-          rowGroup: [
-            { label: "Sample Category", type: "select", options: [], required: true },
-            { label: "Plant", type: "select", options: [], required: true },
-            { label: "Deliver To", type: "select", options: [], required: true }
-          ]
-        },
-        {
-          rowGroup: [
-            { label: "SRF No", type: "text", value: "XXX", required: true },
-            { label: "Purpose", type: "text", placeholder: "purpose", required: true }
-          ]
-        }
-      ]
+      label: "Request By",
+      name: "request_by",
+      type: "text",
+      readonly: true,
+      value: "Yosua Gultom",
+      required: true,
+      columnSpan: 1
     },
     {
-      title: "Item",
-      repeatable: true,
-      fields: [
-        { label: "Item Name", type: "text", required: true },
-        { label: "Quantity", type: "number", required: true }
-      ],
-      addButton: "Add Item",
-      summary: {
-        label: "Total",
-        type: "number",
-        calculated: true
-      }
+      label: "Division",
+      name: "division",
+      type: "text",
+      readonly: true,
+      value: "IOD",
+      required: true,
+      columnSpan: 1
     },
     {
-      title: "Notes",
-      fields: [
-        { label: "Notes", type: "textarea", placeholder: "notes", required: false }
-      ]
+      label: "Location",
+      name: "location",
+      type: "text",
+      readonly: true,
+      value: "INDOFOOD TOWER LT.23",
+      required: true,
+      columnSpan: 1
     },
     {
-      title: "Upload",
-      fields: [
-        {
-          label: "Upload Files",
-          type: "file",
-          accept: ["image/*", "pdf", "docx"],
-          maxSizeMB: 5,
-          multiple: true
-        }
-      ]
+      label: "Sample Category",
+      name: "sample_category",
+      type: "select",
+      options: [],
+      required: true,
+      columnSpan: 1
+    },
+    {
+      label: "Plant",
+      name: "plant",
+      type: "select",
+      options: [],
+      required: true,
+      columnSpan: 1
+    },
+    {
+      label: "Deliver To",
+      name: "deliver_to",
+      type: "select",
+      options: [],
+      required: true,
+      columnSpan: 1
+    },
+    {
+      label: "SRF No",
+      name: "srf_no",
+      type: "text",
+      value: "XXX",
+      required: true,
+      columnSpan: 1
+    },
+    {
+      label: "Purpose",
+      name: "purpose",
+      type: "text",
+      placeholder: "purpose",
+      required: true,
+      columnSpan: 2
+    },
+    {
+      label: "Notes",
+      name: "notes",
+      type: "textarea",
+      placeholder: "notes",
+      required: false,
+      columnSpan: 3
+    },
+    {
+      label: "Upload Files",
+      name: "upload_files",
+      type: "file",
+      accept: ["image/*", "pdf", "docx"],
+      maxSizeMB: 5,
+      multiple: true,
+      columnSpan: 3
     }
   ],
   submit: {
