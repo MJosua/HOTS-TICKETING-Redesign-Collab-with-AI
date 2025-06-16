@@ -1,5 +1,7 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import axios from 'axios';
+import { API_URL } from '@/config/sourceConfig';
 
 // Types for the catalog data
 export interface ServiceCatalogItem {
@@ -36,28 +38,33 @@ const initialState: CatalogState = {
   error: null,
 };
 
-// Async thunks for fetching data
+// Async thunk for fetching service catalog from API
 export const fetchServiceCatalog = createAsyncThunk(
   'catalog/fetchServiceCatalog',
   async () => {
-    // Replace with your actual API call
-    const response = await fetch('/api/service-catalog');
-    if (!response.ok) {
-      throw new Error('Failed to fetch service catalog');
-    }
-    return response.json();
+    const userToken = localStorage.getItem("tokek");
+    const response = await axios.get(`${API_URL}/hots_settings/get_service`, {
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+      },
+    });
+    console.log('Service catalog data:', response.data.data);
+    return response.data.data;
   }
 );
 
+// Async thunk for fetching categories from API
 export const fetchCategoryList = createAsyncThunk(
   'catalog/fetchCategoryList',
   async () => {
-    // Replace with your actual API call
-    const response = await fetch('/api/categories');
-    if (!response.ok) {
-      throw new Error('Failed to fetch categories');
-    }
-    return response.json();
+    const userToken = localStorage.getItem("tokek");
+    const response = await axios.get(`${API_URL}/hots_settings/get_serviceCategory`, {
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+      },
+    });
+    console.log('Category data:', response.data.data);
+    return response.data.data;
   }
 );
 
@@ -150,3 +157,27 @@ export const selectActiveServices = (state: any) =>
 
 export const selectCategoryById = (state: any, categoryId: number) =>
   state.catalog.categoryList.find((category: Category) => category.category_id === categoryId);
+
+// Helper to create grouped menu (like your original logic)
+export const selectGroupedMenu = (state: any, searchKeyword: string = '') => {
+  const categories = state.catalog.categoryList;
+  const services = state.catalog.serviceCatalog;
+  const keyword = searchKeyword.trim().toLowerCase();
+
+  return categories.reduce((acc: any[], category: Category) => {
+    const filteredServices = services.filter((service: ServiceCatalogItem) => {
+      const descMatch = service.service_description?.toLowerCase().includes(keyword);
+      const nameMatch = service.service_name?.toLowerCase().includes(keyword);
+      const keywordMatch = !keyword || descMatch || nameMatch;
+      const categoryMatch = service.category_id === category.category_id;
+
+      return keywordMatch && categoryMatch;
+    });
+
+    if (filteredServices.length > 0) {
+      acc.push({ ...category, services: filteredServices });
+    }
+
+    return acc;
+  }, []);
+};

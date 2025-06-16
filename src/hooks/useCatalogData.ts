@@ -11,11 +11,12 @@ import {
   selectCatalogError,
   selectActiveServices,
   selectServicesByCategory,
-  selectCategoryById
+  selectCategoryById,
+  selectGroupedMenu
 } from '@/store/slices/catalogSlice';
 import type { ServiceCatalogItem, Category } from '@/store/slices/catalogSlice';
 
-// Example data (you can use this to populate initially or as fallback)
+// Example data (fallback if API fails)
 const exampleServiceCatalog: ServiceCatalogItem[] = [
   {
     service_id: 1,
@@ -149,6 +150,11 @@ export const useCatalogData = () => {
     return category?.category_name || 'Unknown Category';
   };
 
+  // Get grouped menu (like your original logic)
+  const getGroupedMenu = (searchKeyword: string = '') => {
+    return useAppSelector(state => selectGroupedMenu(state, searchKeyword));
+  };
+
   return {
     // Data
     serviceCatalog,
@@ -165,5 +171,6 @@ export const useCatalogData = () => {
     getServicesByCategory,
     getCategoryById,
     getCategoryName,
+    getGroupedMenu,
   };
 };
