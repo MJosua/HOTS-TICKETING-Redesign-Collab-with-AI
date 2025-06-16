@@ -46,6 +46,19 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
     return total;
   };
 
+  const getColSpanClass = (columnSpan: number) => {
+    switch (columnSpan) {
+      case 1:
+        return 'col-span-1';
+      case 2:
+        return 'col-span-1 md:col-span-2';
+      case 3:
+        return 'col-span-1 md:col-span-3';
+      default:
+        return 'col-span-1';
+    }
+  };
+
   // Use fields from section, fallback to empty array if not provided
   const sectionFields = section.fields || [];
 
@@ -66,21 +79,22 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
               </Button>
             )}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {sectionFields.map((field, fieldIndex) => {
                 const fieldKey = `${section.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${index}_${field.name}`;
                 
                 return (
-                  <DynamicField
-                    key={`${fieldKey}-${fieldIndex}`}
-                    field={field}
-                    form={form}
-                    fieldKey={fieldKey}
-                    onValueChange={(value) => {
-                      // Handle value changes if needed for calculations
-                      console.log(`Field ${fieldKey} changed to:`, value);
-                    }}
-                  />
+                  <div key={`${fieldKey}-${fieldIndex}`} className={getColSpanClass(field.columnSpan || 1)}>
+                    <DynamicField
+                      field={field}
+                      form={form}
+                      fieldKey={fieldKey}
+                      onValueChange={(value) => {
+                        // Handle value changes if needed for calculations
+                        console.log(`Field ${fieldKey} changed to:`, value);
+                      }}
+                    />
+                  </div>
                 );
               })}
             </div>

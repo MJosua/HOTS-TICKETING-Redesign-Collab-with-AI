@@ -14,6 +14,7 @@ export interface ServiceCatalogItem {
   nav_link: string;
   active: number;
   team_id: number | null;
+  form_json?: string; // New field for JSON form configuration
 }
 
 export interface Category {

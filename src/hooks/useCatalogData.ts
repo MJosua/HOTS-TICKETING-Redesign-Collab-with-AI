@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { 
@@ -16,7 +15,7 @@ import {
 } from '@/store/slices/catalogSlice';
 import type { ServiceCatalogItem, Category } from '@/store/slices/catalogSlice';
 
-// Example data (fallback if API fails)
+// Example data with form_json (fallback if API fails)
 const exampleServiceCatalog: ServiceCatalogItem[] = [
   {
     service_id: 1,
@@ -27,7 +26,41 @@ const exampleServiceCatalog: ServiceCatalogItem[] = [
     image_url: "itassetrequest.png",
     nav_link: "asset-request",
     active: 1,
-    team_id: 2
+    team_id: 2,
+    form_json: JSON.stringify({
+      url: "/asset-request",
+      title: "PC/Notebook Request",
+      fields: [
+        {
+          label: "Asset Type*",
+          name: "asset_type",
+          type: "select",
+          options: ["Desktop PC", "Laptop", "Monitor", "Printer"],
+          required: true,
+          columnSpan: 2
+        },
+        {
+          label: "Priority",
+          name: "priority",
+          type: "select",
+          options: ["High", "Medium", "Low"],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Justification",
+          name: "justification",
+          type: "textarea",
+          placeholder: "Please explain why you need this asset",
+          required: true,
+          columnSpan: 3
+        }
+      ],
+      approval: {
+        steps: ["Manager", "IT Team"],
+        mode: "sequential"
+      }
+    })
   },
   {
     service_id: 7,
@@ -38,43 +71,193 @@ const exampleServiceCatalog: ServiceCatalogItem[] = [
     image_url: "ittechnicalsupport.png",
     nav_link: "it-support",
     active: 1,
-    team_id: 1
+    team_id: 1,
+    form_json: JSON.stringify({
+      url: "/it-support",
+      title: "IT Support Request",
+      fields: [
+        {
+          label: "Type of Support*",
+          name: "support_type",
+          placeholder: "Select Type of Support",
+          type: "select",
+          options: ["Hardware", "Account", "Software"],
+          required: true,
+          columnSpan: 2
+        },
+        {
+          label: "Priority",
+          name: "priority",
+          type: "select",
+          options: ["High", "Medium", "Low"],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Issue Description",
+          name: "issue_description",
+          placeholder: "Please provide a detailed description of the issues you're experiencing",
+          type: "textarea",
+          required: true,
+          columnSpan: 3
+        },
+        {
+          label: "Attachment",
+          name: "attachment",
+          type: "file",
+          accept: ["image/*", "pdf", "docx"],
+          columnSpan: 3
+        }
+      ],
+      approval: {
+        steps: ["Supervisor", "IT Team"],
+        mode: "sequential"
+      }
+    })
   },
   {
     service_id: 8,
     category_id: 1,
-    service_name: "Idea Bank",
-    service_description: "Submit and share your suggestions to enhance our company processes",
+    service_name: "Sample Request Form",
+    service_description: "Submit sample requests with detailed item specifications",
     approval_level: 0,
     image_url: "srf.png",
-    nav_link: "idea-bank",
+    nav_link: "sample-request-form",
     active: 1,
-    team_id: 8
-  },
-  {
-    service_id: 9,
-    category_id: 3,
-    service_name: "Data Revision and Update Request",
-    service_description: "Request updates or revisions to system data for accuracy and reliability",
-    approval_level: 2,
-    image_url: "datarevision.png",
-    nav_link: "data-update",
-    active: 1,
-    team_id: 9
-  },
-  {
-    service_id: 10,
-    category_id: 4,
-    service_name: "Payment Advance Request",
-    service_description: "Create and submit requests for payment advances through ticketing system",
-    approval_level: 3,
-    image_url: "paymentadvancerequest.png",
-    nav_link: "par",
-    active: 1,
-    team_id: 10
+    team_id: 8,
+    form_json: JSON.stringify({
+      url: "/sample-request-form",
+      title: "Sample Request Form",
+      fields: [
+        {
+          label: "Request By",
+          name: "request_by",
+          type: "text",
+          readonly: true,
+          value: "Yosua Gultom",
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Division",
+          name: "division",
+          type: "text",
+          readonly: true,
+          value: "IOD",
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Location",
+          name: "location",
+          type: "text",
+          readonly: true,
+          value: "INDOFOOD TOWER LT.23",
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Sample Category",
+          name: "sample_category",
+          type: "select",
+          options: ["Raw Material", "Finished Product", "Packaging"],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Plant",
+          name: "plant",
+          type: "select",
+          options: ["Plant A", "Plant B", "Plant C"],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Deliver To",
+          name: "deliver_to",
+          type: "select",
+          options: ["Lab A", "Lab B", "External Lab"],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "SRF No",
+          name: "srf_no",
+          type: "text",
+          value: "XXX",
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Purpose",
+          name: "purpose",
+          type: "text",
+          placeholder: "purpose",
+          required: true,
+          columnSpan: 2
+        },
+        {
+          label: "Notes",
+          name: "notes",
+          type: "textarea",
+          placeholder: "notes",
+          required: false,
+          columnSpan: 3
+        },
+        {
+          label: "Upload Files",
+          name: "upload_files",
+          type: "file",
+          accept: ["image/*", "pdf", "docx"],
+          maxSizeMB: 5,
+          multiple: true,
+          columnSpan: 3
+        }
+      ],
+      sections: [
+        {
+          title: "Items",
+          repeatable: true,
+          addButton: "Add Item",
+          summary: {
+            label: "Total Items",
+            type: "number",
+            calculated: true
+          },
+          fields: [
+            {
+              label: "Item Name",
+              name: "item_name",
+              type: "text",
+              required: true,
+              columnSpan: 2
+            },
+            {
+              label: "Quantity",
+              name: "quantity",
+              type: "number",
+              required: true,
+              columnSpan: 1
+            },
+            {
+              label: "Description",
+              name: "description",
+              type: "textarea",
+              columnSpan: 3
+            }
+          ]
+        }
+      ],
+      submit: {
+        label: "Submit",
+        type: "button",
+        action: "/submit-sample-request"
+      }
+    })
   }
 ];
 
+// Example data (fallback if API fails)
 const exampleCategoryList: Category[] = [
   {
     category_id: 1,

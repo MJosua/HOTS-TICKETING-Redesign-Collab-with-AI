@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FormConfig } from '@/types/formTypes';
 import { useCatalogData } from '@/hooks/useCatalogData';
+import { FormSkeleton } from '@/components/ui/FormSkeleton';
 import {
   Table,
   TableBody,
@@ -36,45 +38,21 @@ const ServiceCatalogAdmin = () => {
 
   // Convert service catalog data to FormConfig format for display
   const forms: FormConfig[] = serviceCatalog.map(service => {
-    // Special handling for SRF form to use rowGroups
-    if (service.nav_link === 'sample-request-form') {
-      return {
-        id: service.service_id.toString(),
-        title: service.service_name,
-        url: `/${service.nav_link}`,
-        category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown',
-        description: service.service_description,
-        apiEndpoint: `/api/${service.nav_link}`,
-        approval: { 
-          steps: service.approval_level > 0 ? ['Manager', 'Supervisor'] : [], 
-          mode: 'sequential' as const 
-        },
-        rowGroups: [
-          {
-            rowGroup: [
-              { label: "Request By", type: "text", readonly: true, value: "Yosua Gultom", required: true },
-              { label: "Division", type: "text", readonly: true, value: "IOD", required: true },
-              { label: "Location", type: "text", readonly: true, value: "INDOFOOD TOWER LT.23", required: true }
-            ]
-          },
-          {
-            rowGroup: [
-              { label: "Sample Category", type: "select", options: [], required: true },
-              { label: "Plant", type: "select", options: [], required: true },
-              { label: "Deliver To", type: "select", options: [], required: true }
-            ]
-          },
-          {
-            rowGroup: [
-              { label: "SRF No", type: "text", value: "XXX", required: true },
-              { label: "Purpose", type: "text", placeholder: "purpose", required: true }
-            ]
-          }
-        ]
-      };
+    // Try to parse form_json if it exists
+    if (service.form_json) {
+      try {
+        const parsedConfig = JSON.parse(service.form_json);
+        return {
+          ...parsedConfig,
+          id: service.service_id.toString(),
+          category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown'
+        };
+      } catch (error) {
+        console.error(`Failed to parse form_json for service ${service.service_id}:`, error);
+      }
     }
     
-    // Default form structure for other services
+    // Fallback to default form structure if form_json is not available or invalid
     return {
       id: service.service_id.toString(),
       title: service.service_name,
@@ -87,7 +65,12 @@ const ServiceCatalogAdmin = () => {
         mode: 'sequential' as const 
       },
       fields: [
-        { label: 'Description', type: 'textarea', required: true }
+        { 
+          label: 'Description', 
+          name: 'description',
+          type: 'textarea', 
+          required: true 
+        }
       ]
     };
   });
@@ -113,8 +96,29 @@ const ServiceCatalogAdmin = () => {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading service catalog...</div>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Service Catalog Admin</h1>
+              <p className="text-gray-600">Manage dynamic service forms and their configurations</p>
+            </div>
+            <Button disabled className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Create Form
+            </Button>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Form Search</CardTitle>
+              <Input
+                placeholder="Search forms by title or category..."
+                disabled
+              />
+            </CardHeader>
+          </Card>
+
+          <FormSkeleton />
         </div>
       </AppLayout>
     );
@@ -166,52 +170,61 @@ const ServiceCatalogAdmin = () => {
                   <TableHead>Title</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>URL</TableHead>
-                  <TableHead>API Endpoint</TableHead>
+                  <TableHead>Form Status</TableHead>
                   <TableHead>Approval Steps</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredForms.map((form) => (
-                  <TableRow key={form.id}>
-                    <TableCell className="font-medium">{form.title}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{form.category}</Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{form.url}</TableCell>
-                    <TableCell className="font-mono text-sm">{form.apiEndpoint}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {form.approval?.steps.map((step, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {step}
-                          </Badge>
-                        ))}
-                        {form.approval?.steps.length === 0 && (
-                          <Badge variant="outline" className="text-xs">No Approval</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(form.id!)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDelete(form.id!)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredForms.map((form) => {
+                  const service = serviceCatalog.find(s => s.service_id.toString() === form.id);
+                  const hasFormJson = service?.form_json && service.form_json.trim() !== '';
+                  
+                  return (
+                    <TableRow key={form.id}>
+                      <TableCell className="font-medium">{form.title}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{form.category}</Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{form.url}</TableCell>
+                      <TableCell>
+                        <Badge variant={hasFormJson ? "default" : "outline"}>
+                          {hasFormJson ? "JSON Config" : "Default Form"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {form.approval?.steps.map((step, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {step}
+                            </Badge>
+                          ))}
+                          {form.approval?.steps.length === 0 && (
+                            <Badge variant="outline" className="text-xs">No Approval</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(form.id!)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDelete(form.id!)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>

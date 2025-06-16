@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,33 +59,23 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
     );
   };
 
-  const renderFieldsInRows = (fields: FormField[]) => {
-    let currentRow: FormField[] = [];
-    let currentRowSpan = 0;
-    const rows: FormField[][] = [];
-
-    fields.forEach(field => {
-      const span = field.columnSpan || 1;
-      
-      if (currentRowSpan + span > 3) {
-        if (currentRow.length > 0) {
-          rows.push([...currentRow]);
-        }
-        currentRow = [field];
-        currentRowSpan = span;
-      } else {
-        currentRow.push(field);
-        currentRowSpan += span;
-      }
-    });
-
-    if (currentRow.length > 0) {
-      rows.push(currentRow);
+  const getColSpanClass = (columnSpan: number) => {
+    switch (columnSpan) {
+      case 1:
+        return 'col-span-1';
+      case 2:
+        return 'col-span-1 md:col-span-2';
+      case 3:
+        return 'col-span-1 md:col-span-3';
+      default:
+        return 'col-span-1';
     }
+  };
 
-    return rows.map((row, rowIndex) => (
-      <div key={`row-${rowIndex}`} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {row.map((field, fieldIndex) => {
+  const renderFieldsInRows = (fields: FormField[]) => {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {fields.map((field, fieldIndex) => {
           const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
           
           if (!shouldShowField(field, watchedValues)) {
@@ -92,7 +83,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
           }
 
           return (
-            <div key={fieldKey} className={`col-span-1 md:col-span-${field.columnSpan || 1}`}>
+            <div key={fieldKey} className={getColSpanClass(field.columnSpan || 1)}>
               <DynamicField
                 field={field}
                 form={form}
@@ -105,7 +96,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
           );
         })}
       </div>
-    ));
+    );
   };
 
   const renderFields = (fields: FormField[]) => {
