@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,21 +35,62 @@ const ServiceCatalogAdmin = () => {
   }, []);
 
   // Convert service catalog data to FormConfig format for display
-  const forms: FormConfig[] = serviceCatalog.map(service => ({
-    id: service.service_id.toString(),
-    title: service.service_name,
-    url: `/${service.nav_link}`,
-    category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown',
-    description: service.service_description,
-    apiEndpoint: `/api/${service.nav_link}`,
-    approval: { 
-      steps: service.approval_level > 0 ? ['Manager', 'Supervisor'] : [], 
-      mode: 'sequential' as const 
-    },
-    fields: [
-      { label: 'Description', type: 'textarea', required: true }
-    ]
-  }));
+  const forms: FormConfig[] = serviceCatalog.map(service => {
+    // Special handling for SRF form to use rowGroups
+    if (service.nav_link === 'sample-request-form') {
+      return {
+        id: service.service_id.toString(),
+        title: service.service_name,
+        url: `/${service.nav_link}`,
+        category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown',
+        description: service.service_description,
+        apiEndpoint: `/api/${service.nav_link}`,
+        approval: { 
+          steps: service.approval_level > 0 ? ['Manager', 'Supervisor'] : [], 
+          mode: 'sequential' as const 
+        },
+        rowGroups: [
+          {
+            rowGroup: [
+              { label: "Request By", type: "text", readonly: true, value: "Yosua Gultom", required: true },
+              { label: "Division", type: "text", readonly: true, value: "IOD", required: true },
+              { label: "Location", type: "text", readonly: true, value: "INDOFOOD TOWER LT.23", required: true }
+            ]
+          },
+          {
+            rowGroup: [
+              { label: "Sample Category", type: "select", options: [], required: true },
+              { label: "Plant", type: "select", options: [], required: true },
+              { label: "Deliver To", type: "select", options: [], required: true }
+            ]
+          },
+          {
+            rowGroup: [
+              { label: "SRF No", type: "text", value: "XXX", required: true },
+              { label: "Purpose", type: "text", placeholder: "purpose", required: true }
+            ]
+          }
+        ]
+      };
+    }
+    
+    // Default form structure for other services
+    return {
+      id: service.service_id.toString(),
+      title: service.service_name,
+      url: `/${service.nav_link}`,
+      category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown',
+      description: service.service_description,
+      apiEndpoint: `/api/${service.nav_link}`,
+      approval: { 
+        steps: service.approval_level > 0 ? ['Manager', 'Supervisor'] : [], 
+        mode: 'sequential' as const 
+      },
+      fields: [
+        { label: 'Description', type: 'textarea', required: true }
+      ]
+    };
+  });
 
   const filteredForms = forms.filter(form =>
     form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
