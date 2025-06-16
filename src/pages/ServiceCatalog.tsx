@@ -59,6 +59,7 @@ const ServiceCatalog = () => {
   useEffect(() => {
     if (serviceCatalog.length === 0 && categoryList.length === 0) {
       initializeWithExampleData();
+      console.log("initializeWithExampleData",initializeWithExampleData)
     }
   }, []);
 

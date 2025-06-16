@@ -42,31 +42,41 @@ const initialState: CatalogState = {
 export const fetchServiceCatalog = createAsyncThunk(
   'catalog/fetchServiceCatalog',
   async () => {
-    const userToken = localStorage.getItem("tokek");
-    const response = await axios.get(`${API_URL}/hots_settings/get_service`, {
-      headers: {
-        Authorization: `Bearer ${userToken}`,
-      },
-    });
-    console.log('Service catalog data:', response.data.data);
-    return response.data.data;
+    try {
+      const userToken = localStorage.getItem("tokek");
+      const response = await axios.get(`${API_URL}/hots_settings/get_service`, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      });
+      console.log('Service catalog data:', response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to fetch service catalog:', error);
+      throw error; // Important: rethrow so Redux Toolkit handles it as "rejected"
+    }
   }
 );
 
-// Async thunk for fetching categories from API
 export const fetchCategoryList = createAsyncThunk(
   'catalog/fetchCategoryList',
   async () => {
-    const userToken = localStorage.getItem("tokek");
-    const response = await axios.get(`${API_URL}/hots_settings/get_serviceCategory`, {
-      headers: {
-        Authorization: `Bearer ${userToken}`,
-      },
-    });
-    console.log('Category data:', response.data.data);
-    return response.data.data;
+    try {
+      const userToken = localStorage.getItem("tokek");
+      const response = await axios.get(`${API_URL}/hots_settings/get_serviceCategory`, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      });
+      console.log('Category data:', response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to fetch category list:', error);
+      throw error;
+    }
   }
 );
+
 
 // Thunk to fetch both datasets
 export const fetchCatalogData = createAsyncThunk(
@@ -148,7 +158,7 @@ export const selectCatalogError = (state: any) => state.catalog.error;
 
 // Helper selectors
 export const selectServicesByCategory = (state: any, categoryId: number) =>
-  state.catalog.serviceCatalog.filter((service: ServiceCatalogItem) => 
+  state.catalog.serviceCatalog.filter((service: ServiceCatalogItem) =>
     service.category_id === categoryId && service.active === 1
   );
 
