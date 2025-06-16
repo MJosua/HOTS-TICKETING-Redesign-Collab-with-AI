@@ -50,6 +50,11 @@ const menuItems = [
 
 const adminItems = [
   {
+    title: "Service Catalog Admin",
+    url: "/admin/service-catalog",
+    icon: List,
+  },
+  {
     title: "System Settings",
     url: "/admin/settings",
     icon: Settings,

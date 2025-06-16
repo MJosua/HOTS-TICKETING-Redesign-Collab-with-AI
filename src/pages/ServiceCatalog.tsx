@@ -50,17 +50,13 @@ const ServiceCatalog = () => {
     categoryList,
     isLoading,
     error,
-    initializeWithExampleData,
-    getServicesByCategory,
+    fetchData,
     getCategoryName
   } = useCatalogData();
 
-  // Initialize data on component mount
+  // Fetch real data from API on component mount
   useEffect(() => {
-    if (serviceCatalog.length === 0 && categoryList.length === 0) {
-      initializeWithExampleData();
-      console.log("initializeWithExampleData",initializeWithExampleData)
-    }
+    fetchData();
   }, []);
 
   // Group services by category for rendering
@@ -105,8 +101,7 @@ const ServiceCatalog = () => {
     );
   }
 
-
-  const navigate= useNavigate();  
+  const navigate = useNavigate();  
 
   return (
     <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search services...">

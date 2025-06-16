@@ -8,6 +8,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FormConfig } from '@/types/formTypes';
+import { useCatalogData } from '@/hooks/useCatalogData';
 import {
   Table,
   TableBody,
@@ -19,41 +20,37 @@ import {
 
 const ServiceCatalogAdmin = () => {
   const navigate = useNavigate();
-  const [forms, setForms] = useState<FormConfig[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  const {
+    serviceCatalog,
+    categoryList,
+    isLoading,
+    error,
+    fetchData
+  } = useCatalogData();
 
-  // Mock data - in real app, this would come from API
+  // Fetch real data from API on component mount
   useEffect(() => {
-    const mockForms: FormConfig[] = [
-      {
-        id: '1',
-        title: 'IT Support Request',
-        url: '/it-support',
-        category: 'Support',
-        description: 'Request IT technical support',
-        apiEndpoint: '/api/it-support',
-        approval: { steps: ['Supervisor', 'IT Team'], mode: 'sequential' },
-        fields: [
-          { label: 'Type of Support', type: 'select', options: ['Hardware', 'Software', 'Account'], required: true },
-          { label: 'Issue Description', type: 'textarea', required: true }
-        ]
-      },
-      {
-        id: '2',
-        title: 'Asset Request',
-        url: '/asset-request', 
-        category: 'Hardware',
-        description: 'Request laptop or other assets',
-        apiEndpoint: '/api/asset-request',
-        approval: { steps: ['Manager', 'IT Head'], mode: 'sequential' },
-        fields: [
-          { label: 'Asset Type', type: 'select', options: ['Laptop', 'Desktop', 'Monitor'], required: true },
-          { label: 'Justification', type: 'textarea', required: true }
-        ]
-      }
-    ];
-    setForms(mockForms);
+    fetchData();
   }, []);
+
+  // Convert service catalog data to FormConfig format for display
+  const forms: FormConfig[] = serviceCatalog.map(service => ({
+    id: service.service_id.toString(),
+    title: service.service_name,
+    url: `/${service.nav_link}`,
+    category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown',
+    description: service.service_description,
+    apiEndpoint: `/api/${service.nav_link}`,
+    approval: { 
+      steps: service.approval_level > 0 ? ['Manager', 'Supervisor'] : [], 
+      mode: 'sequential' as const 
+    },
+    fields: [
+      { label: 'Description', type: 'textarea', required: true }
+    ]
+  }));
 
   const filteredForms = forms.filter(form =>
     form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,12 +62,33 @@ const ServiceCatalogAdmin = () => {
   };
 
   const handleDelete = (formId: string) => {
-    setForms(forms.filter(form => form.id !== formId));
+    // TODO: Implement delete functionality
+    console.log('Delete form:', formId);
   };
 
   const handleCreate = () => {
     navigate('/admin/service-catalog/create');
   };
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading service catalog...</div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-600">Error loading catalog: {error}</div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -129,6 +147,9 @@ const ServiceCatalogAdmin = () => {
                             {step}
                           </Badge>
                         ))}
+                        {form.approval?.steps.length === 0 && (
+                          <Badge variant="outline" className="text-xs">No Approval</Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
