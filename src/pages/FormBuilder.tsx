@@ -92,24 +92,96 @@ const FormBuilder = () => {
     title: "Sample Request Form",
     sections: [
       {
-        title: "Request Information",
+        title: "Basic Information",
         fields: [
-          { name: "requestBy", label: "Request By", type: "text", readonly: true, value: "Yosua Gultom", required: true, columnSpan: 1 },
-          { name: "division", label: "Division", type: "text", readonly: true, value: "IOD", required: true, columnSpan: 1 },
-          { name: "location", label: "Location", type: "text", readonly: true, value: "INDOFOOD TOWER LT.23", required: true, columnSpan: 1 },
-          { name: "sampleCategory", label: "Sample Category", type: "select", options: ["Category A", "Category B", "Category C"], required: true, columnSpan: 1 },
-          { name: "plant", label: "Plant", type: "select", options: ["Plant 1", "Plant 2", "Plant 3"], required: true, columnSpan: 1 },
-          { name: "deliverTo", label: "Deliver To", type: "select", options: ["Lab A", "Lab B", "Lab C"], required: true, columnSpan: 1 },
-          { name: "srfNo", label: "SRF No", type: "text", value: "XXX", required: true, columnSpan: 1 },
-          { name: "purpose", label: "Purpose", type: "text", placeholder: "purpose", required: true, columnSpan: 2 }
+          {
+            label: "Request By",
+            name: "request_by",
+            type: "text",
+            readonly: true,
+            value: "Yosua Gultom",
+            required: true,
+            columnSpan: 1
+          },
+          {
+            label: "Division",
+            name: "division",
+            type: "text",
+            readonly: true,
+            value: "IOD",
+            required: true,
+            columnSpan: 1
+          },
+          {
+            label: "Location",
+            name: "location",
+            type: "text",
+            readonly: true,
+            value: "INDOFOOD TOWER LT.23",
+            required: true,
+            columnSpan: 1
+          },
+          {
+            label: "Sample Category",
+            name: "sample_category",
+            type: "select",
+            options: [],
+            required: true,
+            columnSpan: 1
+          },
+          {
+            label: "Plant",
+            name: "plant",
+            type: "select",
+            options: [],
+            required: true,
+            columnSpan: 1
+          },
+          {
+            label: "Deliver To",
+            name: "deliver_to",
+            type: "select",
+            options: [],
+            required: true,
+            columnSpan: 1
+          },
+          {
+            label: "SRF No",
+            name: "srf_no",
+            type: "text",
+            value: "XXX",
+            required: true,
+            columnSpan: 1
+          },
+          {
+            label: "Purpose",
+            name: "purpose",
+            type: "text",
+            placeholder: "purpose",
+            required: true,
+            columnSpan: 1
+          },
+          // ... other basic fields
         ]
       },
       {
-        title: "Items",
+        title: "Items", // This is the repeatable section
         repeatable: true,
         fields: [
-          { name: "itemName", label: "Item Name", type: "text", required: true },
-          { name: "quantity", label: "Quantity", type: "number", required: true }
+          {
+            label: "Item Name",
+            name: "item_name",
+            type: "text",
+            required: true,
+            columnSpan: 2
+          },
+          {
+            label: "Quantity",
+            name: "quantity",
+            type: "number",
+            required: true,
+            columnSpan: 1
+          }
         ],
         addButton: "Add Item",
         summary: {
@@ -121,30 +193,24 @@ const FormBuilder = () => {
       {
         title: "Additional Information",
         fields: [
-          { name: "notes", label: "Notes", type: "textarea", placeholder: "Enter any additional notes", required: false, columnSpan: 3 }
-        ]
-      },
-      {
-        title: "File Upload",
-        fields: [
           {
-            name: "uploadFiles",
-            label: "Upload Files",
-            type: "file",
-            accept: ["image/*", "pdf", "docx"],
-            maxSizeMB: 5,
-            multiple: true,
-            columnSpan: 3
+            label: "Notes",
+            name: "notes",
+            type: "textarea",
+            placeholder: "notes",
+            required: false,
+            columnSpan: 2
           }
+          // ... other fields
         ]
       }
     ],
     submit: {
-      label: "Submit Request",
+      label: "Submit",
       type: "button",
       action: "/submit-sample-request"
     }
-  };
+  }
 
   const itSupportForm: FormConfig = {
     url: "/it-support",

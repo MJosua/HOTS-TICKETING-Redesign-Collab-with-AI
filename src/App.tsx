@@ -161,93 +161,123 @@ const ideaBank: FormConfig = {
   ]
 };
 
+
 const srForm: FormConfig = {
   url: "/sample-request-form",
   title: "Sample Request Form",
-  fields: [
+  sections: [
     {
-      label: "Request By",
-      name: "request_by",
-      type: "text",
-      readonly: true,
-      value: "Yosua Gultom",
-      required: true,
-      columnSpan: 1
+      title: "Basic Information",
+      fields: [
+        {
+          label: "Request By",
+          name: "request_by",
+          type: "text",
+          readonly: true,
+          value: "Yosua Gultom",
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Division",
+          name: "division",
+          type: "text",
+          readonly: true,
+          value: "IOD",
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Location",
+          name: "location",
+          type: "text",
+          readonly: true,
+          value: "INDOFOOD TOWER LT.23",
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Sample Category",
+          name: "sample_category",
+          type: "select",
+          options: [],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Plant",
+          name: "plant",
+          type: "select",
+          options: [],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Deliver To",
+          name: "deliver_to",
+          type: "select",
+          options: [],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "SRF No",
+          name: "srf_no",
+          type: "text",
+          value: "XXX",
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Purpose",
+          name: "purpose",
+          type: "text",
+          placeholder: "purpose",
+          required: true,
+          columnSpan: 1
+        },
+        // ... other basic fields
+      ]
     },
     {
-      label: "Division",
-      name: "division",
-      type: "text",
-      readonly: true,
-      value: "IOD",
-      required: true,
-      columnSpan: 1
+      title: "Items", // This is the repeatable section
+      repeatable: true,
+      fields: [
+        {
+          label: "Item Name",
+          name: "item_name",
+          type: "text",
+          required: true,
+          columnSpan: 2
+        },
+        {
+          label: "Quantity",
+          name: "quantity",
+          type: "number",
+          required: true,
+          columnSpan: 1
+        }
+      ],
+      addButton: "Add Item",
+      summary: {
+        label: "Total Items",
+        type: "number",
+        calculated: true
+      }
     },
     {
-      label: "Location",
-      name: "location",
-      type: "text",
-      readonly: true,
-      value: "INDOFOOD TOWER LT.23",
-      required: true,
-      columnSpan: 1
-    },
-    {
-      label: "Sample Category",
-      name: "sample_category",
-      type: "select",
-      options: [],
-      required: true,
-      columnSpan: 1
-    },
-    {
-      label: "Plant",
-      name: "plant",
-      type: "select",
-      options: [],
-      required: true,
-      columnSpan: 1
-    },
-    {
-      label: "Deliver To",
-      name: "deliver_to",
-      type: "select",
-      options: [],
-      required: true,
-      columnSpan: 1
-    },
-    {
-      label: "SRF No",
-      name: "srf_no",
-      type: "text",
-      value: "XXX",
-      required: true,
-      columnSpan: 1
-    },
-    {
-      label: "Purpose",
-      name: "purpose",
-      type: "text",
-      placeholder: "purpose",
-      required: true,
-      columnSpan: 2
-    },
-    {
-      label: "Notes",
-      name: "notes",
-      type: "textarea",
-      placeholder: "notes",
-      required: false,
-      columnSpan: 3
-    },
-    {
-      label: "Upload Files",
-      name: "upload_files",
-      type: "file",
-      accept: ["image/*", "pdf", "docx"],
-      maxSizeMB: 5,
-      multiple: true,
-      columnSpan: 3
+      title: "Additional Information",
+      fields: [
+        {
+          label: "Notes",
+          name: "notes",
+          type: "textarea",
+          placeholder: "notes",
+          required: false,
+          columnSpan: 2
+        }
+        // ... other fields
+      ]
     }
   ],
   submit: {
