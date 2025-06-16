@@ -1,30 +1,43 @@
 
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '@/hooks/useAppSelector';
+import { useAppDispatch } from '@/hooks/useAppDispatch';
+import { resetLoginAttempts } from '@/store/slices/authSlice';
 import Loginform from './form/loginform';
 import Forgotpassform from './form/forgotpassform';
 import Lockedaccount from './form/lockedaccount';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({
     username: '',
     password: ''
   });
-  const navigate = useNavigate();
-
-
-
-  const [forgotToggle, setForgotToggle] = useState(false)
+  const [forgotToggle, setForgotToggle] = useState(false);
   const [lockedAccount, setLockedAccount] = useState(false);
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/service-catalog');
+    }
+  }, [isAuthenticated, navigate]);
 
-
+  // Reset login attempts when going back to login
+  useEffect(() => {
+    if (!forgotToggle && !lockedAccount) {
+      dispatch(resetLoginAttempts());
+    }
+  }, [forgotToggle, lockedAccount, dispatch]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-0 to-blue-100 flex items-center justify-center p-4">
-      {!forgotToggle && !lockedAccount &&
+      {!forgotToggle && !lockedAccount && (
         <Loginform
           showPassword={showPassword}
           setShowPassword={setShowPassword}
@@ -33,10 +46,9 @@ const Login = () => {
           setForgotToggle={setForgotToggle}
           setLockedAccount={setLockedAccount}
         />
-      }
+      )}
 
-
-      {forgotToggle && !lockedAccount &&
+      {forgotToggle && !lockedAccount && (
         <Forgotpassform
           showPassword={showPassword}
           setShowPassword={setShowPassword}
@@ -44,9 +56,9 @@ const Login = () => {
           setCredentials={setCredentials}
           setForgotToggle={setForgotToggle}
         />
-      }
+      )}
 
-      {lockedAccount &&
+      {lockedAccount && (
         <Lockedaccount
           showPassword={showPassword}
           setShowPassword={setShowPassword}
@@ -55,7 +67,7 @@ const Login = () => {
           setForgotToggle={setForgotToggle}
           setLockedAccount={setLockedAccount}
         />
-      }
+      )}
     </div>
   );
 };
