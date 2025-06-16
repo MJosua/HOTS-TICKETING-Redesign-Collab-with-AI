@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
-import ProgressionBar from '@/components/ui/ProgressionBar';
+import { ApprovalFlowCard } from '@/components/ui/ApprovalFlowCard';
 import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
@@ -39,7 +38,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
   };
 
   const renderApprovalFlow = () => {
-    if (!config.approval) return null;
+    if (!config.approval || !config.approval.steps || config.approval.steps.length === 0) return null;
 
     const approvalSteps = config.approval.steps.map((step, index) => ({
       id: `step-${index}`,
@@ -50,10 +49,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
 
     return (
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-muted-foreground mb-3">Approval Flow</h3>
-        <ProgressionBar 
+        <ApprovalFlowCard 
           steps={approvalSteps} 
-          showDetails={true}
+          mode={config.approval.mode}
           className="mb-4"
         />
       </div>

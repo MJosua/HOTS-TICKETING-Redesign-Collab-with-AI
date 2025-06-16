@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,11 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Save, ArrowUp, ArrowDown } from 'lucide-react';
-import { FormConfig, FormField } from '@/types/formTypes';
+import { FormConfig, FormField, RowGroup } from '@/types/formTypes';
 import { DynamicForm } from '@/components/forms/DynamicForm';
+import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
+import { ApprovalFlowCard } from '@/components/ui/ApprovalFlowCard';
 
 const ServiceFormEditor = () => {
   const { id } = useParams();
@@ -24,6 +26,7 @@ const ServiceFormEditor = () => {
     category: '',
     apiEndpoint: '',
     fields: [],
+    rowGroups: [],
     approval: { steps: [], mode: 'sequential' }
   });
 
@@ -43,6 +46,15 @@ const ServiceFormEditor = () => {
         fields: [
           { label: 'Type of Support', type: 'select', options: ['Hardware', 'Software', 'Account'], required: true },
           { label: 'Issue Description', type: 'textarea', required: true }
+        ],
+        rowGroups: [
+          {
+            rowGroup: [
+              { label: 'Priority', type: 'select', options: ['High', 'Medium', 'Low'], required: true },
+              { label: 'Department', type: 'text', required: true },
+              { label: 'Due Date', type: 'date', required: false }
+            ]
+          }
         ]
       };
       setConfig(mockForm);
@@ -208,9 +220,21 @@ const ServiceFormEditor = () => {
               </CardContent>
             </Card>
 
+            {/* Approval Flow Preview */}
+            <ApprovalFlowCard
+              steps={config.approval?.steps.map((step, index) => ({
+                id: `step-${index}`,
+                name: step,
+                status: 'waiting' as const,
+                approver: step,
+                role: 'Approver'
+              })) || []}
+              mode={config.approval?.mode}
+            />
+
             <Card>
               <CardHeader>
-                <CardTitle>Approval Flow</CardTitle>
+                <CardTitle>Approval Flow Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -263,27 +287,55 @@ const ServiceFormEditor = () => {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Form Fields
-                  <Button size="sm" onClick={addField}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Field
-                  </Button>
-                </CardTitle>
+                <CardTitle>Form Structure</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {config.fields?.map((field, index) => (
-                  <FieldEditor
-                    key={index}
-                    field={field}
-                    onUpdate={(updatedField) => updateField(index, updatedField)}
-                    onRemove={() => removeField(index)}
-                    onMoveUp={() => moveField(index, 'up')}
-                    onMoveDown={() => moveField(index, 'down')}
-                    canMoveUp={index > 0}
-                    canMoveDown={index < (config.fields?.length || 0) - 1}
-                  />
-                ))}
+              <CardContent>
+                <Tabs defaultValue="fields" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="fields">Individual Fields</TabsTrigger>
+                    <TabsTrigger value="rowGroups">Row Groups</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="fields" className="space-y-4 mt-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Individual Fields</h3>
+                      <Button size="sm" onClick={addField}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Field
+                      </Button>
+                    </div>
+                    
+                    {config.fields?.map((field, index) => (
+                      <FieldEditor
+                        key={index}
+                        field={field}
+                        onUpdate={(updatedField) => updateField(index, updatedField)}
+                        onRemove={() => removeField(index)}
+                        onMoveUp={() => moveField(index, 'up')}
+                        onMoveDown={() => moveField(index, 'down')}
+                        canMoveUp={index > 0}
+                        canMoveDown={index < (config.fields?.length || 0) - 1}
+                      />
+                    ))}
+                    
+                    {(!config.fields || config.fields.length === 0) && (
+                      <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
+                        <p className="text-muted-foreground mb-4">No individual fields created yet</p>
+                        <Button onClick={addField}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add First Field
+                        </Button>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="rowGroups" className="mt-4">
+                    <RowGroupEditor
+                      rowGroups={config.rowGroups || []}
+                      onUpdate={(rowGroups) => setConfig({ ...config, rowGroups })}
+                    />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
