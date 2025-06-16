@@ -6,53 +6,9 @@ import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import ProgressionBar from '@/components/ui/ProgressionBar';
 import { DynamicField } from './DynamicField';
+import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
-
-interface FormField {
-  label: string;
-  type: string;
-  placeholder?: string;
-  required?: boolean;
-  options?: string[];
-  readonly?: boolean;
-  value?: string;
-  accept?: string[];
-  maxSizeMB?: number;
-  multiple?: boolean;
-  default?: string;
-  uiCondition?: string;
-  note?: string;
-}
-
-interface FormSection {
-  title: string;
-  fields: FormField[];
-  repeatable?: boolean;
-  addButton?: string;
-  summary?: {
-    label: string;
-    type: string;
-    calculated: boolean;
-  };
-}
-
-interface ApprovalFlow {
-  steps: string[];
-  mode: 'sequential' | 'parallel';
-}
-
-interface FormConfig {
-  url: string;
-  title: string;
-  fields?: FormField[];
-  sections?: FormSection[];
-  approval?: ApprovalFlow;
-  submit?: {
-    label: string;
-    type: string;
-    action: string;
-  };
-}
+import { FormConfig, FormField, RowGroup } from '@/types/formTypes';
 
 interface DynamicFormProps {
   config: FormConfig;
@@ -126,6 +82,20 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
     });
   };
 
+  const renderRowGroups = (rowGroups: RowGroup[]) => {
+    return rowGroups.map((rowGroup, index) => (
+      <RowGroupField
+        key={`rowgroup-${index}`}
+        rowGroup={rowGroup.rowGroup}
+        form={form}
+        groupIndex={index}
+        onValueChange={(fieldKey, value) => {
+          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+        }}
+      />
+    ));
+  };
+
   const renderSections = () => {
     if (!config.sections) return null;
 
@@ -140,7 +110,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
           />
         ) : (
           <div className="space-y-4">
-            {renderFields(section.fields)}
+            {section.fields && renderFields(section.fields)}
+            {section.rowGroups && renderRowGroups(section.rowGroups)}
           </div>
         )}
       </div>
@@ -151,6 +122,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>{config.title}</CardTitle>
+        {config.description && (
+          <p className="text-sm text-muted-foreground">{config.description}</p>
+        )}
         {renderApprovalFlow()}
       </CardHeader>
       <CardContent>
@@ -159,6 +133,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
             {config.fields && (
               <div className="space-y-4">
                 {renderFields(config.fields)}
+              </div>
+            )}
+            
+            {config.rowGroups && (
+              <div className="space-y-4">
+                {renderRowGroups(config.rowGroups)}
               </div>
             )}
             

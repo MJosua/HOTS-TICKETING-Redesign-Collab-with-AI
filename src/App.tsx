@@ -17,6 +17,8 @@ import GoodsRequest from "./pages/GoodsRequest";
 import SystemSettings from "./pages/admin/SystemSettings";
 import UserManagement from "./pages/admin/UserManagement";
 import DivisionManagement from "./pages/admin/DivisionManagement";
+import ServiceCatalogAdmin from "./pages/admin/ServiceCatalogAdmin";
+import ServiceFormEditor from "./pages/admin/ServiceFormEditor";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/login/Loginpage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -295,6 +297,21 @@ const App = () => {
               <Route path="/admin/divisions" element={
                 <ProtectedRoute>
                   <DivisionManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/service-catalog" element={
+                <ProtectedRoute>
+                  <ServiceCatalogAdmin />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/service-catalog/create" element={
+                <ProtectedRoute>
+                  <ServiceFormEditor />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/service-catalog/edit/:id" element={
+                <ProtectedRoute>
+                  <ServiceFormEditor />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
