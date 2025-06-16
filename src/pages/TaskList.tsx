@@ -84,7 +84,7 @@ const TaskList = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pending Approval": return "bg-orange-100 text-orange-800 border-orange-200";
+      case "Pending Approval": return "bg-yellow-100 text-orange-800 border-orange-200";
       case "In Progress": return "bg-blue-100 text-blue-800 border-blue-200";
       case "Approved": return "bg-green-100 text-green-800 border-green-200";
       case "Rejected": return "bg-red-100 text-red-800 border-red-200";
@@ -121,7 +121,7 @@ const TaskList = () => {
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Department</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Priority</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Progress</TableHead>
-                <TableHead className="text-xs font-medium text-muted-foreground uppercase">Status</TableHead>
+                {/* <TableHead className="text-xs font-medium text-muted-foreground uppercase">Status</TableHead> */}
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Amount</TableHead>
               </TableRow>
             </TableHeader>
@@ -152,11 +152,11 @@ const TaskList = () => {
                   <TableCell>
                     <ProgressionBar steps={task.approvalSteps} />
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <Badge className={`${getStatusColor(task.status)} border`}>
                       {renderHighlightedText(task.status)}
                     </Badge>
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell className="font-medium text-foreground">
                     {renderHighlightedText(task.amount)}
                   </TableCell>

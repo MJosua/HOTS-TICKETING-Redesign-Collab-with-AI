@@ -36,7 +36,7 @@ const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBa
               {
                 "bg-primary": step.status === 'approved',
                 "bg-destructive": step.status === 'rejected',
-                "bg-orange-500": step.status === 'pending',
+                "bg-yellow-500": step.status === 'pending',
                 "bg-muted": step.status === 'waiting'
               }
             )}
@@ -58,7 +58,7 @@ const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBa
                 {
                   "bg-primary text-primary-foreground": step.status === 'approved',
                   "bg-destructive text-destructive-foreground": step.status === 'rejected',
-                  "bg-orange-500 text-white": step.status === 'pending',
+                  "bg-yellow-500 text-white": step.status === 'pending',
                   "bg-muted text-muted-foreground": step.status === 'waiting'
                 }
               )}
