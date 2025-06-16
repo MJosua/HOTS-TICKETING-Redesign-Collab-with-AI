@@ -19,13 +19,9 @@ const Forgotpassform = ({
     setForgotToggle,
     setLockedAccount
 }) => {
-
-
     const { toast } = useToast()
-
     const [success, setSuccess] = useState(false)
-
-
+    const [error, setError] = useState('')
     const [email, setEmail] = useState("");
 
     const maskEmail = (email) => {
@@ -45,12 +41,9 @@ const Forgotpassform = ({
             toast({
                 title: "Oopsie!",
                 description: `User ID can't be empty! `,
-                status: "warning",
                 duration: 6000, //in second
-                isClosable: true
             })
         } else {
-
             axios.post(
                 API_URL + "/hots_auth/forgot/", { uid }
             )
@@ -62,34 +55,21 @@ const Forgotpassform = ({
                         setSuccess(true)
                         setEmail(res?.data?.email ?? "An error occurred")
                     }
-
                 })
                 .catch((err) => {
-                    // console.log("Axios error when change password", err); 
                     toast({
                         title: "Oopsiee!",
                         description: 'Something bad just happend! Please try again!',
-                        status: "warning",
                         duration: 6000,
-                        variant: "error",
-                        isClosable: true,
+                        variant: "destructive",
                     });
                     console.log(err)
-
                 });
-            // }
-
-
         }
     }
 
-
-
     return (
-
         <Card className="w-full max-w-md shadow-xl">
-
-
             <CardHeader className="text-center space-y-4">
                 <div className="mx-auto w-16 h-16 bg-blue-900 rounded-lg flex items-center justify-center">
                     <span className="text-white font-bold text-lg"><MailQuestion /></span>
@@ -126,16 +106,9 @@ const Forgotpassform = ({
             </CardHeader>
 
             <CardContent>
-
                 {!success ?
-
-
                     <>
-
                         <form onSubmit={(e) => { handleForgotPassword(e, credentials.username) }} className="space-y-4">
-
-
-
                             <div className="space-y-2">
                                 <Label htmlFor="username">Username / Employee ID</Label>
                                 <Input
@@ -152,8 +125,6 @@ const Forgotpassform = ({
                                 <LogIn className="w-4 h-4 mr-2" />
                                 Sent Reset Email
                             </Button>
-
-
                         </form>
                         <div className="mt-1 text-center text-sm text-gray-500">
                             <a href=""
@@ -174,10 +145,7 @@ const Forgotpassform = ({
                             }}
                             className=" hover:underline hover:text-blue-900 ">Back To Login</a>
                     </div>
-
                 }
-
-
 
                 <div className="mt-6 text-center text-sm text-gray-500">
                     <p>For technical support, contact IT Department</p>
@@ -188,4 +156,3 @@ const Forgotpassform = ({
 }
 
 export default Forgotpassform;
-

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -59,7 +58,6 @@ const Loginform = ({
       toast({
         title: "Login Successful",
         description: "Welcome back to HOTS",
-        variant: "success",
       });
       navigate("/service-catalog");
     }
@@ -79,7 +77,7 @@ const Loginform = ({
         toast({
           title: "Account Locked",
           description: error,
-          variant: "error",
+          variant: "destructive",
           duration: 5000,
         });
         setLockedAccount(true);
@@ -87,7 +85,7 @@ const Loginform = ({
         toast({
           title: "Login Failed",
           description: error,
-          variant: "error",
+          variant: "destructive",
           duration: 4000,
         });
       }

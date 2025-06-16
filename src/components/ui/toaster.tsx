@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -20,17 +21,12 @@ export function Toaster() {
             className={cn(
               "rounded-md shadow-md p-4 border transition-all",
               props.className,
-              props.variant === "error" && "bg-red-600 text-white",
-              props.variant === "success" && "bg-green-600 text-white"
+              props.variant === "destructive" && "bg-red-600 text-white",
+              // Use default styling for success messages
+              title?.includes("Success") && "bg-green-600 text-white"
             )}
-
-
           >
-            <div className="grid gap-1"
-
-
-
-            >
+            <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
                 <ToastDescription>{description}</ToastDescription>
