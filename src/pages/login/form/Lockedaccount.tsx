@@ -1,20 +1,31 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn, Eye, EyeOff, LockKeyhole } from 'lucide-react';
 
+interface LockedaccountProps {
+  showPassword: boolean;
+  setShowPassword: (show: boolean) => void;
+  credentials: {
+    username: string;
+    password: string;
+  };
+  setCredentials: (credentials: { username: string; password: string }) => void;
+  setForgotToggle: (toggle: boolean) => void;
+  setLockedAccount: (locked: boolean) => void;
+}
+
 const Lockedaccount = ({
     showPassword,
     setShowPassword,
     credentials,
     setCredentials,
-    handleLogin,
     setForgotToggle,
     setLockedAccount
-}) => {
+}: LockedaccountProps) => {
     return (
-
         <Card className="w-full max-w-md shadow-xl">
             <CardHeader className="text-center space-y-4">
                 <div className="mx-auto w-16 h-16 bg-blue-900 rounded-lg flex items-center justify-center">
@@ -30,7 +41,6 @@ const Lockedaccount = ({
                 </div>
             </CardHeader>
             <CardContent>
-
                 <div className="mt-1 text-center text-sm text-gray-500">
                     <a href=""
                         onClick={(e) => {
@@ -50,4 +60,3 @@ const Lockedaccount = ({
 }
 
 export default Lockedaccount;
-

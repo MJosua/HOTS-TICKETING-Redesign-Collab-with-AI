@@ -2,29 +2,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogIn, Eye, EyeOff, MailQuestion } from 'lucide-react';
+import { LogIn, MailQuestion } from 'lucide-react';
 import axios from "axios";
-
 import { API_URL } from "../../../config/sourceConfig"
-
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+
+interface ForgotpassformProps {
+  showPassword: boolean;
+  setShowPassword: (show: boolean) => void;
+  credentials: {
+    username: string;
+    password: string;
+  };
+  setCredentials: (credentials: { username: string; password: string }) => void;
+  setForgotToggle: (toggle: boolean) => void;
+}
 
 const Forgotpassform = ({
     showPassword,
     setShowPassword,
     credentials,
     setCredentials,
-    handleLogin,
     setForgotToggle,
-    setLockedAccount
-}) => {
+}: ForgotpassformProps) => {
     const { toast } = useToast()
     const [success, setSuccess] = useState(false)
     const [error, setError] = useState('')
     const [email, setEmail] = useState("");
 
-    const maskEmail = (email) => {
+    const maskEmail = (email: string) => {
         const [localPart, domain] = email.split('@');
         if (localPart.length <= 2) {
             // If the local part of the email is too short, just return it as is
@@ -35,7 +42,7 @@ const Forgotpassform = ({
         return `${maskedLocalPart}@${domain}`;
     };
 
-    const handleForgotPassword = (e, uid) => {
+    const handleForgotPassword = (e: React.FormEvent, uid: string) => {
         e.preventDefault()
         if (uid === '' || !uid || uid === undefined) {
             toast({
@@ -123,7 +130,7 @@ const Forgotpassform = ({
 
                             <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800">
                                 <LogIn className="w-4 h-4 mr-2" />
-                                Sent Reset Email
+                                Send Reset Email
                             </Button>
                         </form>
                         <div className="mt-1 text-center text-sm text-gray-500">
@@ -141,7 +148,6 @@ const Forgotpassform = ({
                             onClick={(e) => {
                                 e.preventDefault();
                                 setForgotToggle(false);
-                                setLockedAccount(false);
                             }}
                             className=" hover:underline hover:text-blue-900 ">Back To Login</a>
                     </div>
