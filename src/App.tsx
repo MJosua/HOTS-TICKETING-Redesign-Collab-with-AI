@@ -137,15 +137,27 @@ const srForm: FormConfig = {
   sections: [
     {
       title: "Data",
-      fields: [
-        { label: "Request By", type: "text", readonly: true, value: "Yosua Gultom", required: true },
-        { label: "Division", type: "text", readonly: true, value: "IOD", required: true },
-        { label: "Location", type: "text", readonly: true, value: "INDOFOOD TOWER LT.23", required: true },
-        { label: "Sample Category", type: "select", options: [], required: true },
-        { label: "Plant", type: "select", options: [], required: true },
-        { label: "Deliver To", type: "select", options: [], required: true },
-        { label: "SRF No", type: "text", value: "XXX", required: true },
-        { label: "Purpose", type: "text", placeholder: "purpose", required: true }
+      rowGroups: [
+        {
+          rowGroup: [
+            { label: "Request By", type: "text", readonly: true, value: "Yosua Gultom", required: true },
+            { label: "Division", type: "text", readonly: true, value: "IOD", required: true },
+            { label: "Location", type: "text", readonly: true, value: "INDOFOOD TOWER LT.23", required: true }
+          ]
+        },
+        {
+          rowGroup: [
+            { label: "Sample Category", type: "select", options: [], required: true },
+            { label: "Plant", type: "select", options: [], required: true },
+            { label: "Deliver To", type: "select", options: [], required: true }
+          ]
+        },
+        {
+          rowGroup: [
+            { label: "SRF No", type: "text", value: "XXX", required: true },
+            { label: "Purpose", type: "text", placeholder: "purpose", required: true }
+          ]
+        }
       ]
     },
     {
@@ -187,6 +199,7 @@ const srForm: FormConfig = {
     action: "/submit-sample-request"
   }
 };
+
 
 const App = () => {
   const handleITSupportSubmit = (data: any) => {
