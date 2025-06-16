@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
@@ -7,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { DynamicForm } from "@/components/forms/DynamicForm";
 import Index from "./pages/Index";
 import ServiceCatalog from "./pages/ServiceCatalog";
 import TaskList from "./pages/TaskList";
@@ -31,7 +33,42 @@ const queryClient = new QueryClient({
   },
 });
 
+// IT Support form configuration
+const itSupportConfig = {
+  url: "/it-support",
+  title: "IT Support Request",
+  fields: [
+    {
+      label: "Type of Support*",
+      placeholder: "Select Type of Support",
+      type: "select",
+      options: ["Hardware", "Account", "Software"],
+      required: true
+    },
+    {
+      label: "Issue Description",
+      placeholder: "Please provide a detailed description of the issues you're experiencing",
+      type: "textarea",
+      required: true
+    },
+    {
+      label: "Attachment",
+      type: "file",
+      accept: ["image/*", "pdf", "docx"]
+    }
+  ],
+  approval: {
+    steps: ["Supervisor", "IT Team"],
+    mode: "sequential" as const
+  }
+};
+
 const App = () => {
+  const handleITSupportSubmit = (data: any) => {
+    console.log('IT Support form submitted:', data);
+    // Handle form submission logic here
+  };
+
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
@@ -89,10 +126,10 @@ const App = () => {
               <Route path="/it-support" element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <div className="text-center py-12">
-                      <h1 className="text-2xl font-bold text-gray-900 mb-4">IT Support Request</h1>
-                      <p className="text-gray-600">This form is under development</p>
-                    </div>
+                    <DynamicForm 
+                      config={itSupportConfig}
+                      onSubmit={handleITSupportSubmit}
+                    />
                   </AppLayout>
                 </ProtectedRoute>
               } />
