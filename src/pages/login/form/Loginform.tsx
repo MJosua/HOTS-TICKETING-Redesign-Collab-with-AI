@@ -131,7 +131,7 @@ const Loginform = ({
     }
   };
 
-  const remainingAttempts = Math.max(0, 3 - loginAttempts);
+  const remainingAttempts = Math.max(0, 5 - loginAttempts);
 
   return (
     <Card className="w-full max-w-md shadow-xl">
