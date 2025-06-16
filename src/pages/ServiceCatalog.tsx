@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Monitor, Lightbulb, Wrench, Database, Plane, FileText, Users, CreditCard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AppLayout } from '@/components/layout/AppLayout';
 import { searchInObject } from '@/utils/searchUtils';
 import { renderHighlightedText } from '@/utils/renderhighlight';
@@ -44,6 +45,7 @@ const serviceIcons: Record<string, any> = {
 
 const ServiceCatalog = () => {
   const [searchValue, setSearchValue] = useState('');
+  const navigate = useNavigate(); // Move this to the top, before any conditional returns
   
   const {
     serviceCatalog,
@@ -81,11 +83,53 @@ const ServiceCatalog = () => {
     };
   }).filter(category => category.services.length > 0);
 
+  const SkeletonCard = () => (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-start space-x-3">
+          <Skeleton className="w-9 h-9 rounded-lg" />
+          <div className="flex-1 min-w-0">
+            <Skeleton className="h-4 w-3/4 mb-2" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <Skeleton className="h-3 w-full mb-2" />
+        <Skeleton className="h-3 w-2/3 mb-3" />
+        <Skeleton className="h-8 w-full" />
+      </CardContent>
+    </Card>
+  );
+
   if (isLoading) {
     return (
-      <AppLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading catalog...</div>
+      <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search services...">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Service Catalog</h1>
+              <p className="text-gray-600">Browse and request services available in HOTS</p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Create skeleton categories */}
+            {[1, 2, 3].map((categoryIndex) => (
+              <div key={categoryIndex}>
+                <div className="flex items-center space-x-3 mb-4">
+                  <Skeleton className="w-10 h-10 rounded-lg" />
+                  <Skeleton className="h-6 w-32" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((serviceIndex) => (
+                    <SkeletonCard key={serviceIndex} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </AppLayout>
     );
@@ -100,8 +144,6 @@ const ServiceCatalog = () => {
       </AppLayout>
     );
   }
-
-  const navigate = useNavigate();  
 
   return (
     <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search services...">
