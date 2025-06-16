@@ -1,0 +1,116 @@
+
+import React, { useState } from 'react';
+import { UseFormReturn } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Plus, Trash2 } from 'lucide-react';
+import { DynamicField } from './DynamicField';
+
+interface FormField {
+  label: string;
+  type: string;
+  placeholder?: string;
+  required?: boolean;
+  options?: string[];
+  readonly?: boolean;
+  value?: string;
+}
+
+interface FormSection {
+  title: string;
+  fields: FormField[];
+  repeatable?: boolean;
+  addButton?: string;
+  summary?: {
+    label: string;
+    type: string;
+    calculated: boolean;
+  };
+}
+
+interface RepeatingSectionProps {
+  section: FormSection;
+  form: UseFormReturn<any>;
+}
+
+export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, form }) => {
+  const [items, setItems] = useState([{ id: Date.now() }]);
+
+  const addItem = () => {
+    setItems([...items, { id: Date.now() }]);
+  };
+
+  const removeItem = (id: number) => {
+    if (items.length > 1) {
+      setItems(items.filter(item => item.id !== id));
+    }
+  };
+
+  const calculateTotal = () => {
+    if (!section.summary?.calculated) return null;
+    
+    const total = items.reduce((sum, item, index) => {
+      const quantityKey = `${section.title.toLowerCase()}_${index}_quantity`;
+      const quantity = form.watch(quantityKey) || 0;
+      return sum + parseInt(quantity.toString()) || 0;
+    }, 0);
+
+    return total;
+  };
+
+  return (
+    <div className="space-y-4">
+      {items.map((item, index) => (
+        <Card key={item.id} className="relative">
+          <CardContent className="pt-6">
+            {items.length > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="absolute top-2 right-2"
+                onClick={() => removeItem(item.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {section.fields.map((field, fieldIndex) => {
+                const fieldKey = `${section.title.toLowerCase()}_${index}_${field.label.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+                
+                return (
+                  <DynamicField
+                    key={`${fieldKey}-${fieldIndex}`}
+                    field={field}
+                    form={form}
+                    fieldKey={fieldKey}
+                  />
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      <div className="flex justify-between items-center">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={addItem}
+          className="flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          {section.addButton || 'Add Item'}
+        </Button>
+
+        {section.summary?.calculated && (
+          <div className="text-right">
+            <span className="text-sm text-muted-foreground">{section.summary.label}: </span>
+            <span className="font-semibold">{calculateTotal()}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
