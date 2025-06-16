@@ -41,7 +41,9 @@ const Loginform = ({
                 delete res.data.tokek;
                 // Check if userData exists and is an array with at least one element
                 const userData = res.data.userData;
-
+                // TODO AI: Add a loading spinner or disable the button when login is in progress
+                // TODO AI: Dispatch loginUser action and handle token securely using localStorage
+                // TODO AI: Show a toast or alert when login fails or succeeds
                 // Dispatch a Redux action with user data
                 if (userData) {
                     // dispatch({
@@ -122,7 +124,7 @@ const Loginform = ({
                 </div>
             </CardHeader>
             <CardContent>
-            <form onSubmit={
+                <form onSubmit={
                     (e) => {
                         HandleLogin(e, credentials.username, credentials.password)
                     }} className="space-y-4">

@@ -4,17 +4,17 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, LockKeyhole, LockKeyholeOpenIcon, LucideLockKeyholeOpen } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import axios from "axios";
+import axios, { Axios } from "axios";
 import { API_URL } from "../../../config/sourceConfig";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Lockedaccount from "./lockedaccount";
 
 const RecoveryForm = ({
 }) => {
     const { toast } = useToast();
     const [error, setError] = useState('');
-
+    const navigate = useNavigate()
     const params = useParams();
     let token = params.token;
 
@@ -57,6 +57,80 @@ const RecoveryForm = ({
         onChecker();
     }, []);
 
+
+    let token1 = params.token;
+
+
+    const [password, setpassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [formError, setFormError] = useState('');
+    const [errors, setErrors] = useState();
+    const [success, setSuccess] = useState()
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // Validate passwords
+
+
+        if (credentials.password !== credentials.confirmpassword) {
+            setFormError('Passwords do not match.');
+            console.log('Passwords do not match.');
+
+            return;
+        }
+        else {
+            axios.post(
+                API_URL + "/hots_auth/change_pass_forgot", { pswd: credentials.password }, {
+                headers: {
+                    Authorization: `Bearer ${token1}`,
+                },
+            }
+            )
+                .then((res) => {
+                    setErrors({
+                        minLength: true,
+                        uppercase: true,
+                        lowercase: true,
+                        number: true,
+                    });
+
+                    toast({
+                        title: 'YEAY!',
+                        description: res.data.message,
+                        status: 'success',
+                        duration: 9000,
+                    })
+
+
+
+                    navigate('/');
+                    setSuccess(true);
+                    setPassword('');
+                    setConfirmPassword('');
+
+                    setFormError('');
+                    // Handle successful form submission
+                    console.log('Passwords are valid and match.');
+                })
+                .catch((err) => {
+                    toast({
+                        title: "Oopsie!",
+                        description: `User ID can't be empty! `,
+                        status: "warning",
+                        duration: 6000, //in second
+                    })
+                    console.log(err.data)
+
+                });
+        }
+
+        // Check if passwords match
+
+
+
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-0 to-blue-100 flex items-center justify-center p-4">
             <Card className="w-full max-w-md shadow-xl">
@@ -76,8 +150,11 @@ const RecoveryForm = ({
 
                     <>
 
-                        <form onSubmit="" className="space-y-4">
 
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <strong>Create New Password</strong>
+                            <small className="text-red-500 text-xs">{formError}</small>
                             <Input
                                 id="username"
                                 type="password"
@@ -100,7 +177,7 @@ const RecoveryForm = ({
 
                             <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800">
 
-                                Sent Reset Email
+                                Reset Password
                             </Button>
 
 
