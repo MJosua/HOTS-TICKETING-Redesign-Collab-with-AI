@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Sidebar,
@@ -21,6 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import ProfileModal from "@/components/modals/ProfileModal";
+import { useAppDispatch } from "@/hooks/useAppDispatch";
+import { logoutUser } from "@/store/slices/authSlice";
+import { useToast } from "@/hooks/use-toast";
 
 const menuItems = [
   {
@@ -74,11 +76,18 @@ interface AppLayoutProps {
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    navigate('/login');
+    dispatch(logoutUser()).then(() => {
+      toast({
+        title: "Success",
+        description: "Logged out successfully",
+      });
+      navigate('/login');
+    });
   };
 
   return (
