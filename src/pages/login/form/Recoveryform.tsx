@@ -1,20 +1,18 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, LockKeyhole, LockKeyholeOpenIcon, LucideLockKeyholeOpen } from 'lucide-react';
+import { LucideLockKeyholeOpen } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import axios, { Axios } from "axios";
+import axios from "axios";
 import { API_URL } from "../../../config/sourceConfig";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import Lockedaccount from "./lockedaccount";
 
 const RecoveryForm = () => {
     const { toast } = useToast();
     const [error, setError] = useState('');
-    const navigate = useNavigate()
+    const navigate = useNavigate();
     const params = useParams();
     let token = params.token;
 
@@ -47,78 +45,50 @@ const RecoveryForm = () => {
         onChecker();
     }, []);
 
-
-    let token1 = params.token;
-
-
-    const [password, setpassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [formError, setFormError] = useState('');
-    const [errors, setErrors] = useState();
-    const [success, setSuccess] = useState()
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // Validate passwords
-
-
         if (credentials.password !== credentials.confirmpassword) {
             setFormError('Passwords do not match.');
             console.log('Passwords do not match.');
-
             return;
         }
-        else {
-            axios.post(
-                API_URL + "/hots_auth/change_pass_forgot", { pswd: credentials.password }, {
-                headers: {
-                    Authorization: `Bearer ${token1}`,
-                },
-            }
-            )
-                .then((res) => {
-                    setErrors({
-                        minLength: true,
-                        uppercase: true,
-                        lowercase: true,
-                        number: true,
-                    });
 
-                    toast({
-                        title: 'YEAY!',
-                        description: res.data.message,
-                        status: 'success',
-                        duration: 9000,
-                    })
+        try {
+            const response = await axios.post(
+                API_URL + "/hots_auth/change_pass_forgot", 
+                { pswd: credentials.password }, 
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
+            toast({
+                title: 'Success!',
+                description: response.data.message,
+                duration: 9000,
+            });
 
-
-                    navigate('/');
-                    setSuccess(true);
-                    setPassword('');
-                    setConfirmPassword('');
-
-                    setFormError('');
-                    // Handle successful form submission
-                    console.log('Passwords are valid and match.');
-                })
-                .catch((err) => {
-                    toast({
-                        title: "Oopsie!",
-                        description: `User ID can't be empty! `,
-                        status: "warning",
-                        duration: 6000, //in second
-                    })
-                    console.log(err.data)
-
-                });
+            navigate('/');
+            setCredentials({
+                password: '',
+                confirmpassword: ''
+            });
+            setFormError('');
+        } catch (err: any) {
+            toast({
+                title: "Error!",
+                description: err.response?.data?.message || 'An error occurred',
+                variant: "destructive",
+                duration: 6000,
+            });
+            console.log(err);
         }
-
-        // Check if passwords match
-
-
-
     };
 
     return (
@@ -137,10 +107,15 @@ const RecoveryForm = () => {
 
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <strong>Create New Password</strong>
+                            {formError && <small className="text-red-500 text-xs block mt-1">{formError}</small>}
+                        </div>
+                        
                         <Input
                             id="password"
                             type="password"
-                            placeholder="Enter your password"
+                            placeholder="Enter your new password"
                             value={credentials.password}
                             onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                             required
@@ -149,7 +124,7 @@ const RecoveryForm = () => {
                         <Input
                             id="confirmpassword"
                             type="password"
-                            placeholder="Confirm your password"
+                            placeholder="Confirm your new password"
                             value={credentials.confirmpassword}
                             onChange={(e) => setCredentials({ ...credentials, confirmpassword: e.target.value })}
                             required
@@ -159,44 +134,6 @@ const RecoveryForm = () => {
                             Reset Password
                         </Button>
                     </form>
-
-
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <strong>Create New Password</strong>
-                            <small className="text-red-500 text-xs">{formError}</small>
-                            <Input
-                                id="username"
-                                type="password"
-                                placeholder="Enter your password"
-                                value={credentials.password}
-                                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                                required
-                            />
-
-
-                            <Input
-                                id="username"
-                                type="password"
-                                placeholder="Confirm your password"
-                                value={credentials.confirmpassword}
-                                onChange={(e) => setCredentials({ ...credentials, confirmpassword: e.target.value })}
-                                required
-                            />
-
-
-                            <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800">
-
-                                Reset Password
-                            </Button>
-
-
-                        </form>
-
-                    </>
-
-
-
 
                     <div className="mt-6 text-center text-sm text-gray-500">
                         <p>For technical support, contact IT Department</p>
