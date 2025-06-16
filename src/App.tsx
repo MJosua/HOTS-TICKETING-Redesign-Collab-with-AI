@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
@@ -24,6 +23,7 @@ import Login from "./pages/login/Loginpage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import TicketDetail from "./pages/TicketDetail";
 import RecoveryForm from "./pages/login/form/Recoveryform";
+import { FormConfig } from "@/types/formTypes";
 
 // Create QueryClient instance outside of component to avoid recreation
 const queryClient = new QueryClient({
@@ -36,7 +36,7 @@ const queryClient = new QueryClient({
 });
 
 // IT Support form configuration
-const itSupportConfig = {
+const itSupportConfig: FormConfig = {
   url: "/it-support",
   title: "IT Support Request",
   fields: [
@@ -65,7 +65,7 @@ const itSupportConfig = {
   }
 };
 
-const assetRequest = {
+const assetRequest: FormConfig = {
   url: "/asset-request",
   title: "Laptop Asset Request",
   fields: [
@@ -102,11 +102,11 @@ const assetRequest = {
   ],
   approval: {
     steps: ["Supervisor", "IT Team"],
-    mode: "sequential"
+    mode: "sequential" as const
   }
 };
 
-const ideaBank = {
+const ideaBank: FormConfig = {
   url: "/idea-bank",
   title: "Idea Bank",
   fields: [
@@ -131,7 +131,7 @@ const ideaBank = {
   ]
 };
 
-const srForm = {
+const srForm: FormConfig = {
   url: "/sample-request-form",
   title: "Sample Request Form",
   sections: [
@@ -187,7 +187,6 @@ const srForm = {
     action: "/submit-sample-request"
   }
 };
-
 
 const App = () => {
   const handleITSupportSubmit = (data: any) => {

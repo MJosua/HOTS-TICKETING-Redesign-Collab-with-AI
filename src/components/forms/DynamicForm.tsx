@@ -8,7 +8,7 @@ import ProgressionBar from '@/components/ui/ProgressionBar';
 import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
-import { FormConfig, FormField, RowGroup } from '@/types/formTypes';
+import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
 
 interface DynamicFormProps {
   config: FormConfig;
@@ -99,7 +99,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
   const renderSections = () => {
     if (!config.sections) return null;
 
-    return config.sections.map((section, sectionIndex) => (
+    return config.sections.map((section: FormSection, sectionIndex) => (
       <div key={`section-${sectionIndex}`} className="mb-6">
         <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
         
