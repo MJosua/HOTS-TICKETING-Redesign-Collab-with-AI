@@ -12,22 +12,22 @@ import { useNavigate } from 'react-router-dom';
 
 // Icon mapping for categories
 const categoryIcons: Record<string, any> = {
-  'Hardware': Monitor,
-  'Software': Database,
-  'Support': Wrench,
+  'IT': Monitor,
+  'Marketing': Database,
+  'General': Wrench,
   'HRGA': Users,
-  'Marketing': FileText,
-  'Operations': FileText,
+  'Accounting': FileText,
+  'Freight': FileText,
 };
 
 // Color mapping for categories
 const categoryColors: Record<string, string> = {
-  'Hardware': 'bg-orange-100 text-orange-600',
-  'Software': 'bg-purple-100 text-purple-600',
-  'Support': 'bg-blue-100 text-blue-600',
+  'IT': 'bg-orange-100 text-orange-600',
+  'Marketing': 'bg-purple-100 text-purple-600',
+  'General': 'bg-blue-100 text-blue-600',
   'HRGA': 'bg-green-100 text-green-600',
-  'Marketing': 'bg-pink-100 text-pink-600',
-  'Operations': 'bg-indigo-100 text-indigo-600',
+  'Accounting': 'bg-pink-100 text-pink-600',
+  'Freight': 'bg-indigo-100 text-indigo-600',
 };
 
 // Service icon mapping
