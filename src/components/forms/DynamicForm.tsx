@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
-import { ProgressionBar } from '@/components/ui/ProgressionBar';
+import ProgressionBar from '@/components/ui/ProgressionBar';
 import { DynamicField } from './DynamicField';
 import { RepeatingSection } from './RepeatingSection';
 

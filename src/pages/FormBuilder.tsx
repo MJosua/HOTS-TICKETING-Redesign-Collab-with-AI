@@ -31,7 +31,7 @@ const FormBuilder = () => {
       ],
       "approval": {
         "steps": ["Supervisor", "IT Team"],
-        "mode": "sequential"
+        "mode": "sequential" as const
       }
     },
     {
@@ -71,7 +71,7 @@ const FormBuilder = () => {
       ],
       "approval": {
         "steps": ["Supervisor", "IT Team"],
-        "mode": "sequential"
+        "mode": "sequential" as const
       }
     },
     {
