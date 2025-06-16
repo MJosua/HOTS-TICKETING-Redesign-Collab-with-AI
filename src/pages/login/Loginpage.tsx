@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import { useAppDispatch } from '@/hooks/useAppDispatch';
 import { resetLoginAttempts } from '@/store/slices/authSlice';
-import Loginform from './form/loginform';
-import Forgotpassform from './form/forgotpassform';
-import Lockedaccount from './form/lockedaccount';
+import Loginform from './form/Loginform';
+import Forgotpassform from './form/Forgotpassform';
+import Lockedaccount from './form/Lockedaccount';
 
 const Login = () => {
   const navigate = useNavigate();

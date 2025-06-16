@@ -7,11 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import axios, { Axios } from "axios";
 import { API_URL } from "../../../config/sourceConfig";
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import Lockedaccount from "./lockedaccount";
 
-const RecoveryForm = ({
-}) => {
+const RecoveryForm = () => {
     const { toast } = useToast();
     const [error, setError] = useState('');
     const navigate = useNavigate()
@@ -23,7 +23,6 @@ const RecoveryForm = ({
         confirmpassword: ''
     });
 
-
     const onChecker = async () => {
         await axios.get(
             API_URL + "/hots_auth/verify-token", {
@@ -34,21 +33,12 @@ const RecoveryForm = ({
         )
             .then((res) => {
                 if (res.data.success) {
-                    // setValid(true);
-                    // setLoading(false);
-
                     console.log("true");
                 } else {
-                    // setValid(true);
                     console.log("false");
-                    // setLoading(true);
-
                 }
             })
             .catch((err) => {
-                // setValid(false);
-                // setLoading(false);
-
                 console.log("Error", err);
             });
     }
@@ -146,9 +136,29 @@ const RecoveryForm = ({
                 </CardHeader>
 
                 <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <Input
+                            id="password"
+                            type="password"
+                            placeholder="Enter your password"
+                            value={credentials.password}
+                            onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                            required
+                        />
 
+                        <Input
+                            id="confirmpassword"
+                            type="password"
+                            placeholder="Confirm your password"
+                            value={credentials.confirmpassword}
+                            onChange={(e) => setCredentials({ ...credentials, confirmpassword: e.target.value })}
+                            required
+                        />
 
-                    <>
+                        <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800">
+                            Reset Password
+                        </Button>
+                    </form>
 
 
 
@@ -192,7 +202,6 @@ const RecoveryForm = ({
                         <p>For technical support, contact IT Department</p>
                     </div>
                 </CardContent>
-
             </Card>
         </div>
     );
