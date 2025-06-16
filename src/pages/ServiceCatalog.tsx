@@ -7,6 +7,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { searchInObject } from '@/utils/searchUtils';
 import { renderHighlightedText } from '@/utils/renderhighlight';
 import { useCatalogData } from '@/hooks/useCatalogData';
+import { useNavigate } from 'react-router-dom';
 
 // Icon mapping for categories
 const categoryIcons: Record<string, any> = {
@@ -103,6 +104,9 @@ const ServiceCatalog = () => {
     );
   }
 
+
+  const navigate= useNavigate();  
+
   return (
     <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search services...">
       <div className="space-y-6">
@@ -146,7 +150,7 @@ const ServiceCatalog = () => {
                         variant="outline"
                         size="sm"
                         className="w-full"
-                        onClick={() => window.location.href = service.url}
+                        onClick={() => navigate(`/service-catalog${service.url}`)}
                       >
                         Request Service
                       </Button>

@@ -63,6 +63,130 @@ const itSupportConfig = {
   }
 };
 
+const assetRequest = {
+  url: "/asset-request",
+  title: "Laptop Asset Request",
+  fields: [
+    {
+      label: "Job Description**",
+      placeholder: "Please describe your specific part of the job for why you need another laptop",
+      type: "textarea",
+      required: true
+    },
+    {
+      label: "Laptop Specification *",
+      type: "radio",
+      required: true,
+      options: ["Standard", "Analyst", "Marketing"]
+    },
+    {
+      label: "Do you have an Indofood asset PC/Laptop that you are currently using?",
+      type: "toggle",
+      default: "off"
+    },
+    {
+      label: "Date of Acquisition of the Used Asset *",
+      type: "date",
+      required: true,
+      uiCondition: "show if toggle is on"
+    },
+    {
+      label: "Used Laptop Specification**",
+      type: "select",
+      options: ["Standard", "Analyst", "Marketing"],
+      required: false,
+      uiCondition: "show if toggle is on"
+    }
+  ],
+  approval: {
+    steps: ["Supervisor", "IT Team"],
+    mode: "sequential"
+  }
+};
+
+const ideaBank = {
+  url: "/idea-bank",
+  title: "Idea Bank",
+  fields: [
+    {
+      label: "Issue Detail*",
+      placeholder: "Please provide a detailed description of the issues you're experiencing",
+      type: "textarea",
+      required: true
+    },
+    {
+      label: "Issue Solution*",
+      placeholder: "You may not have any solution, but if you have, please provide a detailed description of solution you're thinking",
+      type: "textarea",
+      required: true
+    },
+    {
+      label: "Attachment*",
+      note: "Attachment cannot exceed 5 MB in size.",
+      type: "file",
+      accept: ["image/*", "pdf", "docx"]
+    }
+  ]
+};
+
+const srForm = {
+  url: "/sample-request-form",
+  title: "Sample Request Form",
+  sections: [
+    {
+      title: "Data",
+      fields: [
+        { label: "Request By", type: "text", readonly: true, value: "Yosua Gultom", required: true },
+        { label: "Division", type: "text", readonly: true, value: "IOD", required: true },
+        { label: "Location", type: "text", readonly: true, value: "INDOFOOD TOWER LT.23", required: true },
+        { label: "Sample Category", type: "select", options: [], required: true },
+        { label: "Plant", type: "select", options: [], required: true },
+        { label: "Deliver To", type: "select", options: [], required: true },
+        { label: "SRF No", type: "text", value: "XXX", required: true },
+        { label: "Purpose", type: "text", placeholder: "purpose", required: true }
+      ]
+    },
+    {
+      title: "Item",
+      repeatable: true,
+      fields: [
+        { label: "Item Name", type: "text", required: true },
+        { label: "Quantity", type: "number", required: true }
+      ],
+      addButton: "Add Item",
+      summary: {
+        label: "Total",
+        type: "number",
+        calculated: true
+      }
+    },
+    {
+      title: "Notes",
+      fields: [
+        { label: "Notes", type: "textarea", placeholder: "notes", required: false }
+      ]
+    },
+    {
+      title: "Upload",
+      fields: [
+        {
+          label: "Upload Files",
+          type: "file",
+          accept: ["image/*", "pdf", "docx"],
+          maxSizeMB: 5,
+          multiple: true
+        }
+      ]
+    }
+  ],
+  submit: {
+    label: "Submit",
+    type: "button",
+    action: "/submit-sample-request"
+  }
+};
+
+
 const App = () => {
   const handleITSupportSubmit = (data: any) => {
     console.log('IT Support form submitted:', data);
@@ -85,12 +209,56 @@ const App = () => {
               } />
 
               <Route path="/forgot-password/:token" element={<RecoveryForm />} />
-              
+
               <Route path="/service-catalog" element={
                 <ProtectedRoute>
                   <ServiceCatalog />
                 </ProtectedRoute>
               } />
+
+              <Route path="/service-catalog/asset-request" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <DynamicForm
+                      config={assetRequest}
+                      onSubmit={handleITSupportSubmit}
+                    />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/service-catalog/it-support" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <DynamicForm
+                      config={itSupportConfig}
+                      onSubmit={handleITSupportSubmit}
+                    />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/service-catalog/idea-bank" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <DynamicForm
+                      config={ideaBank}
+                      onSubmit={handleITSupportSubmit}
+                    />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/service-catalog/sample-request-form" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <DynamicForm
+                      config={srForm}
+                      onSubmit={handleITSupportSubmit}
+                    />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+
               <Route path="/task-list" element={
                 <ProtectedRoute>
                   <TaskList />
@@ -113,26 +281,7 @@ const App = () => {
                   </AppLayout>
                 </ProtectedRoute>
               } />
-              <Route path="/asset-request" element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <div className="text-center py-12">
-                      <h1 className="text-2xl font-bold text-gray-900 mb-4">Asset Request Form</h1>
-                      <p className="text-gray-600">This form is under development</p>
-                    </div>
-                  </AppLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/it-support" element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <DynamicForm 
-                      config={itSupportConfig}
-                      onSubmit={handleITSupportSubmit}
-                    />
-                  </AppLayout>
-                </ProtectedRoute>
-              } />
+
               <Route path="/admin/settings" element={
                 <ProtectedRoute>
                   <SystemSettings />
