@@ -18,8 +18,8 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
   const addRowGroup = () => {
     const newRowGroup: RowGroup = {
       rowGroup: [
-        { label: 'New Field 1', type: 'text', required: false },
-        { label: 'New Field 2', type: 'text', required: false }
+        { label: 'New Field 1', name: 'new_field_1', type: 'text', required: false },
+        { label: 'New Field 2', name: 'new_field_2', type: 'text', required: false }
       ]
     };
     onUpdate([...rowGroups, newRowGroup]);
@@ -49,8 +49,10 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
   const addFieldToRow = (groupIndex: number) => {
     const updated = [...rowGroups];
     if (updated[groupIndex].rowGroup.length < 3) {
+      const fieldNumber = updated[groupIndex].rowGroup.length + 1;
       updated[groupIndex].rowGroup.push({
-        label: `New Field ${updated[groupIndex].rowGroup.length + 1}`,
+        label: `New Field ${fieldNumber}`,
+        name: `new_field_${groupIndex}_${fieldNumber}`,
         type: 'text',
         required: false
       });
@@ -162,13 +164,25 @@ const FieldInRowEditor: React.FC<FieldInRowEditorProps> = ({ field, onUpdate, on
     onUpdate({ ...field, ...updates });
   };
 
+  const generateFieldName = (label: string) => {
+    return label.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  };
+
+  const handleLabelChange = (label: string) => {
+    const suggestedName = generateFieldName(label);
+    updateField({ 
+      label, 
+      name: field.name || suggestedName 
+    });
+  };
+
   return (
     <Card className="p-3 border border-muted">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Input
             value={field.label}
-            onChange={(e) => updateField({ label: e.target.value })}
+            onChange={(e) => handleLabelChange(e.target.value)}
             placeholder="Field Label"
             className="text-sm font-medium"
           />
@@ -178,6 +192,13 @@ const FieldInRowEditor: React.FC<FieldInRowEditorProps> = ({ field, onUpdate, on
             </Button>
           )}
         </div>
+
+        <Input
+          value={field.name}
+          onChange={(e) => updateField({ name: e.target.value })}
+          placeholder="field_name"
+          className="text-xs"
+        />
 
         <div className="grid grid-cols-2 gap-2">
           <Select value={field.type} onValueChange={(value) => updateField({ type: value })}>

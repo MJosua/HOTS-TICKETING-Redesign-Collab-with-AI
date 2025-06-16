@@ -45,15 +45,15 @@ const ServiceFormEditor = () => {
         apiEndpoint: '/api/it-support',
         approval: { steps: ['Supervisor', 'IT Team'], mode: 'sequential' },
         fields: [
-          { label: 'Type of Support', type: 'select', options: ['Hardware', 'Software', 'Account'], required: true },
-          { label: 'Issue Description', type: 'textarea', required: true }
+          { label: 'Type of Support', name: 'support_type', type: 'select', options: ['Hardware', 'Software', 'Account'], required: true },
+          { label: 'Issue Description', name: 'issue_description', type: 'textarea', required: true }
         ],
         rowGroups: [
           {
             rowGroup: [
-              { label: 'Priority', type: 'select', options: ['High', 'Medium', 'Low'], required: true },
-              { label: 'Department', type: 'text', required: true },
-              { label: 'Due Date', type: 'date', required: false }
+              { label: 'Priority', name: 'priority', type: 'select', options: ['High', 'Medium', 'Low'], required: true },
+              { label: 'Department', name: 'department', type: 'text', required: true },
+              { label: 'Due Date', name: 'due_date', type: 'date', required: false }
             ]
           }
         ]
