@@ -12,8 +12,12 @@ interface DynamicServiceRoutesProps {
 export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
   const { serviceCatalog, isLoading } = useCatalogData();
 
-  // Don't render routes while loading
+  console.log('useDynamicServiceRoutes - isLoading:', isLoading);
+  console.log('useDynamicServiceRoutes - serviceCatalog:', serviceCatalog);
+
+  // Return empty array while loading to avoid issues
   if (isLoading) {
+    console.log('Still loading, returning empty routes array');
     return [];
   }
 
@@ -22,22 +26,30 @@ export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
     service => service.active === 1 && service.nav_link && service.nav_link.trim() !== ''
   );
 
-  return activeServices.map((service) => (
-    <Route
-      key={service.service_id}
-      path={`/service-catalog/${service.nav_link}`}
-      element={
-        <ProtectedRoute>
-          <AppLayout>
-            <CatalogFormLoader
-              servicePath={service.nav_link}
-              onSubmit={onSubmit}
-            />
-          </AppLayout>
-        </ProtectedRoute>
-      }
-    />
-  ));
+  console.log('Active services for routing:', activeServices);
+
+  const routes = activeServices.map((service) => {
+    console.log(`Creating route for service: ${service.service_name} with nav_link: ${service.nav_link}`);
+    return (
+      <Route
+        key={service.service_id}
+        path={`/service-catalog/${service.nav_link}`}
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <CatalogFormLoader
+                servicePath={service.nav_link}
+                onSubmit={onSubmit}
+              />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+    );
+  });
+
+  console.log('Generated routes count:', routes.length);
+  return routes;
 };
 
 // Keep the original component for backward compatibility but mark it as deprecated
