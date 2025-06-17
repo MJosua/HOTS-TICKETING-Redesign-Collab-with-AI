@@ -1,13 +1,12 @@
-
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Users, Monitor } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import DivisionModal from "@/components/modals/DivisionModal";
-import DeleteConfirmModal from "@/components/modals/DeleteConfirmModal";
 
 interface Division {
   id: string;
@@ -280,13 +279,22 @@ const DivisionManagement = () => {
           onSave={handleSaveDivision}
         />
 
-        <DeleteConfirmModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => setIsDeleteModalOpen(false)}
-          onConfirm={handleConfirmDelete}
-          title="Delete Division"
-          description={`Are you sure you want to delete "${selectedDivision?.name}"? This action cannot be undone and will affect all employees in this division.`}
-        />
+        <AlertDialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Division</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{selectedDivision?.name}"? This action cannot be undone and will affect all employees in this division.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
