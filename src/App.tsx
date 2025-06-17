@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
@@ -10,6 +9,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { CatalogFormLoader } from "@/components/forms/CatalogFormLoader";
 import { FormConfig } from "@/types/formTypes";
+import { useTokenExpiration } from "@/hooks/useTokenExpiration";
+import TokenExpiredModal from "@/components/modals/TokenExpiredModal";
 import Index from "./pages/Index";
 import ServiceCatalog from "./pages/ServiceCatalog";
 import TaskList from "./pages/TaskList";
@@ -289,139 +290,155 @@ const srForm: FormConfig = {
 };
 
 
-const App = () => {
+const AppContent = () => {
+  const { isTokenExpiredModalOpen, closeTokenExpiredModal, username } = useTokenExpiration();
+
   const handleFormSubmit = (data: any) => {
     console.log('Form submitted:', data);
     // Handle form submission logic here
   };
 
   return (
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Index />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/forgot-password/:token" element={<RecoveryForm />} />
+
+          <Route path="/service-catalog" element={
+            <ProtectedRoute>
+              <ServiceCatalog />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/service-catalog/asset-request" element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CatalogFormLoader
+                  servicePath="asset-request"
+                  onSubmit={handleFormSubmit}
+                />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/service-catalog/it-support" element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CatalogFormLoader
+                  servicePath="it-support"
+                  onSubmit={handleFormSubmit}
+                />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/service-catalog/idea-bank" element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CatalogFormLoader
+                  servicePath="idea-bank"
+                  onSubmit={handleFormSubmit}
+                />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/service-catalog/sample-request-form" element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CatalogFormLoader
+                  servicePath="sample-request-form"
+                  onSubmit={handleFormSubmit}
+                />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/task-list" element={
+            <ProtectedRoute>
+              <TaskList />
+            </ProtectedRoute>
+          } />
+          <Route path="/my-tickets" element={
+            <ProtectedRoute>
+              <MyTickets />
+            </ProtectedRoute>
+          } />
+          <Route path="/ticket/:id" element={
+            <ProtectedRoute>
+              <TicketDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/goods-request" element={
+            <ProtectedRoute>
+              <AppLayout>
+                <GoodsRequest />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/settings" element={
+            <ProtectedRoute>
+              <SystemSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users" element={
+            <ProtectedRoute>
+              <UserManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/divisions" element={
+            <ProtectedRoute>
+              <DivisionManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/service-catalog" element={
+            <ProtectedRoute>
+              <ServiceCatalogAdmin />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/service-catalog/create" element={
+            <ProtectedRoute>
+              <ServiceFormEditor />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/service-catalog/edit/:id" element={
+            <ProtectedRoute>
+              <ServiceFormEditor />
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={
+            <AppLayout>
+              <NotFound />
+            </AppLayout>
+          } />
+        </Routes>
+      </BrowserRouter>
+      
+      <TokenExpiredModal
+        isOpen={isTokenExpiredModalOpen}
+        onClose={closeTokenExpiredModal}
+        username={username}
+      />
+    </>
+  );
+};
+
+const App = () => {
+  return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
-
-              <Route path="/forgot-password/:token" element={<RecoveryForm />} />
-
-              <Route path="/service-catalog" element={
-                <ProtectedRoute>
-                  <ServiceCatalog />
-                </ProtectedRoute>
-              } />
-
-              <Route path="/service-catalog/asset-request" element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <CatalogFormLoader
-                      servicePath="asset-request"
-                      onSubmit={handleFormSubmit}
-                    />
-                  </AppLayout>
-                </ProtectedRoute>
-              } />
-
-              <Route path="/service-catalog/it-support" element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <CatalogFormLoader
-                      servicePath="it-support"
-                      onSubmit={handleFormSubmit}
-                    />
-                  </AppLayout>
-                </ProtectedRoute>
-              } />
-
-              <Route path="/service-catalog/idea-bank" element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <CatalogFormLoader
-                      servicePath="idea-bank"
-                      onSubmit={handleFormSubmit}
-                    />
-                  </AppLayout>
-                </ProtectedRoute>
-              } />
-
-              <Route path="/service-catalog/sample-request-form" element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <CatalogFormLoader
-                      servicePath="sample-request-form"
-                      onSubmit={handleFormSubmit}
-                    />
-                  </AppLayout>
-                </ProtectedRoute>
-              } />
-
-              <Route path="/task-list" element={
-                <ProtectedRoute>
-                  <TaskList />
-                </ProtectedRoute>
-              } />
-              <Route path="/my-tickets" element={
-                <ProtectedRoute>
-                  <MyTickets />
-                </ProtectedRoute>
-              } />
-              <Route path="/ticket/:id" element={
-                <ProtectedRoute>
-                  <TicketDetail />
-                </ProtectedRoute>
-              } />
-              <Route path="/goods-request" element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <GoodsRequest />
-                  </AppLayout>
-                </ProtectedRoute>
-              } />
-
-              <Route path="/admin/settings" element={
-                <ProtectedRoute>
-                  <SystemSettings />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/users" element={
-                <ProtectedRoute>
-                  <UserManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/divisions" element={
-                <ProtectedRoute>
-                  <DivisionManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/service-catalog" element={
-                <ProtectedRoute>
-                  <ServiceCatalogAdmin />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/service-catalog/create" element={
-                <ProtectedRoute>
-                  <ServiceFormEditor />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/service-catalog/edit/:id" element={
-                <ProtectedRoute>
-                  <ServiceFormEditor />
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={
-                <AppLayout>
-                  <NotFound />
-                </AppLayout>
-              } />
-            </Routes>
-          </BrowserRouter>
+          <AppContent />
         </TooltipProvider>
       </QueryClientProvider>
     </Provider>
