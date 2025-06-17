@@ -78,7 +78,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" hideClose>
+      <DialogContent className="sm:max-w-md [&>button]:hidden">
         <div className="absolute right-4 top-4 z-10">
           <Button
             variant="ghost"
