@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { DynamicForm } from './DynamicForm';
 import { FormSkeleton } from '@/components/ui/FormSkeleton';
@@ -13,6 +12,67 @@ interface CatalogFormLoaderProps {
   onSubmit: (data: any) => void;
 }
 
+// Default fallback form configuration for services with invalid JSON
+const getDefaultFormConfig = (serviceName: string, servicePath: string): FormConfig => ({
+  url: `/${servicePath}`,
+  title: serviceName,
+  description: "Please provide the following information for your request.",
+  fields: [
+    {
+      label: "Subject*",
+      name: "subject",
+      type: "text",
+      placeholder: "Enter the subject of your request",
+      required: true,
+      columnSpan: 3
+    },
+    {
+      label: "Priority",
+      name: "priority",
+      type: "select",
+      options: ["High", "Medium", "Low"],
+      required: true,
+      columnSpan: 1
+    },
+    {
+      label: "Category",
+      name: "category",
+      type: "select",
+      options: ["General", "Technical", "Administrative"],
+      required: true,
+      columnSpan: 1
+    },
+    {
+      label: "Department",
+      name: "department",
+      type: "text",
+      placeholder: "Your department",
+      required: false,
+      columnSpan: 1
+    },
+    {
+      label: "Description*",
+      name: "description",
+      type: "textarea",
+      placeholder: "Please provide a detailed description of your request",
+      required: true,
+      columnSpan: 3
+    },
+    {
+      label: "Attachment",
+      name: "attachment",
+      type: "file",
+      accept: ["image/*", "pdf", "docx"],
+      maxSizeMB: 5,
+      columnSpan: 3
+    }
+  ],
+  approval: {
+    steps: ["Supervisor"],
+    mode: "sequential" as const
+  }
+});
+
 export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePath, onSubmit }) => {
   const navigate = useNavigate();
   const { serviceCatalog, categoryList, isLoading: catalogLoading, fetchData } = useCatalogData();
@@ -20,6 +80,7 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [serviceInfo, setServiceInfo] = useState<any>(null);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -37,17 +98,28 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
 
       setServiceInfo(service);
 
+      // Try to parse form_json, fall back to default if invalid
       if (service.form_json && service.form_json.trim() !== '') {
         try {
           const parsedConfig = JSON.parse(service.form_json);
           setFormConfig(parsedConfig);
+          setUsingFallback(false);
           setError(null);
         } catch (parseError) {
-          console.error(`Failed to parse form_json for service ${service.service_id}:`, parseError);
-          setError('Invalid form configuration');
+          console.warn(`Invalid form_json for service ${service.service_id}, using fallback form:`, parseError);
+          // Use default form configuration
+          const defaultConfig = getDefaultFormConfig(service.service_name, servicePath);
+          setFormConfig(defaultConfig);
+          setUsingFallback(true);
+          setError(null);
         }
       } else {
-        setError('No form configuration available');
+        console.warn(`No form_json for service ${service.service_id}, using fallback form`);
+        // Use default form configuration
+        const defaultConfig = getDefaultFormConfig(service.service_name, servicePath);
+        setFormConfig(defaultConfig);
+        setUsingFallback(true);
+        setError(null);
       }
       
       setIsLoading(false);
@@ -130,6 +202,11 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
           <div className={`px-4 py-2 rounded-full text-sm font-medium ${getCategoryColor(serviceInfo.category_id)}`}>
             <span className="mr-2">{getCategoryIcon(serviceInfo.category_id)}</span>
             {getCategoryName(serviceInfo.category_id)} - {serviceInfo.service_name}
+          </div>
+        )}
+        {usingFallback && (
+          <div className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+            Using Default Form
           </div>
         )}
       </div>
