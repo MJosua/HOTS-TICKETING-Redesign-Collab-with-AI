@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { FormField } from '@/types/formTypes';
 
 interface DynamicFieldEditorProps {
@@ -17,10 +16,17 @@ interface DynamicFieldEditorProps {
 export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, onUpdate }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
+  const generateFieldName = (label: string) => {
+    return label.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '') // Remove special characters except spaces
+      .replace(/\s+/g, '_') // Replace spaces with underscores
+      .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+  };
+
   const addField = () => {
     const newField: FormField = {
       label: 'New Field',
-      name: `new_field_${Date.now()}`,
+      name: 'new_field',
       type: 'text',
       required: false,
       columnSpan: 1
@@ -53,10 +59,6 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
     return !fields.some((field, index) => 
       index !== currentIndex && field.name === name
     );
-  };
-
-  const generateFieldName = (label: string) => {
-    return label.toLowerCase().replace(/[^a-z0-9]/g, '_');
   };
 
   const renderFieldsPreview = () => {
@@ -108,10 +110,16 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Form Fields</h3>
-        <Button size="sm" onClick={addField}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Field
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => onUpdate([...fields])}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button size="sm" onClick={addField}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Field
+          </Button>
+        </div>
       </div>
 
       {renderFieldsPreview()}
@@ -180,7 +188,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     const suggestedName = generateFieldName(label);
     updateField({ 
       label, 
-      name: field.name || suggestedName 
+      name: suggestedName // Auto-generate name from label
     });
   };
 
@@ -246,6 +254,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               className={nameError ? 'border-red-500' : ''}
             />
             {nameError && <p className="text-xs text-red-500 mt-1">{nameError}</p>}
+            <p className="text-xs text-gray-500 mt-1">Auto-generated from label, can be edited</p>
           </div>
         </div>
 

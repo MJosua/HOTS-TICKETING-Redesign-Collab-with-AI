@@ -1,16 +1,16 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FormConfig } from '@/types/formTypes';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { FormSkeleton } from '@/components/ui/FormSkeleton';
-import DeleteConfirmModal from '@/components/modals/DeleteConfirmModal';
 import {
   Table,
   TableBody,
@@ -19,6 +19,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +42,7 @@ const ServiceCatalogAdmin = () => {
     serviceName: ''
   });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
   
   const {
     serviceCatalog,
@@ -151,6 +162,28 @@ const ServiceCatalogAdmin = () => {
     setDeleteModal({ isOpen: false, serviceId: '', serviceName: '' });
   };
 
+  const handleReload = async () => {
+    setIsReloading(true);
+    try {
+      await fetchData();
+      toast({
+        title: "Success",
+        description: "Service catalog data refreshed successfully",
+        variant: "default",
+        duration: 2000
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh data",
+        variant: "destructive",
+        duration: 3000
+      });
+    } finally {
+      setIsReloading(false);
+    }
+  };
+
   const handleCreate = () => {
     navigate('/admin/service-catalog/create');
   };
@@ -224,10 +257,21 @@ const ServiceCatalogAdmin = () => {
               <p className="text-gray-600">Manage dynamic service forms and their configurations</p>
             </div>
           </div>
-          <Button onClick={handleCreate} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Create Form
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleReload} 
+              disabled={isReloading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${isReloading ? 'animate-spin' : ''}`} />
+              Reload
+            </Button>
+            <Button onClick={handleCreate} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Create Form
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -243,7 +287,19 @@ const ServiceCatalogAdmin = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Service Forms ({filteredForms.length})</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Service Forms ({filteredForms.length})</CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleReload} 
+                disabled={isReloading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`w-3 h-3 ${isReloading ? 'animate-spin' : ''}`} />
+                Reload
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -303,6 +359,14 @@ const ServiceCatalogAdmin = () => {
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleReload}
+                            disabled={isReloading}
+                          >
+                            <RefreshCw className={`w-3 h-3 ${isReloading ? 'animate-spin' : ''}`} />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -313,16 +377,32 @@ const ServiceCatalogAdmin = () => {
           </CardContent>
         </Card>
 
-        <DeleteConfirmModal
-          isOpen={deleteModal.isOpen}
-          onClose={handleDeleteCancel}
-          onConfirm={handleDeleteConfirm}
-          title="Delete Service Catalog"
-          description={`Are you sure you want to delete "${deleteModal.serviceName}"? This action cannot be undone and will remove the service form and all its configurations.`}
-        />
+        <AlertDialog open={deleteModal.isOpen} onOpenChange={handleDeleteCancel}>
+          <AlertDialogContent className="bg-white border border-gray-200 shadow-lg z-50">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-red-600">Delete Service Catalog</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-600">
+                Are you sure you want to delete "<strong>{deleteModal.serviceName}</strong>"? This action cannot be undone and will remove the service form and all its configurations.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 rounded-b-lg">
+              <AlertDialogCancel onClick={handleDeleteCancel} className="bg-white border-gray-300">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteConfirm} 
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
 };
 
 export default ServiceCatalogAdmin;
+
