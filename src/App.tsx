@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
@@ -291,8 +290,6 @@ const srForm: FormConfig = {
 
 
 const AppContent = () => {
-  const { isTokenExpiredModalOpen, closeTokenExpiredModal, username } = useTokenExpiration();
-
   const handleFormSubmit = (data: any) => {
     console.log('Form submitted:', data);
     // Handle form submission logic here
@@ -420,13 +417,9 @@ const AppContent = () => {
             </AppLayout>
           } />
         </Routes>
+        
+        <TokenExpiredModalWrapper />
       </BrowserRouter>
-      
-      <TokenExpiredModal
-        isOpen={isTokenExpiredModalOpen}
-        onClose={closeTokenExpiredModal}
-        username={username}
-      />
     </>
   );
 };
