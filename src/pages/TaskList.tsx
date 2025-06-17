@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,12 @@ import { useNavigate } from 'react-router-dom';
 import ProgressionBar from "@/components/ui/ProgressionBar";
 import { highlightSearchTerm, searchInObject } from "@/utils/searchUtils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Grid, List } from 'lucide-react';
+import { Grid, List, RefreshCw } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
+import { fetchTaskList } from '@/store/slices/ticketsSlice';
+import { convertTicketToDisplayFormat, getStatusColor, getPriorityColor } from '@/utils/ticketUtils';
+import { TicketPagination } from '@/components/ui/TicketPagination';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const TaskList = () => {
   const [searchValue, setSearchValue] = useState('');
@@ -17,53 +22,15 @@ const TaskList = () => {
   const [filterPriority, setFilterPriority] = useState('all');
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
-  // Mock data with approval steps
-  const [tasks] = useState([
-    {
-      id: "SPB-2024-001",
-      type: "Surat Permintaan Barang",
-      requester: "Ahmad Rahman",
-      department: "Produksi",
-      priority: "High",
-      created: "2024-06-10",
-      amount: "Rp 2,500,000",
-      status: "Pending Approval",
-      approvalSteps: [
-        { id: '1', name: 'Supervisor', status: 'approved' as const },
-        { id: '2', name: 'Manager', status: 'pending' as const },
-        { id: '3', name: 'Director', status: 'waiting' as const },
-      ]
-    },
-    {
-      id: "IT-2024-045",
-      type: "IT Support Request",
-      requester: "Sari Dewi",
-      department: "Finance",
-      priority: "Medium",
-      created: "2024-06-11",
-      amount: "-",
-      status: "In Progress",
-      approvalSteps: [
-        { id: '1', name: 'IT Manager', status: 'approved' as const },
-        { id: '2', name: 'Head of IT', status: 'approved' as const },
-      ]
-    },
-    {
-      id: "AST-2024-078",
-      type: "Asset Request",
-      requester: "Budi Santoso",
-      department: "HR",
-      priority: "Low",
-      created: "2024-06-09",
-      amount: "Rp 1,200,000",
-      status: "Approved",
-      approvalSteps: [
-        { id: '1', name: 'HR Manager', status: 'approved' as const },
-        { id: '2', name: 'Finance Manager', status: 'approved' as const },
-        { id: '3', name: 'Director', status: 'approved' as const },
-      ]
-    }
-  ]);
+  const dispatch = useAppDispatch();
+  const { taskList } = useAppSelector((state) => state.tickets);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    dispatch(fetchTaskList(1));
+  }, [dispatch]);
+
+  const tasks = taskList.data.map(convertTicketToDisplayFormat);
 
   const filteredTasks = tasks.filter(task => {
     const statusFilter = filterStatus === 'all' || task.status === filterStatus;
@@ -73,29 +40,16 @@ const TaskList = () => {
     return statusFilter && priorityFilter && searchFilter;
   });
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High": return "bg-red-100 text-red-800 border-red-200";
-      case "Medium": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "Low": return "bg-green-100 text-green-800 border-green-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Pending Approval": return "bg-yellow-100 text-orange-800 border-orange-200";
-      case "In Progress": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Approved": return "bg-green-100 text-green-800 border-green-200";
-      case "Rejected": return "bg-red-100 text-red-800 border-red-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const navigate = useNavigate();
-
   const handleRowClick = (taskId: string) => {
     navigate(`/ticket/${taskId}`);
+  };
+
+  const handlePageChange = (page: number) => {
+    dispatch(fetchTaskList(page));
+  };
+
+  const handleRefresh = () => {
+    dispatch(fetchTaskList(taskList.currentPage));
   };
 
   const renderHighlightedText = (text: string) => {
@@ -121,7 +75,6 @@ const TaskList = () => {
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Department</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Priority</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Progress</TableHead>
-                {/* <TableHead className="text-xs font-medium text-muted-foreground uppercase">Status</TableHead> */}
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Amount</TableHead>
               </TableRow>
             </TableHeader>
@@ -152,11 +105,6 @@ const TaskList = () => {
                   <TableCell>
                     <ProgressionBar steps={task.approvalSteps} />
                   </TableCell>
-                  {/* <TableCell>
-                    <Badge className={`${getStatusColor(task.status)} border`}>
-                      {renderHighlightedText(task.status)}
-                    </Badge>
-                  </TableCell> */}
                   <TableCell className="font-medium text-foreground">
                     {renderHighlightedText(task.amount)}
                   </TableCell>
@@ -219,6 +167,16 @@ const TaskList = () => {
     </div>
   );
 
+  if (taskList.isLoading && taskList.data.length === 0) {
+    return (
+      <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search tasks...">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner />
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search tasks...">
       <div className="space-y-6">
@@ -226,11 +184,29 @@ const TaskList = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-foreground">Task List</h1>
           <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={taskList.isLoading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${taskList.isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
-              {filteredTasks.length} Tasks
+              {taskList.totalData} Tasks
             </Badge>
           </div>
         </div>
+
+        {/* Error display */}
+        {taskList.error && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <p className="text-red-600">{taskList.error}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Filters and View Toggle */}
         <Card className="border-border shadow-sm">
@@ -245,7 +221,7 @@ const TaskList = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="Pending Approval">Pending Approval</SelectItem>
+                      <SelectItem value="Submitted">Submitted</SelectItem>
                       <SelectItem value="In Progress">In Progress</SelectItem>
                       <SelectItem value="Approved">Approved</SelectItem>
                       <SelectItem value="Rejected">Rejected</SelectItem>
@@ -296,7 +272,17 @@ const TaskList = () => {
         {/* Content */}
         {viewMode === 'table' ? <TableView /> : <CardView />}
 
-        {filteredTasks.length === 0 && (
+        {/* Pagination */}
+        {taskList.totalPage > 1 && (
+          <TicketPagination
+            currentPage={taskList.currentPage}
+            totalPages={taskList.totalPage}
+            totalItems={taskList.totalData}
+            onPageChange={handlePageChange}
+          />
+        )}
+
+        {filteredTasks.length === 0 && !taskList.isLoading && (
           <Card className="border-border">
             <CardContent className="p-8 text-center">
               <p className="text-muted-foreground">No tasks found matching your search criteria.</p>

@@ -27,7 +27,7 @@ export const DeleteServiceDialog: React.FC<DeleteServiceDialogProps> = ({
   onCancel
 }) => {
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && !isDeleting && onCancel()}>
       <AlertDialogContent className="bg-white border border-gray-200 shadow-lg z-50">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-red-600">Delete Service Catalog</AlertDialogTitle>
@@ -36,7 +36,7 @@ export const DeleteServiceDialog: React.FC<DeleteServiceDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 rounded-b-lg">
-          <AlertDialogCancel onClick={onCancel} className="bg-white border-gray-300">
+          <AlertDialogCancel onClick={onCancel} className="bg-white border-gray-300" disabled={isDeleting}>
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction 
