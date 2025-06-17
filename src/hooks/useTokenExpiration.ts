@@ -1,18 +1,15 @@
 
 import { useState, useEffect } from 'react';
-import { useAppSelector, useAppDispatch } from './useAppSelector';
-import { clearToken } from '@/store/slices/authSlice';
+import { useAppSelector } from './useAppSelector';
 import axios from 'axios';
 
 export const useTokenExpiration = () => {
-  const dispatch = useAppDispatch();
   const [isTokenExpiredModalOpen, setIsTokenExpiredModalOpen] = useState(false);
   const { token, user, isAuthenticated } = useAppSelector((state) => state.auth);
 
-  // Close modal if user becomes authenticated
+  // Close modal if user becomes unauthenticated
   useEffect(() => {
-    if (isAuthenticated && token) {
-      console.log('User authenticated, closing token expired modal');
+    if (!isAuthenticated || !token) {
       setIsTokenExpiredModalOpen(false);
     }
   }, [isAuthenticated, token]);
@@ -23,9 +20,7 @@ export const useTokenExpiration = () => {
       (response) => response,
       (error) => {
         if (error.response?.status === 401 && token && isAuthenticated) {
-          console.log('Token expired detected, showing modal and clearing token');
-          // Token is expired, clear it and show modal
-          dispatch(clearToken());
+          // Token is expired, show modal
           setIsTokenExpiredModalOpen(true);
         }
         return Promise.reject(error);
@@ -36,7 +31,7 @@ export const useTokenExpiration = () => {
     return () => {
       axios.interceptors.response.eject(interceptor);
     };
-  }, [token, isAuthenticated, dispatch]);
+  }, [token, isAuthenticated]);
 
   const closeTokenExpiredModal = () => {
     setIsTokenExpiredModalOpen(false);

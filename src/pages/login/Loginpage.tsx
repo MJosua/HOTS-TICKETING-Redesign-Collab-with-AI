@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useAppSelector';
@@ -11,7 +10,7 @@ import Lockedaccount from './form/Lockedaccount';
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { isAuthenticated, token, isLoading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({
@@ -21,14 +20,12 @@ const Login = () => {
   const [forgotToggle, setForgotToggle] = useState(false);
   const [lockedAccount, setLockedAccount] = useState(false);
 
-  // Check if user is already authenticated
+  // Redirect if already authenticated
   useEffect(() => {
-    const hasToken = token || localStorage.getItem('tokek');
-    if (isAuthenticated && hasToken && !isLoading) {
-      console.log('User already authenticated, redirecting to service catalog');
-      navigate('/service-catalog', { replace: true });
+    if (isAuthenticated) {
+      navigate('/service-catalog');
     }
-  }, [isAuthenticated, token, isLoading, navigate]);
+  }, [isAuthenticated, navigate]);
 
   // Reset login attempts when going back to login
   useEffect(() => {

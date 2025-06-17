@@ -1,7 +1,7 @@
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config/sourceConfig';
-import { useNavigate } from 'react-router-dom';
 
 interface UserData {
   id: string;
@@ -19,75 +19,47 @@ interface AuthState {
   error: string | null;
   loginAttempts: number;
   isLocked: boolean;
-  isTokenExpired: boolean;
 }
-
-// Get initial token from localStorage
-const storedToken = localStorage.getItem('tokek');
 
 const initialState: AuthState = {
   user: null,
-  token: storedToken,
+  token: localStorage.getItem('tokek'),
   isLoading: false,
-  isAuthenticated: !!storedToken, // Set based on token presence
+  isAuthenticated: !!localStorage.getItem('tokek'),
   error: null,
   loginAttempts: 0,
   isLocked: false,
-  isTokenExpired: false,
 };
-const navigate = useNavigate()
 
-// Async thunk for login - simplified without navigation
+// Async thunk for login
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async ({ username, password, isReauthentication = false }: {
-    username: string;
-    password: string;
-    isReauthentication?: boolean;
-  }, { rejectWithValue }) => {
+  async ({ username, password }: { username: string; password: string }, { rejectWithValue }) => {
     try {
-      console.log('Attempting login for:', username, 'isReauthentication:', isReauthentication);
-
       const response = await axios.post(`${API_URL}/hots_auth/login`, {
         uid: username,
         asin: password,
       });
 
       if (response.data.success) {
-
-        if (localStorage.getItem("isAuthenticated") === "true") {
-          // Authenticated block
-          const { tokek, userData } = response.data;
-          localStorage.setItem('tokek', tokek);
-
-          return { token: tokek, userData, isReauthentication };
-
-        } else {
-          // Not authenticated block
-          const { tokek, userData } = response.data;
-          localStorage.setItem('tokek', tokek);
-          localStorage.setItem('isAuthenticated', 'true');
-          console.log("LOGIN RESPONSE:", response.data);
-          navigate("/service-catalog")
-          return { token: tokek, userData, isReauthentication };
-        }
-
+        const { tokek, userData } = response.data;
+        localStorage.setItem('tokek', tokek);
+        localStorage.setItem('isAuthenticated', 'true');
+        console.log("LOGIN RESPONSE:", response.data);
+        return { token: tokek, userData };
       } else {
         return rejectWithValue(response.data.message);
       }
     } catch (error: any) {
-      console.log('Login failed:', error.response?.data?.message || error.message);
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
 
-// Simplified logout
+// Async thunk for logout
 export const logoutUser = createAsyncThunk('auth/logoutUser', async () => {
   localStorage.removeItem('tokek');
   localStorage.removeItem('isAuthenticated');
-  console.log('User logged out, session cleared');
-  window.location.reload();
 });
 
 const authSlice = createSlice({
@@ -104,14 +76,11 @@ const authSlice = createSlice({
     setLocked: (state) => {
       state.isLocked = true;
     },
+    // Add action to clear only token but preserve user data temporarily
     clearToken: (state) => {
       state.token = null;
       state.isAuthenticated = false;
-      state.isTokenExpired = true;
-      localStorage.removeItem('tokek');
-    },
-    resetTokenExpiration: (state) => {
-      state.isTokenExpired = false;
+      // Don't clear user data immediately to allow re-authentication
     },
   },
   extraReducers: (builder) => {
@@ -129,31 +98,12 @@ const authSlice = createSlice({
         state.error = null;
         state.loginAttempts = 0;
         state.isLocked = false;
-        state.isTokenExpired = false;
-        console.log('Login successful, user authenticated');
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
+        state.isAuthenticated = false;
         state.error = action.payload as string;
-
-        // Only increment attempts if this is NOT a re-authentication
-        if (!state.isTokenExpired) {
-          state.loginAttempts += 1;
-        }
-
-        // Handle authentication state based on type of login
-        if (!state.isTokenExpired) {
-          // This is a fresh login attempt, clear everything on failure
-          state.isAuthenticated = false;
-          state.user = null;
-          state.token = null;
-          localStorage.removeItem('tokek');
-          localStorage.removeItem('isAuthenticated');
-        } else {
-          // This is a re-authentication attempt, keep user data but stay unauthenticated
-          state.isAuthenticated = false;
-          state.token = null;
-        }
+        state.loginAttempts += 1;
 
         // Check if account should be locked
         if (action.payload && typeof action.payload === 'string' &&
@@ -161,7 +111,7 @@ const authSlice = createSlice({
           state.isLocked = true;
         }
       })
-      // Logout cases - simplified
+      // Logout cases
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.token = null;
@@ -169,11 +119,9 @@ const authSlice = createSlice({
         state.error = null;
         state.loginAttempts = 0;
         state.isLocked = false;
-        state.isTokenExpired = false;
-        state.isLoading = false;
       });
   },
 });
 
-export const { clearError, resetLoginAttempts, setLocked, clearToken, resetTokenExpiration } = authSlice.actions;
+export const { clearError, resetLoginAttempts, setLocked, clearToken } = authSlice.actions;
 export default authSlice.reducer;
