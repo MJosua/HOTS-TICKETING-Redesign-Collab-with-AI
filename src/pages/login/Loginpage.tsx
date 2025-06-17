@@ -21,11 +21,10 @@ const Login = () => {
   const [forgotToggle, setForgotToggle] = useState(false);
   const [lockedAccount, setLockedAccount] = useState(false);
 
-  // Redirect if already authenticated - check both Redux state and localStorage
+  // Simple redirect check - only redirect if truly authenticated
   useEffect(() => {
-    const isAuth = isAuthenticated && (token || localStorage.getItem('tokek'));
-    if (isAuth) {
-      console.log('User already authenticated, redirecting to service catalog');
+    if (isAuthenticated && token) {
+      console.log('User authenticated, redirecting to service catalog');
       navigate('/service-catalog', { replace: true });
     }
   }, [isAuthenticated, token, navigate]);
@@ -36,11 +35,6 @@ const Login = () => {
       dispatch(resetLoginAttempts());
     }
   }, [forgotToggle, lockedAccount, dispatch]);
-
-  // Don't render anything if already authenticated to prevent flash
-  if (isAuthenticated && (token || localStorage.getItem('tokek'))) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-0 to-blue-100 flex items-center justify-center p-4">

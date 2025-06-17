@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config/sourceConfig';
@@ -19,7 +18,7 @@ interface AuthState {
   error: string | null;
   loginAttempts: number;
   isLocked: boolean;
-  isTokenExpired: boolean; // Add flag to track if this is a token expiration scenario
+  isTokenExpired: boolean;
 }
 
 const initialState: AuthState = {
@@ -65,11 +64,11 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-// Async thunk for logout - simplified to avoid delays
+// Simplified logout - no async needed
 export const logoutUser = createAsyncThunk('auth/logoutUser', async () => {
   localStorage.removeItem('tokek');
   localStorage.removeItem('isAuthenticated');
-  return true; // Simple return to avoid delays
+  console.log('User logged out, session cleared');
 });
 
 const authSlice = createSlice({
@@ -86,15 +85,12 @@ const authSlice = createSlice({
     setLocked: (state) => {
       state.isLocked = true;
     },
-    // Add action to clear only token but preserve user data temporarily
     clearToken: (state) => {
       state.token = null;
       state.isAuthenticated = false;
       state.isTokenExpired = true;
       localStorage.removeItem('tokek');
-      // Don't clear user data immediately to allow re-authentication
     },
-    // Add action to reset token expiration flag
     resetTokenExpiration: (state) => {
       state.isTokenExpired = false;
     },
@@ -115,6 +111,7 @@ const authSlice = createSlice({
         state.loginAttempts = 0;
         state.isLocked = false;
         state.isTokenExpired = false;
+        console.log('Login successful, user authenticated');
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -137,7 +134,6 @@ const authSlice = createSlice({
           // This is a re-authentication attempt, keep user data but stay unauthenticated
           state.isAuthenticated = false;
           state.token = null;
-          // Keep user data for re-authentication
         }
 
         // Check if account should be locked
@@ -146,7 +142,7 @@ const authSlice = createSlice({
           state.isLocked = true;
         }
       })
-      // Logout cases
+      // Logout cases - simplified
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.token = null;
@@ -155,6 +151,7 @@ const authSlice = createSlice({
         state.loginAttempts = 0;
         state.isLocked = false;
         state.isTokenExpired = false;
+        state.isLoading = false;
       });
   },
 });

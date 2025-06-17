@@ -11,14 +11,9 @@ const TokenExpiredModalWrapper: React.FC = () => {
   const dispatch = useAppDispatch();
   const { isTokenExpiredModalOpen, closeTokenExpiredModal, username } = useTokenExpiration();
 
-  const handleNavigateToLogin = async () => {
-    // Close the modal first
+  const handleNavigateToLogin = () => {
     closeTokenExpiredModal();
-    
-    // Dispatch logout to clear Redux state
-    await dispatch(logoutUser());
-    
-    // Then navigate to login
+    dispatch(logoutUser());
     navigate('/login', { replace: true });
   };
 
