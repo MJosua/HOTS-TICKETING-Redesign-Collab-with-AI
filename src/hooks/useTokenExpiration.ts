@@ -5,14 +5,21 @@ import axios from 'axios';
 
 export const useTokenExpiration = () => {
   const [isTokenExpiredModalOpen, setIsTokenExpiredModalOpen] = useState(false);
-  const { token, user } = useAppSelector((state) => state.auth);
+  const { token, user, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  // Close modal if user becomes unauthenticated
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setIsTokenExpiredModalOpen(false);
+    }
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
     // Set up axios interceptor to detect 401 responses
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401 && token) {
+        if (error.response?.status === 401 && token && isAuthenticated) {
           // Token is expired, show modal
           setIsTokenExpiredModalOpen(true);
         }
@@ -24,7 +31,7 @@ export const useTokenExpiration = () => {
     return () => {
       axios.interceptors.response.eject(interceptor);
     };
-  }, [token]);
+  }, [token, isAuthenticated]);
 
   const closeTokenExpiredModal = () => {
     setIsTokenExpiredModalOpen(false);
@@ -33,6 +40,6 @@ export const useTokenExpiration = () => {
   return {
     isTokenExpiredModalOpen,
     closeTokenExpiredModal,
-    username: user?.username || '',
+    username: user?.username || user?.uid || '',
   };
 };

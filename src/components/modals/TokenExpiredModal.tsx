@@ -36,7 +36,12 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
   const [validationError, setValidationError] = useState('');
 
   const handleClose = () => {
-    onClose();
+    // Reset form state
+    setPassword('');
+    setValidationError('');
+    setShowPassword(false);
+    
+    // Call the logout navigation handler
     onNavigateToLogin();
   };
 
@@ -52,7 +57,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
     try {
       await dispatch(loginUser({
-        username: user.uid,
+        username: user?.uid || username,
         password: password,
       })).unwrap();
 
@@ -62,6 +67,8 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
       });
 
       setPassword('');
+      setValidationError('');
+      setShowPassword(false);
       onClose();
     } catch (error) {
       toast({
@@ -69,6 +76,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
         description: "Please check your password and try again",
         variant: "destructive",
       });
+      setValidationError('Invalid password');
     }
   };
 
@@ -80,7 +88,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => { }}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md [&>button]:hidden">
         <div className="absolute right-4 top-4 z-10">
           <Button
@@ -108,8 +116,6 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Username Display */}
-
           {/* Password Input */}
           <div className="space-y-2">
             <Label htmlFor="password" className="text-sm font-medium text-gray-700">
