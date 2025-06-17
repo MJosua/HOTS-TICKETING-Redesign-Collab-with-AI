@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { FormConfig } from '@/types/formTypes';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { FormSkeleton } from '@/components/ui/FormSkeleton';
+import DeleteConfirmModal from '@/components/modals/DeleteConfirmModal';
 import {
   Table,
   TableBody,
@@ -18,10 +18,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import axios from 'axios';
+import { API_URL } from '@/config/SourceConfig';
+import { useToast } from '@/hooks/use-toast';
 
 const ServiceCatalogAdmin = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; serviceId: string; serviceName: string }>({
+    isOpen: false,
+    serviceId: '',
+    serviceName: ''
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const {
     serviceCatalog,
@@ -30,6 +39,8 @@ const ServiceCatalogAdmin = () => {
     error,
     fetchData
   } = useCatalogData();
+
+  const { toast } = useToast();
 
   // Fetch real data from API on component mount
   useEffect(() => {
@@ -84,9 +95,59 @@ const ServiceCatalogAdmin = () => {
     navigate(`/admin/service-catalog/edit/${formId}`);
   };
 
-  const handleDelete = (formId: string) => {
-    // TODO: Implement delete functionality
-    console.log('Delete form:', formId);
+  const handleDeleteClick = (formId: string) => {
+    const service = serviceCatalog.find(s => s.service_id.toString() === formId);
+    if (service) {
+      setDeleteModal({
+        isOpen: true,
+        serviceId: formId,
+        serviceName: service.service_name
+      });
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModal.serviceId) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      console.log('Deleting service with ID:', deleteModal.serviceId);
+      
+      const response = await axios.delete(`${API_URL}/hots_settings/delete/${deleteModal.serviceId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        }
+      });
+
+      console.log('Delete response:', response.data);
+
+      toast({
+        title: "Success",
+        description: `Service "${deleteModal.serviceName}" has been deleted successfully`,
+        variant: "default",
+        duration: 3000
+      });
+
+      // Refresh the catalog data
+      fetchData();
+      
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete service",
+        variant: "destructive",
+        duration: 5000
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteModal({ isOpen: false, serviceId: '', serviceName: '' });
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({ isOpen: false, serviceId: '', serviceName: '' });
   };
 
   const handleCreate = () => {
@@ -236,7 +297,8 @@ const ServiceCatalogAdmin = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDelete(form.id!)}
+                            onClick={() => handleDeleteClick(form.id!)}
+                            disabled={isDeleting}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -249,6 +311,14 @@ const ServiceCatalogAdmin = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <DeleteConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+          title="Delete Service Catalog"
+          description={`Are you sure you want to delete "${deleteModal.serviceName}"? This action cannot be undone and will remove the service form and all its configurations.`}
+        />
       </div>
     </AppLayout>
   );

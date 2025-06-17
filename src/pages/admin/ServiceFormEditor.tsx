@@ -19,13 +19,11 @@ import axios from 'axios';
 import { API_URL } from '@/config/SourceConfig';
 import { useToast } from '@/hooks/use-toast';
 
-
-
 const ServiceFormEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = !!id;
-  const { categoryList } = useCatalogData();
+  const { categoryList, serviceCatalog } = useCatalogData();
 
   const [config, setConfig] = useState<FormConfig>({
     title: '',
@@ -39,52 +37,80 @@ const ServiceFormEditor = () => {
   });
 
   const [previewMode, setPreviewMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isEdit) {
-      // Mock loading existing form - in real app, fetch from API
-      const mockForm: FormConfig = {
-        id: '1',
-        title: 'IT Support Request',
-        url: '/it-support',
-        category: 'Support',
-        description: 'Request IT technical support',
-        apiEndpoint: '/api/it-support',
-        approval: { steps: ['Supervisor', 'IT Team'], mode: 'sequential' },
-        fields: [
-          { label: 'Type of Support', name: 'support_type', type: 'select', options: ['Hardware', 'Software', 'Account'], required: true },
-          { label: 'Issue Description', name: 'issue_description', type: 'textarea', required: true }
-        ],
-        rowGroups: [
-          {
-            rowGroup: [
-              { label: 'Priority', name: 'priority', type: 'select', options: ['High', 'Medium', 'Low'], required: true },
-              { label: 'Department', name: 'department', type: 'text', required: true },
-              { label: 'Due Date', name: 'due_date', type: 'date', required: false }
-            ]
+    if (isEdit && id && serviceCatalog.length > 0) {
+      console.log('Loading service data for edit mode, ID:', id);
+      
+      // Find the service by ID
+      const serviceData = serviceCatalog.find(service => service.service_id.toString() === id);
+      
+      if (serviceData) {
+        console.log('Found service data:', serviceData);
+        
+        // Get category name from category_id
+        const category = categoryList.find(cat => cat.category_id === serviceData.category_id);
+        const categoryName = category?.category_name || '';
+        
+        // Parse form_json if it exists, otherwise create default structure
+        let parsedConfig: FormConfig = {
+          id: serviceData.service_id.toString(),
+          title: serviceData.service_name,
+          url: `/${serviceData.nav_link}`,
+          category: categoryName,
+          description: serviceData.service_description,
+          apiEndpoint: `/api/${serviceData.nav_link}`,
+          approval: { 
+            steps: serviceData.approval_level > 0 ? ['Manager', 'Supervisor'] : [], 
+            mode: 'sequential' as const 
+          },
+          fields: [],
+          rowGroups: []
+        };
+
+        // Try to parse existing form_json
+        if (serviceData.form_json) {
+          try {
+            const jsonConfig = JSON.parse(serviceData.form_json);
+            parsedConfig = {
+              ...parsedConfig,
+              ...jsonConfig,
+              // Override with database values
+              id: serviceData.service_id.toString(),
+              category: categoryName, // Always use category from database
+            };
+          } catch (error) {
+            console.error('Failed to parse form_json:', error);
+            // Use default structure if JSON is invalid
           }
-        ]
-      };
-      setConfig(mockForm);
+        }
+
+        setConfig(parsedConfig);
+      } else {
+        console.warn('Service not found for ID:', id);
+      }
     }
-  }, [isEdit]);
+  }, [isEdit, id, serviceCatalog, categoryList]);
 
   const {toast} = useToast()
 
   const handleSave = async () => {
-
+    setIsLoading(true);
+    
     // Generate JSON from current config
     const jsonConfig = generateFormJSON();
     console.log('Generated JSON for saving:', jsonConfig);
-    // TODO: Call your service catalog save API here with jsonConfig
-    // Example: await saveServiceCatalog({ ...otherFields, form_json: jsonConfig });
-    // navigate('/admin/service-catalog');
 
     try {
+      // Find category_id from category name
+      const selectedCategory = categoryList.find(c => c.category_name === config.category);
+      
       // Build full service catalog object
       const payload = {
+        ...(isEdit && { service_id: parseInt(id!) }), // Include service_id for update
         service_name: config.title,
-        category_id: categoryList.find(c => c.category_name === config.category)?.category_id || null,
+        category_id: selectedCategory?.category_id || null,
         service_description: config.description,
         approval_level: config.approval?.steps?.length || 0,
         image_url: "", // you can add this from an image uploader
@@ -95,6 +121,8 @@ const ServiceFormEditor = () => {
         form_json: jsonConfig // full form config object
       };
 
+      console.log('Saving payload:', payload);
+
       const response = await axios.post(`${API_URL}/hots_settings/insertupdate/service_catalog`, payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
@@ -103,17 +131,27 @@ const ServiceFormEditor = () => {
 
       console.log("SAVE SUCCESS:", response.data);
 
-      // Optional: toast, redirect, etc.
-      toast({ title: "Success", description: "Form saved", status: "success", variant: "success", duration: 5000 });
+      toast({ 
+        title: "Success", 
+        description: isEdit ? "Form updated successfully" : "Form created successfully", 
+        variant: "default",
+        duration: 3000 
+      });
+      
       navigate('/admin/service-catalog');
 
     } catch (error: any) {
       console.error("SAVE ERROR:", error);
-
-      toast({ title: "Error", description: error.response.data.message || "Failed to save", status: "error", variant: "destructive", duration: 5000 });
+      toast({ 
+        title: "Error", 
+        description: error.response?.data?.message || "Failed to save form", 
+        variant: "destructive", 
+        duration: 5000 
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
-
 
   const generateFormJSON = () => {
     // Clean up the config for JSON serialization
@@ -265,9 +303,9 @@ const ServiceFormEditor = () => {
             <Button variant="outline" onClick={() => setPreviewMode(true)}>
               Preview
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} disabled={isLoading}>
               <Save className="w-4 h-4 mr-2" />
-              Save Form
+              {isLoading ? 'Saving...' : 'Save Form'}
             </Button>
           </div>
         </div>
