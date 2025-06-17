@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
@@ -9,8 +10,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { CatalogFormLoader } from "@/components/forms/CatalogFormLoader";
 import { FormConfig } from "@/types/formTypes";
-import { useTokenExpiration } from "@/hooks/useTokenExpiration";
-import TokenExpiredModal from "@/components/modals/TokenExpiredModal";
+import TokenExpiredModalWrapper from "@/components/modals/TokenExpiredModalWrapper";
 import Index from "./pages/Index";
 import ServiceCatalog from "./pages/ServiceCatalog";
 import TaskList from "./pages/TaskList";

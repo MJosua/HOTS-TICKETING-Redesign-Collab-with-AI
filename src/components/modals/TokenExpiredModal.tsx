@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,15 +14,16 @@ import { loginUser } from "@/store/slices/authSlice";
 interface TokenExpiredModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigateToLogin: () => void;
   username: string;
 }
 
 const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({ 
   isOpen, 
   onClose, 
+  onNavigateToLogin,
   username 
 }) => {
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const { isLoading } = useAppSelector((state) => state.auth);
@@ -34,7 +34,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
   const handleClose = () => {
     onClose();
-    navigate('/login');
+    onNavigateToLogin();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
