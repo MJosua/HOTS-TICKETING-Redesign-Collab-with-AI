@@ -24,6 +24,7 @@ import Login from "./pages/login/Loginpage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import TicketDetail from "./pages/TicketDetail";
 import RecoveryForm from "./pages/login/form/Recoveryform";
+import { useSelector } from 'react-redux';
 
 // Create QueryClient instance outside of component to avoid recreation
 const queryClient = new QueryClient({
@@ -44,6 +45,9 @@ const AppContent = () => {
 
   const dynamicServiceRoutes = useDynamicServiceRoutes(handleFormSubmit);
   
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  console.log("user",user)
 
   return (
     <>

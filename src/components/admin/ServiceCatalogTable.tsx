@@ -83,7 +83,7 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
                   <TableCell>
                     <div className="flex gap-1">
                       {form.approval?.steps.map((step, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                        <Badge key={step.id} variant="outline" className="text-xs">
                           {step}
                         </Badge>
                       ))}
