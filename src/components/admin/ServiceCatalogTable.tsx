@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -83,7 +82,7 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
                   <TableCell>
                     <div className="flex gap-1">
                       {form.approval?.steps.map((step, index) => (
-                        <Badge key={step.id} variant="outline" className="text-xs">
+                        <Badge key={index} variant="outline" className="text-xs">
                           {step}
                         </Badge>
                       ))}

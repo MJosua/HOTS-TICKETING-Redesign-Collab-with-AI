@@ -1,6 +1,7 @@
+
 import React, { useCallback } from "react";
 import { Provider } from "react-redux";
-import { store } from "./store";
+import { store, RootState } from "./store";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
