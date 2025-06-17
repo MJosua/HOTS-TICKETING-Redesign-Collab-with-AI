@@ -1,32 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Plus, Edit, Trash2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FormConfig } from '@/types/formTypes';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { FormSkeleton } from '@/components/ui/FormSkeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ServiceCatalogHeader } from '@/components/admin/ServiceCatalogHeader';
+import { ServiceCatalogSearch } from '@/components/admin/ServiceCatalogSearch';
+import { ServiceCatalogTable } from '@/components/admin/ServiceCatalogTable';
+import { DeleteServiceDialog } from '@/components/admin/DeleteServiceDialog';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
@@ -244,159 +228,34 @@ const ServiceCatalogAdmin = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate('/')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Service Catalog Admin</h1>
-              <p className="text-gray-600">Manage dynamic service forms and their configurations</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleReload} 
-              disabled={isReloading}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${isReloading ? 'animate-spin' : ''}`} />
-              Reload
-            </Button>
-            <Button onClick={handleCreate} className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Create Form
-            </Button>
-          </div>
-        </div>
+        <ServiceCatalogHeader
+          onReload={handleReload}
+          onCreate={handleCreate}
+          isReloading={isReloading}
+        />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Form Search</CardTitle>
-            <Input
-              placeholder="Search forms by title or category..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </CardHeader>
-        </Card>
+        <ServiceCatalogSearch
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Service Forms ({filteredForms.length})</CardTitle>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleReload} 
-                disabled={isReloading}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className={`w-3 h-3 ${isReloading ? 'animate-spin' : ''}`} />
-                Reload
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>URL</TableHead>
-                  <TableHead>Form Status</TableHead>
-                  <TableHead>Approval Steps</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredForms.map((form) => {
-                  const service = serviceCatalog.find(s => s.service_id.toString() === form.id);
-                  const hasFormJson = service?.form_json && service.form_json.trim() !== '';
-                  
-                  return (
-                    <TableRow key={form.id}>
-                      <TableCell className="font-medium">{form.title}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{form.category}</Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{form.url}</TableCell>
-                      <TableCell>
-                        <Badge variant={hasFormJson ? "default" : "outline"}>
-                          {hasFormJson ? "JSON Config" : "Default Form"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {form.approval?.steps.map((step, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {step}
-                            </Badge>
-                          ))}
-                          {form.approval?.steps.length === 0 && (
-                            <Badge variant="outline" className="text-xs">No Approval</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(form.id!)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteClick(form.id!)}
-                            disabled={isDeleting}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleReload}
-                            disabled={isReloading}
-                          >
-                            <RefreshCw className={`w-3 h-3 ${isReloading ? 'animate-spin' : ''}`} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <ServiceCatalogTable
+          forms={filteredForms}
+          serviceCatalog={serviceCatalog}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+          onReload={handleReload}
+          isDeleting={isDeleting}
+          isReloading={isReloading}
+        />
 
-        <AlertDialog open={deleteModal.isOpen} onOpenChange={handleDeleteCancel}>
-          <AlertDialogContent className="bg-white border border-gray-200 shadow-lg z-50">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-red-600">Delete Service Catalog</AlertDialogTitle>
-              <AlertDialogDescription className="text-gray-600">
-                Are you sure you want to delete "<strong>{deleteModal.serviceName}</strong>"? This action cannot be undone and will remove the service form and all its configurations.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 rounded-b-lg">
-              <AlertDialogCancel onClick={handleDeleteCancel} className="bg-white border-gray-300">
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleDeleteConfirm} 
-                disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {isDeleting ? 'Deleting...' : 'Delete'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <DeleteServiceDialog
+          isOpen={deleteModal.isOpen}
+          serviceName={deleteModal.serviceName}
+          isDeleting={isDeleting}
+          onConfirm={handleDeleteConfirm}
+          onCancel={handleDeleteCancel}
+        />
       </div>
     </AppLayout>
   );
