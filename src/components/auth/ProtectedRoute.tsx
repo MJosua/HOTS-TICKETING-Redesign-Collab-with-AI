@@ -9,37 +9,29 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, token, isLoading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, token } = useAppSelector((state) => state.auth);
   const [isChecking, setIsChecking] = useState(true);
   
+  // Check authentication - if we have a token in localStorage but not in Redux state yet,
+  // still consider authenticated to prevent flickering
+  const hasToken = token || localStorage.getItem('tokek');
+  const isAuth = isAuthenticated && hasToken;
+
   useEffect(() => {
-    // Quick check - if we have clear authentication state, stop checking immediately
-    const storedToken = localStorage.getItem('tokek');
-    const hasValidAuth = isAuthenticated && (token || storedToken);
-    
-    if (hasValidAuth || (!isAuthenticated && !token && !storedToken)) {
-      setIsChecking(false);
-      return;
-    }
-    
-    // Only delay if authentication state is unclear
+    // Give a brief moment for Redux state to initialize
     const timer = setTimeout(() => {
       setIsChecking(false);
-    }, 100);
+    }, 200);
 
     return () => clearTimeout(timer);
-  }, []); // Run only once on mount
+  }, []);
 
-  // Show loading screen while checking authentication or during login process
-  if (isChecking || isLoading) {
+  // Show loading screen while checking authentication
+  if (isChecking) {
     return <AuthLoadingScreen />;
   }
   
-  // Check authentication - use stored token as fallback
-  const storedToken = localStorage.getItem('tokek');
-  const isUserAuthenticated = isAuthenticated && (token || storedToken);
-  
-  if (!isUserAuthenticated) {
+  if (!isAuth) {
     console.log('User not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import { useAppDispatch } from '@/hooks/useAppDispatch';
@@ -20,33 +20,17 @@ const Login = () => {
   });
   const [forgotToggle, setForgotToggle] = useState(false);
   const [lockedAccount, setLockedAccount] = useState(false);
-  
-  // Use ref to prevent multiple navigation attempts
-  const hasNavigated = useRef(false);
 
-  // Single effect to handle authentication redirect
+  // Check if user is already authenticated
   useEffect(() => {
-    // Only check authentication once the loading state is clear
-    if (isLoading) return;
-    
-    const storedToken = localStorage.getItem('tokek');
-    const shouldRedirect = isAuthenticated && (token || storedToken) && !hasNavigated.current;
-    
-    if (shouldRedirect) {
+    const hasToken = token || localStorage.getItem('tokek');
+    if (isAuthenticated && hasToken && !isLoading) {
       console.log('User already authenticated, redirecting to service catalog');
-      hasNavigated.current = true;
       navigate('/service-catalog', { replace: true });
     }
   }, [isAuthenticated, token, isLoading, navigate]);
 
-  // Reset navigation flag when user logs out
-  useEffect(() => {
-    if (!isAuthenticated && !token) {
-      hasNavigated.current = false;
-    }
-  }, [isAuthenticated, token]);
-
-  // Reset login attempts when returning to login form
+  // Reset login attempts when going back to login
   useEffect(() => {
     if (!forgotToggle && !lockedAccount) {
       dispatch(resetLoginAttempts());

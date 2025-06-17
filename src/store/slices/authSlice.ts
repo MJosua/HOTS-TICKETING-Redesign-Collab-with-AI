@@ -1,7 +1,7 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config/sourceConfig';
+import { useNavigate } from 'react-router-dom';
 
 interface UserData {
   id: string;
@@ -35,8 +35,9 @@ const initialState: AuthState = {
   isLocked: false,
   isTokenExpired: false,
 };
+const navigate = useNavigate()
 
-// Async thunk for login
+// Async thunk for login - simplified without navigation
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ username, password, isReauthentication = false }: {
@@ -53,12 +54,24 @@ export const loginUser = createAsyncThunk(
       });
 
       if (response.data.success) {
-        const { tokek, userData } = response.data;
-        localStorage.setItem('tokek', tokek);
-        localStorage.setItem('isAuthenticated', 'true');
-        console.log("LOGIN RESPONSE:", response.data);
-        
-        return { token: tokek, userData, isReauthentication };
+
+        if (localStorage.getItem("isAuthenticated") === "true") {
+          // Authenticated block
+          const { tokek, userData } = response.data;
+          localStorage.setItem('tokek', tokek);
+
+          return { token: tokek, userData, isReauthentication };
+
+        } else {
+          // Not authenticated block
+          const { tokek, userData } = response.data;
+          localStorage.setItem('tokek', tokek);
+          localStorage.setItem('isAuthenticated', 'true');
+          console.log("LOGIN RESPONSE:", response.data);
+          navigate("/service-catalog")
+          return { token: tokek, userData, isReauthentication };
+        }
+
       } else {
         return rejectWithValue(response.data.message);
       }
@@ -148,7 +161,7 @@ const authSlice = createSlice({
           state.isLocked = true;
         }
       })
-      // Logout cases
+      // Logout cases - simplified
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.token = null;
