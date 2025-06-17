@@ -11,6 +11,7 @@ interface UserData {
   role?: string;
   [key: string]: any;
 }
+
 interface AuthState {
   user: UserData | null;
   token: string | null;
