@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import axios from 'axios';
-import { API_URL } from '@/config/SourceConfig';
+import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
 
 const ServiceCatalogAdmin = () => {
