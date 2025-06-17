@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FormConfig } from '@/types/formTypes';
 import { useCatalogData } from '@/hooks/useCatalogData';
@@ -98,9 +98,15 @@ const ServiceCatalogAdmin = () => {
       <AppLayout>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Service Catalog Admin</h1>
-              <p className="text-gray-600">Manage dynamic service forms and their configurations</p>
+            <div className="flex items-center gap-4">
+              <Button variant="outline" onClick={() => navigate('/')} disabled>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Service Catalog Admin</h1>
+                <p className="text-gray-600">Manage dynamic service forms and their configurations</p>
+              </div>
             </div>
             <Button disabled className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
@@ -127,8 +133,16 @@ const ServiceCatalogAdmin = () => {
   if (error) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-red-600">Error loading catalog: {error}</div>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={() => navigate('/')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-red-600">Error loading catalog: {error}</div>
+          </div>
         </div>
       </AppLayout>
     );
@@ -138,9 +152,15 @@ const ServiceCatalogAdmin = () => {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Service Catalog Admin</h1>
-            <p className="text-gray-600">Manage dynamic service forms and their configurations</p>
+          <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={() => navigate('/')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Service Catalog Admin</h1>
+              <p className="text-gray-600">Manage dynamic service forms and their configurations</p>
+            </div>
           </div>
           <Button onClick={handleCreate} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />

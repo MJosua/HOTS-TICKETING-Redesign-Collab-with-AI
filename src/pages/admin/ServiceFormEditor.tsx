@@ -8,17 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Save, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, Save, ArrowUp, ArrowDown, ArrowLeft } from 'lucide-react';
 import { FormConfig, FormField, RowGroup } from '@/types/formTypes';
 import { DynamicForm } from '@/components/forms/DynamicForm';
 import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
 import { ApprovalFlowCard } from '@/components/ui/ApprovalFlowCard';
 import { DynamicFieldEditor } from '@/components/forms/DynamicFieldEditor';
+import { useCatalogData } from '@/hooks/useCatalogData';
 
 const ServiceFormEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = !!id;
+  const { categoryList } = useCatalogData();
   
   const [config, setConfig] = useState<FormConfig>({
     title: '',
@@ -63,9 +65,57 @@ const ServiceFormEditor = () => {
   }, [isEdit]);
 
   const handleSave = () => {
-    console.log('Saving form config:', config);
-    // In real app, save to API
+    // Generate JSON from current config
+    const jsonConfig = generateFormJSON();
+    console.log('Generated JSON for saving:', jsonConfig);
+    
+    // TODO: Call your service catalog save API here with jsonConfig
+    // Example: await saveServiceCatalog({ ...otherFields, form_json: jsonConfig });
+    
     navigate('/admin/service-catalog');
+  };
+
+  const generateFormJSON = () => {
+    // Clean up the config for JSON serialization
+    const cleanConfig = {
+      ...config,
+      fields: config.fields?.map(field => ({
+        ...field,
+        // Remove any undefined values that might break JSON
+        ...(field.options && { options: field.options }),
+        ...(field.placeholder && { placeholder: field.placeholder }),
+        ...(field.value && { value: field.value }),
+        ...(field.default && { default: field.default }),
+        ...(field.readonly && { readonly: field.readonly }),
+        ...(field.uiCondition && { uiCondition: field.uiCondition }),
+        ...(field.accept && { accept: field.accept }),
+        ...(field.note && { note: field.note })
+      }))
+    };
+    
+    return JSON.stringify(cleanConfig, null, 2);
+  };
+
+  const getCategoryIcon = (categoryName: string) => {
+    const iconMap: { [key: string]: string } = {
+      'Hardware': '💻',
+      'Software': '💾',
+      'Support': '🛠️',
+      'HRGA': '👥',
+      'Marketing': '📢'
+    };
+    return iconMap[categoryName] || '📋';
+  };
+
+  const getCategoryColor = (categoryName: string) => {
+    const colorMap: { [key: string]: string } = {
+      'Hardware': 'bg-blue-100 text-blue-800',
+      'Software': 'bg-green-100 text-green-800',
+      'Support': 'bg-orange-100 text-orange-800',
+      'HRGA': 'bg-purple-100 text-purple-800',
+      'Marketing': 'bg-pink-100 text-pink-800'
+    };
+    return colorMap[categoryName] || 'bg-gray-100 text-gray-800';
   };
 
   const addField = () => {
@@ -133,8 +183,18 @@ const ServiceFormEditor = () => {
       <AppLayout>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Form Preview</h1>
-            <Button onClick={() => setPreviewMode(false)}>Back to Editor</Button>
+            <div className="flex items-center gap-4">
+              <Button variant="outline" onClick={() => setPreviewMode(false)}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Editor
+              </Button>
+              {config.category && (
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(config.category)}`}>
+                  <span className="mr-2">{getCategoryIcon(config.category)}</span>
+                  Form Preview
+                </div>
+              )}
+            </div>
           </div>
           <DynamicForm config={config} onSubmit={(data) => console.log('Preview submit:', data)} />
         </div>
@@ -146,7 +206,21 @@ const ServiceFormEditor = () => {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">{isEdit ? 'Edit' : 'Create'} Service Form</h1>
+          <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={() => navigate('/admin/service-catalog')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <div className="flex items-center gap-3">
+              {config.category && (
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(config.category)}`}>
+                  <span className="mr-2">{getCategoryIcon(config.category)}</span>
+                  {config.category}
+                </div>
+              )}
+              <h1 className="text-2xl font-bold">{isEdit ? 'Edit' : 'Create'} Service Form</h1>
+            </div>
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setPreviewMode(true)}>
               Preview
@@ -193,10 +267,12 @@ const ServiceFormEditor = () => {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Support">Support</SelectItem>
-                      <SelectItem value="Hardware">Hardware</SelectItem>
-                      <SelectItem value="Software">Software</SelectItem>
-                      <SelectItem value="HRGA">HRGA</SelectItem>
+                      {categoryList.map((category) => (
+                        <SelectItem key={category.category_id} value={category.category_name}>
+                          <span className="mr-2">{getCategoryIcon(category.category_name)}</span>
+                          {category.category_name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
