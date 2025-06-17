@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config/sourceConfig';
@@ -36,14 +35,14 @@ const initialState: AuthState = {
   isTokenExpired: false,
 };
 
-// Async thunk for login
+// Async thunk for login - simplified without navigation
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ username, password, isReauthentication = false }: { 
     username: string; 
     password: string; 
     isReauthentication?: boolean;
-  }, { rejectWithValue, getState }) => {
+  }, { rejectWithValue }) => {
     try {
       console.log('Attempting login for:', username, 'isReauthentication:', isReauthentication);
       
@@ -68,7 +67,7 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-// Simplified logout - no async needed
+// Simplified logout
 export const logoutUser = createAsyncThunk('auth/logoutUser', async () => {
   localStorage.removeItem('tokek');
   localStorage.removeItem('isAuthenticated');
