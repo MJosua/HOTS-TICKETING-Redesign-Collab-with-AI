@@ -30,6 +30,7 @@ interface CatalogState {
   categoryList: Category[];
   isLoading: boolean;
   error: string | null;
+  useFallbackData: boolean;
 }
 
 const initialState: CatalogState = {
@@ -37,7 +38,169 @@ const initialState: CatalogState = {
   categoryList: [],
   isLoading: false,
   error: null,
+  useFallbackData: false,
 };
+
+// Fallback data for when API fails
+const fallbackServiceCatalog: ServiceCatalogItem[] = [
+  {
+    service_id: 1,
+    category_id: 1,
+    service_name: "PC/Notebook Request",
+    service_description: "Request a new or replacement computer",
+    approval_level: 2,
+    image_url: "itassetrequest.png",
+    nav_link: "asset-request",
+    active: 1,
+    team_id: 2,
+    form_json: JSON.stringify({
+      url: "/asset-request",
+      title: "PC/Notebook Request",
+      fields: [
+        {
+          label: "Asset Type*",
+          name: "asset_type",
+          type: "select",
+          options: ["Desktop PC", "Laptop", "Monitor", "Printer"],
+          required: true,
+          columnSpan: 2
+        },
+        {
+          label: "Priority",
+          name: "priority",
+          type: "select",
+          options: ["High", "Medium", "Low"],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Justification",
+          name: "justification",
+          type: "textarea",
+          placeholder: "Please explain why you need this asset",
+          required: true,
+          columnSpan: 3
+        }
+      ],
+      approval: {
+        steps: ["Manager", "IT Team"],
+        mode: "sequential"
+      }
+    })
+  },
+  {
+    service_id: 7,
+    category_id: 3,
+    service_name: "IT Technical Support",
+    service_description: "Get help with IT issues from computer to software errors",
+    approval_level: 1,
+    image_url: "ittechnicalsupport.png",
+    nav_link: "it-support",
+    active: 1,
+    team_id: 1,
+    form_json: JSON.stringify({
+      url: "/it-support",
+      title: "IT Support Request",
+      fields: [
+        {
+          label: "Type of Support*",
+          name: "support_type",
+          placeholder: "Select Type of Support",
+          type: "select",
+          options: ["Hardware", "Account", "Software"],
+          required: true,
+          columnSpan: 2
+        },
+        {
+          label: "Priority",
+          name: "priority",
+          type: "select",
+          options: ["High", "Medium", "Low"],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Issue Description",
+          name: "issue_description",
+          placeholder: "Please provide a detailed description of the issues you're experiencing",
+          type: "textarea",
+          required: true,
+          columnSpan: 3
+        }
+      ],
+      approval: {
+        steps: ["Supervisor", "IT Team"],
+        mode: "sequential"
+      }
+    })
+  },
+  {
+    service_id: 8,
+    category_id: 1,
+    service_name: "Sample Request Form",
+    service_description: "Submit sample requests with detailed item specifications",
+    approval_level: 0,
+    image_url: "srf.png",
+    nav_link: "sample-request-form",
+    active: 1,
+    team_id: 8,
+    form_json: JSON.stringify({
+      url: "/sample-request-form",
+      title: "Sample Request Form",
+      fields: [
+        {
+          label: "Request By",
+          name: "request_by",
+          type: "text",
+          readonly: true,
+          value: "Yosua Gultom",
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Sample Category",
+          name: "sample_category",
+          type: "select",
+          options: ["Raw Material", "Finished Product", "Packaging"],
+          required: true,
+          columnSpan: 1
+        },
+        {
+          label: "Notes",
+          name: "notes",
+          type: "textarea",
+          placeholder: "notes",
+          required: false,
+          columnSpan: 3
+        }
+      ]
+    })
+  }
+];
+
+const fallbackCategoryList: Category[] = [
+  {
+    category_id: 1,
+    category_name: "Hardware",
+    description: null,
+    creation_date: null,
+    finished_date: null
+  },
+  {
+    category_id: 2,
+    category_name: "Software",
+    description: null,
+    creation_date: null,
+    finished_date: null
+  },
+  {
+    category_id: 3,
+    category_name: "Support",
+    description: null,
+    creation_date: null,
+    finished_date: null
+  }
+];
 
 // Async thunk for fetching service catalog from API
 export const fetchServiceCatalog = createAsyncThunk(
@@ -54,7 +217,11 @@ export const fetchServiceCatalog = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       console.error('Failed to fetch service catalog:', error);
-      throw error; // Important: rethrow so Redux Toolkit handles it as "rejected"
+      if (error.response?.status === 401) {
+        console.log('Using fallback service catalog data due to authentication error');
+        return fallbackServiceCatalog;
+      }
+      throw error;
     }
   }
 );
@@ -73,20 +240,32 @@ export const fetchCategoryList = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       console.error('Failed to fetch category list:', error);
+      if (error.response?.status === 401) {
+        console.log('Using fallback category data due to authentication error');
+        return fallbackCategoryList;
+      }
       throw error;
     }
   }
 );
 
-
 // Thunk to fetch both datasets
 export const fetchCatalogData = createAsyncThunk(
   'catalog/fetchCatalogData',
   async (_, { dispatch }) => {
-    await Promise.all([
+    const results = await Promise.allSettled([
       dispatch(fetchServiceCatalog()),
       dispatch(fetchCategoryList())
     ]);
+    
+    // Check if both requests failed due to auth issues
+    const allFailed = results.every(result => result.status === 'rejected');
+    if (allFailed) {
+      console.log('All API requests failed, using complete fallback data');
+      return { useFallback: true };
+    }
+    
+    return { useFallback: false };
   }
 );
 
@@ -104,6 +283,14 @@ const catalogSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    useFallbackData: (state) => {
+      state.serviceCatalog = fallbackServiceCatalog;
+      state.categoryList = fallbackCategoryList;
+      state.useFallbackData = true;
+      state.isLoading = false;
+      state.error = null;
+      console.log('Using fallback data for service catalog');
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -115,10 +302,14 @@ const catalogSlice = createSlice({
       .addCase(fetchServiceCatalog.fulfilled, (state, action) => {
         state.isLoading = false;
         state.serviceCatalog = action.payload;
+        state.useFallbackData = Array.isArray(action.payload) && action.payload === fallbackServiceCatalog;
       })
       .addCase(fetchServiceCatalog.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch service catalog';
+        // Use fallback data on failure
+        state.serviceCatalog = fallbackServiceCatalog;
+        state.useFallbackData = true;
       })
       // Category list cases
       .addCase(fetchCategoryList.pending, (state) => {
@@ -132,23 +323,35 @@ const catalogSlice = createSlice({
       .addCase(fetchCategoryList.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch categories';
+        // Use fallback data on failure
+        state.categoryList = fallbackCategoryList;
+        state.useFallbackData = true;
       })
       // Combined fetch cases
       .addCase(fetchCatalogData.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchCatalogData.fulfilled, (state) => {
+      .addCase(fetchCatalogData.fulfilled, (state, action) => {
         state.isLoading = false;
+        if (action.payload.useFallback) {
+          state.serviceCatalog = fallbackServiceCatalog;
+          state.categoryList = fallbackCategoryList;
+          state.useFallbackData = true;
+        }
       })
       .addCase(fetchCatalogData.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch catalog data';
+        // Use fallback data on complete failure
+        state.serviceCatalog = fallbackServiceCatalog;
+        state.categoryList = fallbackCategoryList;
+        state.useFallbackData = true;
       });
   },
 });
 
-export const { setServiceCatalog, setCategoryList, clearError } = catalogSlice.actions;
+export const { setServiceCatalog, setCategoryList, clearError, useFallbackData } = catalogSlice.actions;
 export default catalogSlice.reducer;
 
 // Selectors
@@ -156,6 +359,7 @@ export const selectServiceCatalog = (state: any) => state.catalog.serviceCatalog
 export const selectCategoryList = (state: any) => state.catalog.categoryList;
 export const selectCatalogLoading = (state: any) => state.catalog.isLoading;
 export const selectCatalogError = (state: any) => state.catalog.error;
+export const selectUseFallbackData = (state: any) => state.catalog.useFallbackData;
 
 // Helper selectors
 export const selectServicesByCategory = (state: any, categoryId: number) =>

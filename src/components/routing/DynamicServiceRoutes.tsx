@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { CatalogFormLoader } from '@/components/forms/CatalogFormLoader';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchCatalogData, selectServiceCatalog, selectCatalogLoading } from '@/store/slices/catalogSlice';
+import { fetchCatalogData, selectServiceCatalog, selectCatalogLoading, useFallbackData } from '@/store/slices/catalogSlice';
 
 interface DynamicServiceRoutesProps {
   onSubmit: (data: any) => void;
@@ -16,11 +16,17 @@ export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
   const serviceCatalog = useAppSelector(selectServiceCatalog);
   const isLoading = useAppSelector(selectCatalogLoading);
 
-  // Only fetch data if the store is empty and we're not already loading
+  // Initialize with fallback data immediately if store is empty
   useEffect(() => {
-    if (serviceCatalog.length === 0 && !isLoading) {
-      console.log('Fetching catalog data because store is empty');
-      dispatch(fetchCatalogData());
+    if (serviceCatalog.length === 0) {
+      console.log('Service catalog is empty, initializing with fallback data');
+      dispatch(useFallbackData());
+      
+      // Still try to fetch real data in the background
+      if (!isLoading) {
+        console.log('Attempting to fetch real catalog data in background');
+        dispatch(fetchCatalogData());
+      }
     }
   }, [dispatch, serviceCatalog.length, isLoading]);
 
@@ -29,12 +35,16 @@ export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
     console.log('useDynamicServiceRoutes - Creating routes with:', {
       isLoading,
       serviceCatalogLength: serviceCatalog.length,
-      serviceCatalog: serviceCatalog.slice(0, 3) // Log first 3 items only
+      serviceCatalogPreview: serviceCatalog.slice(0, 3).map(s => ({ 
+        id: s.service_id, 
+        name: s.service_name, 
+        nav_link: s.nav_link 
+      }))
     });
 
-    // Return empty array while loading to avoid issues
-    if (isLoading || serviceCatalog.length === 0) {
-      console.log('Still loading or no data, returning empty routes array');
+    // Only return empty if truly no data available
+    if (serviceCatalog.length === 0) {
+      console.log('No service catalog data available, returning empty routes array');
       return [];
     }
 
@@ -71,7 +81,7 @@ export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
 
     console.log('Generated routes count:', generatedRoutes.length);
     return generatedRoutes;
-  }, [serviceCatalog, isLoading, onSubmit]);
+  }, [serviceCatalog, onSubmit]);
 
   return routes;
 };
