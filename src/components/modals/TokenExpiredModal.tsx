@@ -42,9 +42,16 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
     onNavigateToLogin();
   };
 
+  const [trialCount, setTrialCount] = useState<number>(() => {
+    const stored = localStorage.getItem('trialCount');
+    return stored ? parseInt(stored) : 3; // default to 3 attempts
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    const updated = trialCount - 1;
+    setTrialCount(updated);
+    localStorage.setItem('trialCount', updated.toString());
     if (!password.trim()) {
       setValidationError('Password is required');
       return;
@@ -76,6 +83,8 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
         description: "Please check your password and try again",
         variant: "destructive",
       });
+
+      localStorage.setItem('tokek', updated.toString());
       setValidationError('Invalid password');
     }
   };
@@ -86,6 +95,8 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
       setValidationError('');
     }
   };
+
+
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
