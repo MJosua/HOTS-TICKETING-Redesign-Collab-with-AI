@@ -110,6 +110,11 @@ const DivisionManagement = () => {
     }
   };
 
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedDivision(null);
+  };
+
   const highlightText = (text: string, highlight: string) => {
     if (!highlight) return text;
     const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
@@ -279,7 +284,7 @@ const DivisionManagement = () => {
           onSave={handleSaveDivision}
         />
 
-        <AlertDialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <AlertDialog open={isDeleteModalOpen} onOpenChange={handleDeleteCancel}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Division</AlertDialogTitle>
@@ -288,7 +293,7 @@ const DivisionManagement = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={handleDeleteCancel}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
                 Delete
               </AlertDialogAction>

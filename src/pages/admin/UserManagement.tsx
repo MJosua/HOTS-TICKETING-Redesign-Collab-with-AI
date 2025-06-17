@@ -149,6 +149,11 @@ const UserManagement = () => {
     }
   };
 
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
+    setDeleteTarget(null);
+  };
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case "Administrator": return "bg-purple-100 text-purple-800";
@@ -364,7 +369,7 @@ const UserManagement = () => {
           onSave={handleSaveRole}
         />
 
-        <AlertDialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <AlertDialog open={isDeleteModalOpen} onOpenChange={handleDeleteCancel}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete {deleteTarget?.type === 'user' ? 'User' : 'Role'}</AlertDialogTitle>
@@ -373,7 +378,7 @@ const UserManagement = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={handleDeleteCancel}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
                 Delete
               </AlertDialogAction>
