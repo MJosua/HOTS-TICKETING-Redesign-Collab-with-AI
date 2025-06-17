@@ -10,7 +10,6 @@ interface UserData {
   role?: string;
   [key: string]: any;
 }
-
 interface AuthState {
   user: UserData | null;
   token: string | null;
@@ -45,6 +44,7 @@ export const loginUser = createAsyncThunk(
         const { tokek, userData } = response.data;
         localStorage.setItem('tokek', tokek);
         localStorage.setItem('isAuthenticated', 'true');
+        console.log("LOGIN RESPONSE:", response.data);
         return { token: tokek, userData };
       } else {
         return rejectWithValue(response.data.message);
@@ -97,10 +97,10 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = action.payload as string;
         state.loginAttempts += 1;
-        
+
         // Check if account should be locked
-        if (action.payload && typeof action.payload === 'string' && 
-            action.payload.includes('Too many login attempt')) {
+        if (action.payload && typeof action.payload === 'string' &&
+          action.payload.includes('Too many login attempt')) {
           state.isLocked = true;
         }
       })

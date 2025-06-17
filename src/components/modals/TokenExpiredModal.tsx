@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppDispatch } from "@/hooks/useAppDispatch";
 import { useAppSelector } from "@/hooks/useAppSelector";
 import { loginUser } from "@/store/slices/authSlice";
+import { useSelector } from 'react-redux';
 
 interface TokenExpiredModalProps {
   isOpen: boolean;
@@ -18,16 +19,18 @@ interface TokenExpiredModalProps {
   username: string;
 }
 
-const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({ 
-  isOpen, 
-  onClose, 
+const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
+  isOpen,
+  onClose,
   onNavigateToLogin,
-  username 
+  username
 }) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const { isLoading } = useAppSelector((state) => state.auth);
-  
+
+
+  const user = useSelector((state: RootState) => state.auth.user);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -39,7 +42,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!password.trim()) {
       setValidationError('Password is required');
       return;
@@ -49,15 +52,15 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
     try {
       await dispatch(loginUser({
-        username: username,
+        username: user.uid,
         password: password,
       })).unwrap();
-      
+
       toast({
         title: "Authentication Successful",
         description: "Your session has been renewed",
       });
-      
+
       setPassword('');
       onClose();
     } catch (error) {
@@ -77,7 +80,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={isOpen} onOpenChange={() => { }}>
       <DialogContent className="sm:max-w-md [&>button]:hidden">
         <div className="absolute right-4 top-4 z-10">
           <Button
@@ -106,13 +109,6 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Username Display */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">Username</Label>
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border">
-              <User className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-900 font-medium">{username}</span>
-            </div>
-          </div>
 
           {/* Password Input */}
           <div className="space-y-2">
@@ -148,7 +144,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
           {/* Action Buttons */}
           <div className="flex flex-col space-y-3 pt-4">
-            <Button 
+            <Button
               type="submit"
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-2.5"
               disabled={isLoading}
@@ -165,8 +161,8 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
                 </>
               )}
             </Button>
-            
-            <Button 
+
+            <Button
               type="button"
               variant="outline"
               onClick={handleClose}
