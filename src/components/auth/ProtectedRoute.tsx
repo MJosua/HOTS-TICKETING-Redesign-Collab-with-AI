@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import { AuthLoadingScreen } from './AuthLoadingScreen';
@@ -9,29 +9,37 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, token } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, token, isLoading } = useAppSelector((state) => state.auth);
   const [isChecking, setIsChecking] = useState(true);
   
-  // Check authentication - if we have a token in localStorage but not in Redux state yet,
-  // still consider authenticated to prevent flickering
-  const hasToken = token || localStorage.getItem('tokek');
-  const isAuth = isAuthenticated && hasToken;
+  // Memoize authentication check to prevent unnecessary re-calculations
+  const authStatus = useMemo(() => {
+    const hasToken = token || localStorage.getItem('tokek');
+    const isAuth = isAuthenticated && hasToken;
+    
+    return {
+      isAuthenticated: isAuth,
+      hasToken: !!hasToken
+    };
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
-    // Give a brief moment for Redux state to initialize
+    // Reduce checking time if we already have clear auth state
+    const checkingDelay = authStatus.hasToken ? 100 : 200;
+    
     const timer = setTimeout(() => {
       setIsChecking(false);
-    }, 200);
+    }, checkingDelay);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [authStatus.hasToken]);
 
-  // Show loading screen while checking authentication
-  if (isChecking) {
+  // Show loading screen while checking authentication or during login process
+  if (isChecking || isLoading) {
     return <AuthLoadingScreen />;
   }
   
-  if (!isAuth) {
+  if (!authStatus.isAuthenticated) {
     console.log('User not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }

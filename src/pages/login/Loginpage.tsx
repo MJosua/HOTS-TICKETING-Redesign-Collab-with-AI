@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import { useAppDispatch } from '@/hooks/useAppDispatch';
@@ -20,20 +20,37 @@ const Login = () => {
   });
   const [forgotToggle, setForgotToggle] = useState(false);
   const [lockedAccount, setLockedAccount] = useState(false);
+  
+  // Use ref to prevent multiple navigation attempts
+  const hasNavigated = useRef(false);
 
-  // Check if user is already authenticated
+  // Check if user is already authenticated - optimize to prevent delay
   useEffect(() => {
     const hasToken = token || localStorage.getItem('tokek');
-    if (isAuthenticated && hasToken && !isLoading) {
+    
+    // Only navigate if we have both authentication state and token, and haven't already navigated
+    if (isAuthenticated && hasToken && !isLoading && !hasNavigated.current) {
       console.log('User already authenticated, redirecting to service catalog');
+      hasNavigated.current = true;
       navigate('/service-catalog', { replace: true });
     }
   }, [isAuthenticated, token, isLoading, navigate]);
 
-  // Reset login attempts when going back to login
+  // Reset navigation flag when authentication state changes
   useEffect(() => {
-    if (!forgotToggle && !lockedAccount) {
-      dispatch(resetLoginAttempts());
+    if (!isAuthenticated || !token) {
+      hasNavigated.current = false;
+    }
+  }, [isAuthenticated, token]);
+
+  // Reset login attempts when going back to login - debounce to prevent excessive dispatches
+  useEffect(() => {
+    if (!forgotToggle && !lockedAccount && !hasNavigated.current) {
+      const timer = setTimeout(() => {
+        dispatch(resetLoginAttempts());
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [forgotToggle, lockedAccount, dispatch]);
 

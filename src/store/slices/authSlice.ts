@@ -1,3 +1,4 @@
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config/sourceConfig';
@@ -35,7 +36,7 @@ const initialState: AuthState = {
   isTokenExpired: false,
 };
 
-// Async thunk for login - without navigation
+// Async thunk for login
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ username, password, isReauthentication = false }: {
@@ -147,7 +148,7 @@ const authSlice = createSlice({
           state.isLocked = true;
         }
       })
-      // Logout cases - simplified
+      // Logout cases
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.token = null;

@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,17 +33,28 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isAccountLocked, setIsAccountLocked] = useState(false);
   const [isProcessingLogin, setIsProcessingLogin] = useState(false);
+  
+  // Use ref to prevent multiple logout calls
+  const hasNavigatedRef = useRef(false);
 
   const maxAttempts = 3;
   const remainingAttempts = maxAttempts - failedAttempts;
 
-  // Only redirect to login if user becomes completely unauthenticated AND we're not processing
+  // Only redirect to login once when user becomes completely unauthenticated
   useEffect(() => {
-    if (!isAuthenticated && !user && !isProcessingLogin && !isLoading) {
+    if (!isAuthenticated && !user && !isProcessingLogin && !isLoading && !hasNavigatedRef.current) {
       console.log('User is completely logged out, redirecting to login');
+      hasNavigatedRef.current = true;
       onNavigateToLogin();
     }
   }, [isAuthenticated, user, isProcessingLogin, isLoading, onNavigateToLogin]);
+
+  // Reset navigation flag when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      hasNavigatedRef.current = false;
+    }
+  }, [isOpen]);
 
   const handleClose = () => {
     // Reset form state
@@ -53,9 +63,13 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
     setShowPassword(false);
     setFailedAttempts(0);
     setIsAccountLocked(false);
+    setIsProcessingLogin(false);
     
-    // Call the logout navigation handler
-    onNavigateToLogin();
+    // Prevent multiple calls
+    if (!hasNavigatedRef.current) {
+      hasNavigatedRef.current = true;
+      onNavigateToLogin();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,7 +131,6 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
         });
         setValidationError(`Invalid password. ${maxAttempts - newFailedAttempts} attempt(s) remaining.`);
       }
-      // Don't redirect on failed attempts - stay in modal
     }
   };
 
