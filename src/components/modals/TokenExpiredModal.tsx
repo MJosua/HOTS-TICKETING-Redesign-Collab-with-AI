@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,8 +77,6 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
         variant: "destructive",
       });
       setValidationError('Invalid password');
-      // Don't close the modal - keep it open for retry
-      setPassword(''); // Clear password but keep modal open
     }
   };
 
@@ -89,7 +88,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}} modal>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md [&>button]:hidden">
         <div className="absolute right-4 top-4 z-10">
           <Button

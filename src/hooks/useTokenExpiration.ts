@@ -1,63 +1,39 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppSelector } from './useAppSelector';
 import axios from 'axios';
 
 export const useTokenExpiration = () => {
   const [isTokenExpiredModalOpen, setIsTokenExpiredModalOpen] = useState(false);
   const { token, user, isAuthenticated } = useAppSelector((state) => state.auth);
-  const interceptorRef = useRef<number | null>(null);
 
-  // Only close modal if user becomes unauthenticated AND modal was manually closed
+  // Close modal if user becomes unauthenticated
   useEffect(() => {
     if (!isAuthenticated || !token) {
-      // Only auto-close if the modal wasn't opened due to token expiration
-      // This prevents auto-closing when token expires but user hasn't logged out manually
-      console.log('Auth state changed, but keeping modal state:', { isAuthenticated, token, modalOpen: isTokenExpiredModalOpen });
+      setIsTokenExpiredModalOpen(false);
     }
-  }, [isAuthenticated, token, isTokenExpiredModalOpen]);
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
-    // Remove existing interceptor if any
-    if (interceptorRef.current !== null) {
-      axios.interceptors.response.eject(interceptorRef.current);
-    }
-
     // Set up axios interceptor to detect 401 responses
-    interceptorRef.current = axios.interceptors.response.use(
-      (response) => {
-        console.log('Successful response:', response.status);
-        return response;
-      },
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
       (error) => {
-        console.log('Response error intercepted:', {
-          status: error.response?.status,
-          hasToken: !!token,
-          isAuthenticated,
-          modalCurrentlyOpen: isTokenExpiredModalOpen
-        });
-
-        // Always show modal on 401 if user has a token and is authenticated
         if (error.response?.status === 401 && token && isAuthenticated) {
-          console.log('401 detected - showing token expired modal');
+          // Token is expired, show modal
           setIsTokenExpiredModalOpen(true);
         }
-        
         return Promise.reject(error);
       }
     );
 
     // Cleanup interceptor on unmount
     return () => {
-      if (interceptorRef.current !== null) {
-        axios.interceptors.response.eject(interceptorRef.current);
-        interceptorRef.current = null;
-      }
+      axios.interceptors.response.eject(interceptor);
     };
-  }, [token, isAuthenticated]); // Remove isTokenExpiredModalOpen from dependencies to prevent re-creating interceptor
+  }, [token, isAuthenticated]);
 
   const closeTokenExpiredModal = () => {
-    console.log('Manually closing token expired modal');
     setIsTokenExpiredModalOpen(false);
   };
 
