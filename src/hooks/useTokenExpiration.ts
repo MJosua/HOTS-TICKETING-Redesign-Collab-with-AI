@@ -11,19 +11,25 @@ export const useTokenExpiration = () => {
   
   // Use ref to prevent multiple token expiration triggers
   const hasTriggeredExpiration = useRef(false);
+  const interceptorId = useRef<number | null>(null);
 
   // Close modal if user becomes authenticated
   useEffect(() => {
     if (isAuthenticated && token) {
       console.log('User authenticated, closing token expired modal');
       setIsTokenExpiredModalOpen(false);
-      hasTriggeredExpiration.current = false; // Reset on successful auth
+      hasTriggeredExpiration.current = false;
     }
   }, [isAuthenticated, token]);
 
   useEffect(() => {
-    // Set up axios interceptor to detect 401 responses
-    const interceptor = axios.interceptors.response.use(
+    // Remove existing interceptor if any
+    if (interceptorId.current !== null) {
+      axios.interceptors.response.eject(interceptorId.current);
+    }
+
+    // Set up new axios interceptor
+    interceptorId.current = axios.interceptors.response.use(
       (response) => response,
       (error) => {
         // Only trigger token expiration once per session
@@ -45,13 +51,15 @@ export const useTokenExpiration = () => {
 
     // Cleanup interceptor on unmount
     return () => {
-      axios.interceptors.response.eject(interceptor);
+      if (interceptorId.current !== null) {
+        axios.interceptors.response.eject(interceptorId.current);
+      }
     };
   }, [token, isAuthenticated, dispatch]);
 
   const closeTokenExpiredModal = () => {
     setIsTokenExpiredModalOpen(false);
-    hasTriggeredExpiration.current = false; // Reset when manually closed
+    hasTriggeredExpiration.current = false;
   };
 
   return {

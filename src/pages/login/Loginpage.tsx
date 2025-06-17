@@ -24,33 +24,32 @@ const Login = () => {
   // Use ref to prevent multiple navigation attempts
   const hasNavigated = useRef(false);
 
-  // Check if user is already authenticated - optimize to prevent delay
+  // Single effect to handle authentication redirect
   useEffect(() => {
-    const hasToken = token || localStorage.getItem('tokek');
+    // Only check authentication once the loading state is clear
+    if (isLoading) return;
     
-    // Only navigate if we have both authentication state and token, and haven't already navigated
-    if (isAuthenticated && hasToken && !isLoading && !hasNavigated.current) {
+    const storedToken = localStorage.getItem('tokek');
+    const shouldRedirect = isAuthenticated && (token || storedToken) && !hasNavigated.current;
+    
+    if (shouldRedirect) {
       console.log('User already authenticated, redirecting to service catalog');
       hasNavigated.current = true;
       navigate('/service-catalog', { replace: true });
     }
   }, [isAuthenticated, token, isLoading, navigate]);
 
-  // Reset navigation flag when authentication state changes
+  // Reset navigation flag when user logs out
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated && !token) {
       hasNavigated.current = false;
     }
   }, [isAuthenticated, token]);
 
-  // Reset login attempts when going back to login - debounce to prevent excessive dispatches
+  // Reset login attempts when returning to login form
   useEffect(() => {
-    if (!forgotToggle && !lockedAccount && !hasNavigated.current) {
-      const timer = setTimeout(() => {
-        dispatch(resetLoginAttempts());
-      }, 100);
-      
-      return () => clearTimeout(timer);
+    if (!forgotToggle && !lockedAccount) {
+      dispatch(resetLoginAttempts());
     }
   }, [forgotToggle, lockedAccount, dispatch]);
 
