@@ -11,6 +11,7 @@ import { useAppDispatch } from "@/hooks/useAppDispatch";
 import { useAppSelector } from "@/hooks/useAppSelector";
 import { loginUser } from "@/store/slices/authSlice";
 import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
 
 interface TokenExpiredModalProps {
   isOpen: boolean;
@@ -28,7 +29,6 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const { isLoading } = useAppSelector((state) => state.auth);
-
 
   const user = useSelector((state: RootState) => state.auth.user);
   const [password, setPassword] = useState('');
