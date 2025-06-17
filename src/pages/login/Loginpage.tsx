@@ -11,7 +11,7 @@ import Lockedaccount from './form/Lockedaccount';
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { isAuthenticated, token } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, token, isLoading } = useAppSelector((state) => state.auth);
   
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({
@@ -21,14 +21,14 @@ const Login = () => {
   const [forgotToggle, setForgotToggle] = useState(false);
   const [lockedAccount, setLockedAccount] = useState(false);
 
-  // Check if user is already authenticated - check both Redux and localStorage
+  // Check if user is already authenticated
   useEffect(() => {
     const hasToken = token || localStorage.getItem('tokek');
-    if (isAuthenticated && hasToken) {
+    if (isAuthenticated && hasToken && !isLoading) {
       console.log('User already authenticated, redirecting to service catalog');
       navigate('/service-catalog', { replace: true });
     }
-  }, [isAuthenticated, token, navigate]);
+  }, [isAuthenticated, token, isLoading, navigate]);
 
   // Reset login attempts when going back to login
   useEffect(() => {

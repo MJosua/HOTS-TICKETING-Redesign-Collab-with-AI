@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     // Give a brief moment for Redux state to initialize
     const timer = setTimeout(() => {
       setIsChecking(false);
-    }, 100);
+    }, 200);
 
     return () => clearTimeout(timer);
   }, []);
