@@ -38,13 +38,13 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
   const maxAttempts = 3;
   const remainingAttempts = maxAttempts - failedAttempts;
 
-  // Only redirect to login if user becomes completely unauthenticated (not just token expired)
+  // Only redirect to login if user becomes completely unauthenticated AND we're not processing
   useEffect(() => {
-    if (!isAuthenticated && !user && !isProcessingLogin) {
-      // User is completely logged out (not just token expired)
+    if (!isAuthenticated && !user && !isProcessingLogin && !isLoading) {
+      console.log('User is completely logged out, redirecting to login');
       onNavigateToLogin();
     }
-  }, [isAuthenticated, user, isProcessingLogin, onNavigateToLogin]);
+  }, [isAuthenticated, user, isProcessingLogin, isLoading, onNavigateToLogin]);
 
   const handleClose = () => {
     // Reset form state
@@ -71,11 +71,14 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
     // Use username prop as fallback if user data is cleared
     const loginUsername = user?.uid || user?.username || username;
+    
+    console.log('Attempting re-authentication for:', loginUsername);
 
     try {
       await dispatch(loginUser({
         username: loginUsername,
         password: password,
+        isReauthentication: true,
       })).unwrap();
 
       toast({
@@ -92,6 +95,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
       setIsProcessingLogin(false);
       onClose();
     } catch (error) {
+      console.log('Re-authentication failed:', error);
       setIsProcessingLogin(false);
       const newFailedAttempts = failedAttempts + 1;
       setFailedAttempts(newFailedAttempts);

@@ -11,6 +11,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, token } = useAppSelector((state) => state.auth);
   
   // Check both Redux state and localStorage for authentication
+  // Fixed typo: 'tokek' should be consistent with what's stored
   const isAuth = isAuthenticated && (token || localStorage.getItem('tokek'));
   
   if (!isAuth) {

@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config/sourceConfig';
@@ -19,6 +18,7 @@ interface AuthState {
   error: string | null;
   loginAttempts: number;
   isLocked: boolean;
+  isTokenExpired: boolean; // Add flag to track if this is a token expiration scenario
 }
 
 const initialState: AuthState = {
@@ -29,13 +29,20 @@ const initialState: AuthState = {
   error: null,
   loginAttempts: 0,
   isLocked: false,
+  isTokenExpired: false,
 };
 
 // Async thunk for login
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async ({ username, password }: { username: string; password: string }, { rejectWithValue }) => {
+  async ({ username, password, isReauthentication = false }: { 
+    username: string; 
+    password: string; 
+    isReauthentication?: boolean;
+  }, { rejectWithValue, getState }) => {
     try {
+      console.log('Attempting login for:', username, 'isReauthentication:', isReauthentication);
+      
       const response = await axios.post(`${API_URL}/hots_auth/login`, {
         uid: username,
         asin: password,
@@ -46,11 +53,12 @@ export const loginUser = createAsyncThunk(
         localStorage.setItem('tokek', tokek);
         localStorage.setItem('isAuthenticated', 'true');
         console.log("LOGIN RESPONSE:", response.data);
-        return { token: tokek, userData };
+        return { token: tokek, userData, isReauthentication };
       } else {
         return rejectWithValue(response.data.message);
       }
     } catch (error: any) {
+      console.log('Login failed:', error.response?.data?.message || error.message);
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
@@ -80,7 +88,12 @@ const authSlice = createSlice({
     clearToken: (state) => {
       state.token = null;
       state.isAuthenticated = false;
+      state.isTokenExpired = true;
       // Don't clear user data immediately to allow re-authentication
+    },
+    // Add action to reset token expiration flag
+    resetTokenExpiration: (state) => {
+      state.isTokenExpired = false;
     },
   },
   extraReducers: (builder) => {
@@ -98,12 +111,26 @@ const authSlice = createSlice({
         state.error = null;
         state.loginAttempts = 0;
         state.isLocked = false;
+        state.isTokenExpired = false;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
-        state.isAuthenticated = false;
         state.error = action.payload as string;
         state.loginAttempts += 1;
+
+        // Only clear authentication completely if this is NOT a re-authentication attempt
+        // For re-authentication, keep user data but mark as unauthenticated
+        if (!state.isTokenExpired) {
+          // This is a fresh login attempt, clear everything on failure
+          state.isAuthenticated = false;
+          state.user = null;
+          state.token = null;
+        } else {
+          // This is a re-authentication attempt, keep user data but stay unauthenticated
+          state.isAuthenticated = false;
+          state.token = null;
+          // Keep user data for re-authentication
+        }
 
         // Check if account should be locked
         if (action.payload && typeof action.payload === 'string' &&
@@ -119,9 +146,10 @@ const authSlice = createSlice({
         state.error = null;
         state.loginAttempts = 0;
         state.isLocked = false;
+        state.isTokenExpired = false;
       });
   },
 });
 
-export const { clearError, resetLoginAttempts, setLocked, clearToken } = authSlice.actions;
+export const { clearError, resetLoginAttempts, setLocked, clearToken, resetTokenExpiration } = authSlice.actions;
 export default authSlice.reducer;
