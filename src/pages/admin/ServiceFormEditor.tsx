@@ -72,7 +72,7 @@ const ServiceFormEditor = () => {
     // TODO: Call your service catalog save API here with jsonConfig
     // Example: await saveServiceCatalog({ ...otherFields, form_json: jsonConfig });
     
-    navigate('/admin/service-catalog');
+    // navigate('/admin/service-catalog');
   };
 
   const generateFormJSON = () => {

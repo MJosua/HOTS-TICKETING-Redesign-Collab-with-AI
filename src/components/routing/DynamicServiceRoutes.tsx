@@ -53,14 +53,13 @@ export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
       service => service.active === 1 && service.nav_link && service.nav_link.trim() !== ''
     );
 
-    console.log('Active services for routing:', activeServices.map(s => ({ 
-      id: s.service_id, 
-      name: s.service_name, 
-      nav_link: s.nav_link 
-    })));
+    // console.log('Active services for routing:', activeServices.map(s => ({ 
+    //   id: s.service_id, 
+    //   name: s.service_name, 
+    //   nav_link: s.nav_link 
+    // })));
 
     const generatedRoutes = activeServices.map((service) => {
-      console.log(`Creating route for service: ${service.service_name} with nav_link: ${service.nav_link}`);
       return (
         <Route
           key={service.service_id}
@@ -79,7 +78,6 @@ export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
       );
     });
 
-    console.log('Generated routes count:', generatedRoutes.length);
     return generatedRoutes;
   }, [serviceCatalog, onSubmit]);
 

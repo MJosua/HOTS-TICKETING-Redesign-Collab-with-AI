@@ -44,7 +44,6 @@ const AppContent = () => {
 
   const dynamicServiceRoutes = useDynamicServiceRoutes(handleFormSubmit);
   
-  console.log('App.tsx - Dynamic service routes count:', dynamicServiceRoutes.length);
 
   return (
     <>

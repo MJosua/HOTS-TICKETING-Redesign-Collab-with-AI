@@ -376,7 +376,7 @@ export function AppSidebar() {
 export function AppLayout({ children, searchValue, onSearchChange, searchPlaceholder = "Search..." }: AppLayoutProps) {
 
   const location = useLocation();
-  const hiddenSearchRoutes = ['/','/login', '/admin/settings', '/admin/service-catalog'];
+  const hiddenSearchRoutes = ['/','/login', '/admin/settings', '/admin/service-catalog', '/admin/service-catalog/create', '/admin/service-catalog/create'] ;
   const shouldHideSearch = hiddenSearchRoutes.includes(location.pathname);
 
   return (
