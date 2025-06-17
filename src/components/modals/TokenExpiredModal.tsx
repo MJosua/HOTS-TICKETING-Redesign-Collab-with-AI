@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,16 +26,25 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
-  const { isLoading, user } = useAppSelector((state) => state.auth);
+  const { isLoading, user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isAccountLocked, setIsAccountLocked] = useState(false);
+  const [isProcessingLogin, setIsProcessingLogin] = useState(false);
 
   const maxAttempts = 3;
   const remainingAttempts = maxAttempts - failedAttempts;
+
+  // Only redirect to login if user becomes completely unauthenticated (not just token expired)
+  useEffect(() => {
+    if (!isAuthenticated && !user && !isProcessingLogin) {
+      // User is completely logged out (not just token expired)
+      onNavigateToLogin();
+    }
+  }, [isAuthenticated, user, isProcessingLogin, onNavigateToLogin]);
 
   const handleClose = () => {
     // Reset form state
@@ -58,6 +67,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
     }
 
     setValidationError('');
+    setIsProcessingLogin(true);
 
     // Use username prop as fallback if user data is cleared
     const loginUsername = user?.uid || user?.username || username;
@@ -79,8 +89,10 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
       setShowPassword(false);
       setFailedAttempts(0);
       setIsAccountLocked(false);
+      setIsProcessingLogin(false);
       onClose();
     } catch (error) {
+      setIsProcessingLogin(false);
       const newFailedAttempts = failedAttempts + 1;
       setFailedAttempts(newFailedAttempts);
 
@@ -101,6 +113,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
         });
         setValidationError(`Invalid password. ${maxAttempts - newFailedAttempts} attempt(s) remaining.`);
       }
+      // Don't redirect on failed attempts - stay in modal
     }
   };
 
@@ -180,7 +193,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => handlePasswordChange(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isLoading || isProcessingLogin}
                   className={`pr-10 ${validationError ? "border-red-500" : ""}`}
                   required
                 />
@@ -190,7 +203,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
+                  disabled={isLoading || isProcessingLogin}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -207,9 +220,9 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-2.5"
-                disabled={isLoading}
+                disabled={isLoading || isProcessingLogin}
               >
-                {isLoading ? (
+                {isLoading || isProcessingLogin ? (
                   <>
                     <LoadingSpinner size="sm" className="mr-2" />
                     Authenticating...
@@ -227,7 +240,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isLoading}
+              disabled={isLoading || isProcessingLogin}
               className="w-full border-gray-300 hover:bg-gray-50"
             >
               End Session & Logout
