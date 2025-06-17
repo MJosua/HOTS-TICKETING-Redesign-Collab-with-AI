@@ -10,8 +10,10 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, token } = useAppSelector((state) => state.auth);
   
-  // Simple authentication check
-  const isAuth = isAuthenticated && token;
+  // Check authentication - if we have a token in localStorage but not in Redux state yet,
+  // still consider authenticated to prevent flickering
+  const hasToken = token || localStorage.getItem('tokek');
+  const isAuth = isAuthenticated && hasToken;
   
   if (!isAuth) {
     console.log('User not authenticated, redirecting to login');

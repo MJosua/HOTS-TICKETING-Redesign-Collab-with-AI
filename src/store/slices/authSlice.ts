@@ -1,3 +1,4 @@
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config/sourceConfig';
@@ -21,11 +22,14 @@ interface AuthState {
   isTokenExpired: boolean;
 }
 
+// Get initial token from localStorage
+const storedToken = localStorage.getItem('tokek');
+
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem('tokek'),
+  token: storedToken,
   isLoading: false,
-  isAuthenticated: !!localStorage.getItem('tokek'),
+  isAuthenticated: !!storedToken, // Set based on token presence
   error: null,
   loginAttempts: 0,
   isLocked: false,

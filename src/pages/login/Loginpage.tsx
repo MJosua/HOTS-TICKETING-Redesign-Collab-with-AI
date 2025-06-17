@@ -21,10 +21,11 @@ const Login = () => {
   const [forgotToggle, setForgotToggle] = useState(false);
   const [lockedAccount, setLockedAccount] = useState(false);
 
-  // Simple redirect check - only redirect if truly authenticated
+  // Check if user is already authenticated - check both Redux and localStorage
   useEffect(() => {
-    if (isAuthenticated && token) {
-      console.log('User authenticated, redirecting to service catalog');
+    const hasToken = token || localStorage.getItem('tokek');
+    if (isAuthenticated && hasToken) {
+      console.log('User already authenticated, redirecting to service catalog');
       navigate('/service-catalog', { replace: true });
     }
   }, [isAuthenticated, token, navigate]);
