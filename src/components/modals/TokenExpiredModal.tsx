@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppDispatch } from "@/hooks/useAppDispatch";
 import { useAppSelector } from "@/hooks/useAppSelector";
 import { loginUser } from "@/store/slices/authSlice";
+import { fetchCatalogData } from "@/store/slices/catalogSlice";
+import { fetchMyTickets, fetchAllTickets, fetchTaskList } from "@/store/slices/ticketsSlice";
 
 interface TokenExpiredModalProps {
   isOpen: boolean;
@@ -68,9 +70,20 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
         password: password,
       })).unwrap();
 
+      // Re-fetch all data after successful authentication
+      console.log('Refreshing data after successful re-authentication...');
+      
+      // Fetch catalog data
+      dispatch(fetchCatalogData());
+      
+      // Fetch tickets data
+      dispatch(fetchMyTickets(1));
+      dispatch(fetchAllTickets(1));
+      dispatch(fetchTaskList(1));
+
       toast({
         title: "Authentication Successful",
-        description: "Your session has been renewed",
+        description: "Your session has been renewed and data refreshed",
       });
 
       setPassword('');
