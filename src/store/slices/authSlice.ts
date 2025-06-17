@@ -1,3 +1,4 @@
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config/sourceConfig';
@@ -64,10 +65,11 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-// Async thunk for logout
+// Async thunk for logout - simplified to avoid delays
 export const logoutUser = createAsyncThunk('auth/logoutUser', async () => {
   localStorage.removeItem('tokek');
   localStorage.removeItem('isAuthenticated');
+  return true; // Simple return to avoid delays
 });
 
 const authSlice = createSlice({
@@ -89,6 +91,7 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       state.isTokenExpired = true;
+      localStorage.removeItem('tokek');
       // Don't clear user data immediately to allow re-authentication
     },
     // Add action to reset token expiration flag
@@ -116,15 +119,20 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
-        state.loginAttempts += 1;
+        
+        // Only increment attempts if this is NOT a re-authentication
+        if (!state.isTokenExpired) {
+          state.loginAttempts += 1;
+        }
 
-        // Only clear authentication completely if this is NOT a re-authentication attempt
-        // For re-authentication, keep user data but mark as unauthenticated
+        // Handle authentication state based on type of login
         if (!state.isTokenExpired) {
           // This is a fresh login attempt, clear everything on failure
           state.isAuthenticated = false;
           state.user = null;
           state.token = null;
+          localStorage.removeItem('tokek');
+          localStorage.removeItem('isAuthenticated');
         } else {
           // This is a re-authentication attempt, keep user data but stay unauthenticated
           state.isAuthenticated = false;

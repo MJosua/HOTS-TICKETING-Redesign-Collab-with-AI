@@ -37,6 +37,11 @@ const Login = () => {
     }
   }, [forgotToggle, lockedAccount, dispatch]);
 
+  // Don't render anything if already authenticated to prevent flash
+  if (isAuthenticated && (token || localStorage.getItem('tokek'))) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-0 to-blue-100 flex items-center justify-center p-4">
       {!forgotToggle && !lockedAccount && (
