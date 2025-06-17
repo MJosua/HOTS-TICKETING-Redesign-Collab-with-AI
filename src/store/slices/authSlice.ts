@@ -6,6 +6,7 @@ import { API_URL } from '../../config/sourceConfig';
 interface UserData {
   id: string;
   username: string;
+  uid: string;
   email?: string;
   role?: string;
   [key: string]: any;
@@ -75,6 +76,12 @@ const authSlice = createSlice({
     setLocked: (state) => {
       state.isLocked = true;
     },
+    // Add action to clear only token but preserve user data temporarily
+    clearToken: (state) => {
+      state.token = null;
+      state.isAuthenticated = false;
+      // Don't clear user data immediately to allow re-authentication
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -116,5 +123,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, resetLoginAttempts, setLocked } = authSlice.actions;
+export const { clearError, resetLoginAttempts, setLocked, clearToken } = authSlice.actions;
 export default authSlice.reducer;

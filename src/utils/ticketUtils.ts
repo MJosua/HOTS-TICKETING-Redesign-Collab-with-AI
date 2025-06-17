@@ -3,8 +3,8 @@ import { Ticket, Approver } from '@/types/ticketTypes';
 
 export const convertTicketToDisplayFormat = (ticket: Ticket) => {
   // Convert approval list to steps format
-  const approvalSteps = ticket.list_approval?.map((approver: Approver) => ({
-    id: approver.approver_id.toString(),
+  const approvalSteps = ticket.list_approval?.map((approver: Approver, index: number) => ({
+    id: `${approver.approver_id}-${approver.approval_order}-${index}`,
     name: approver.approver_name,
     status: approver.approval_status === 1 ? 'approved' as const : 
             approver.approval_status === 2 ? 'rejected' as const : 

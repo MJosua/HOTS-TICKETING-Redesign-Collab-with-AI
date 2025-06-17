@@ -30,7 +30,7 @@ const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBa
         </span>
         {steps.map((step, index) => (
           <div
-            key={step.id}
+            key={`${step.id}-${index}`}
             className={cn(
               "h-2 w-8 rounded-full",
               {
@@ -50,7 +50,7 @@ const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBa
   return (
     <div className={cn("flex items-center space-x-2", className)}>
       {steps.map((step, index) => (
-        <React.Fragment key={step.id}>
+        <div key={`${step.id}-${step.name}-${index}`} className="flex items-center">
           <div className="flex flex-col items-center">
             <div
               className={cn(
@@ -89,7 +89,7 @@ const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBa
               )}
             />
           )}
-        </React.Fragment>
+        </div>
       ))}
     </div>
   );

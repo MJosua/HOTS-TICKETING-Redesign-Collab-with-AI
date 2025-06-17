@@ -10,8 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppDispatch } from "@/hooks/useAppDispatch";
 import { useAppSelector } from "@/hooks/useAppSelector";
 import { loginUser } from "@/store/slices/authSlice";
-import { useSelector } from 'react-redux';
-import type { RootState } from '@/store';
 
 interface TokenExpiredModalProps {
   isOpen: boolean;
@@ -28,9 +26,8 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
-  const { isLoading } = useAppSelector((state) => state.auth);
+  const { isLoading, user } = useAppSelector((state) => state.auth);
 
-  const user = useSelector((state: RootState) => state.auth.user);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -55,9 +52,12 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
     setValidationError('');
 
+    // Use username prop as fallback if user data is cleared
+    const loginUsername = user?.uid || user?.username || username;
+
     try {
       await dispatch(loginUser({
-        username: user?.uid || username,
+        username: loginUsername,
         password: password,
       })).unwrap();
 
