@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useCallback } from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
 import { Toaster } from "@/components/ui/toaster";
@@ -37,15 +36,15 @@ const queryClient = new QueryClient({
 });
 
 const AppContent = () => {
-  const handleFormSubmit = (data: any) => {
+  // Use useCallback to prevent unnecessary re-renders of dynamic routes
+  const handleFormSubmit = useCallback((data: any) => {
     console.log('Form submitted:', data);
     // Handle form submission logic here
-  };
+  }, []);
 
   const dynamicServiceRoutes = useDynamicServiceRoutes(handleFormSubmit);
   
-  console.log('App.tsx - Dynamic service routes:', dynamicServiceRoutes);
-  console.log('App.tsx - Dynamic service routes length:', dynamicServiceRoutes.length);
+  console.log('App.tsx - Dynamic service routes count:', dynamicServiceRoutes.length);
 
   return (
     <>
