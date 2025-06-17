@@ -1,11 +1,18 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from './useAppSelector';
+import { useAuthCheck } from './useAuthCheck';
 import axios from 'axios';
 
 export const useTokenExpiration = () => {
   const [isTokenExpiredModalOpen, setIsTokenExpiredModalOpen] = useState(false);
   const { token, user, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  // Use the auth check hook
+  useAuthCheck({ 
+    userToken2: token || '', 
+    setIsTokenExpiredModalOpen 
+  });
 
   // Close modal if user becomes unauthenticated
   useEffect(() => {
