@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Route } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -10,12 +9,12 @@ interface DynamicServiceRoutesProps {
   onSubmit: (data: any) => void;
 }
 
-export const DynamicServiceRoutes: React.FC<DynamicServiceRoutesProps> = ({ onSubmit }) => {
+export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
   const { serviceCatalog, isLoading } = useCatalogData();
 
   // Don't render routes while loading
   if (isLoading) {
-    return null;
+    return [];
   }
 
   // Filter active services that have valid nav_link
@@ -23,24 +22,26 @@ export const DynamicServiceRoutes: React.FC<DynamicServiceRoutesProps> = ({ onSu
     service => service.active === 1 && service.nav_link && service.nav_link.trim() !== ''
   );
 
-  return (
-    <>
-      {activeServices.map((service) => (
-        <Route
-          key={service.service_id}
-          path={`/service-catalog/${service.nav_link}`}
-          element={
-            <ProtectedRoute>
-              <AppLayout>
-                <CatalogFormLoader
-                  servicePath={service.nav_link}
-                  onSubmit={onSubmit}
-                />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-      ))}
-    </>
-  );
+  return activeServices.map((service) => (
+    <Route
+      key={service.service_id}
+      path={`/service-catalog/${service.nav_link}`}
+      element={
+        <ProtectedRoute>
+          <AppLayout>
+            <CatalogFormLoader
+              servicePath={service.nav_link}
+              onSubmit={onSubmit}
+            />
+          </AppLayout>
+        </ProtectedRoute>
+      }
+    />
+  ));
+};
+
+// Keep the original component for backward compatibility but mark it as deprecated
+export const DynamicServiceRoutes: React.FC<DynamicServiceRoutesProps> = ({ onSubmit }) => {
+  const routes = useDynamicServiceRoutes(onSubmit);
+  return <React.Fragment>{routes}</React.Fragment>;
 };

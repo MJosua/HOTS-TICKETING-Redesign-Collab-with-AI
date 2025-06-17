@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { DynamicServiceRoutes } from "@/components/routing/DynamicServiceRoutes";
+import { useDynamicServiceRoutes } from "@/components/routing/DynamicServiceRoutes";
 import TokenExpiredModalWrapper from "@/components/modals/TokenExpiredModalWrapper";
 import Index from "./pages/Index";
 import ServiceCatalog from "./pages/ServiceCatalog";
@@ -42,6 +42,8 @@ const AppContent = () => {
     // Handle form submission logic here
   };
 
+  const dynamicServiceRoutes = useDynamicServiceRoutes(handleFormSubmit);
+
   return (
     <>
       <BrowserRouter>
@@ -62,7 +64,7 @@ const AppContent = () => {
           } />
 
           {/* Dynamic service catalog routes */}
-          <DynamicServiceRoutes onSubmit={handleFormSubmit} />
+          {dynamicServiceRoutes}
 
           <Route path="/task-list" element={
             <ProtectedRoute>
