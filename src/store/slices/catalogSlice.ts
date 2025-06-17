@@ -213,12 +213,12 @@ export const fetchServiceCatalog = createAsyncThunk(
           Authorization: `Bearer ${userToken}`,
         },
       });
-      console.log('Service catalog data:', response.data.data);
+      // console.log('Service catalog data:', response.data.data);
       return response.data.data;
     } catch (error) {
       console.error('Failed to fetch service catalog:', error);
       if (error.response?.status === 401) {
-        console.log('Using fallback service catalog data due to authentication error');
+        // console.log('Using fallback service catalog data due to authentication error');
         return fallbackServiceCatalog;
       }
       throw error;
@@ -236,12 +236,12 @@ export const fetchCategoryList = createAsyncThunk(
           Authorization: `Bearer ${userToken}`,
         },
       });
-      console.log('Category data:', response.data.data);
+      // console.log('Category data:', response.data.data);
       return response.data.data;
     } catch (error) {
       console.error('Failed to fetch category list:', error);
       if (error.response?.status === 401) {
-        console.log('Using fallback category data due to authentication error');
+        // console.log('Using fallback category data due to authentication error');
         return fallbackCategoryList;
       }
       throw error;
@@ -289,7 +289,7 @@ const catalogSlice = createSlice({
       state.useFallbackData = true;
       state.isLoading = false;
       state.error = null;
-      console.log('Using fallback data for service catalog');
+      // console.log('Using fallback data for service catalog');
     },
   },
   extraReducers: (builder) => {

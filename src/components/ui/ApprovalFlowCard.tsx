@@ -100,7 +100,7 @@ export const ApprovalFlowCard: React.FC<ApprovalFlowCardProps> = ({
               const isLast = index === steps.length - 1;
               
               return (
-                <React.Fragment key={step.id}>
+                <React.Fragment key={index}>
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <div className="flex flex-col items-center cursor-pointer group">

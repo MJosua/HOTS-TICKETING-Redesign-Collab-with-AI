@@ -15,13 +15,18 @@ import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
 import { ApprovalFlowCard } from '@/components/ui/ApprovalFlowCard';
 import { DynamicFieldEditor } from '@/components/forms/DynamicFieldEditor';
 import { useCatalogData } from '@/hooks/useCatalogData';
+import axios from 'axios';
+import { API_URL } from '@/config/SourceConfig';
+import { useToast } from '@/hooks/use-toast';
+
+
 
 const ServiceFormEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = !!id;
   const { categoryList } = useCatalogData();
-  
+
   const [config, setConfig] = useState<FormConfig>({
     title: '',
     url: '',
@@ -64,16 +69,51 @@ const ServiceFormEditor = () => {
     }
   }, [isEdit]);
 
-  const handleSave = () => {
+  const {toast} = useToast()
+
+  const handleSave = async () => {
+
     // Generate JSON from current config
     const jsonConfig = generateFormJSON();
     console.log('Generated JSON for saving:', jsonConfig);
-    
     // TODO: Call your service catalog save API here with jsonConfig
     // Example: await saveServiceCatalog({ ...otherFields, form_json: jsonConfig });
-    
     // navigate('/admin/service-catalog');
+
+    try {
+      // Build full service catalog object
+      const payload = {
+        service_name: config.title,
+        category_id: categoryList.find(c => c.category_name === config.category)?.category_id || null,
+        service_description: config.description,
+        approval_level: config.approval?.steps?.length || 0,
+        image_url: "", // you can add this from an image uploader
+        nav_link: config.url.replace(/^\/+/, ''), // remove leading slash
+        active: 1,
+        team_id: null, // or set from admin UI later
+        api_endpoint: config.apiEndpoint,
+        form_json: jsonConfig // full form config object
+      };
+
+      const response = await axios.post(`${API_URL}/hots_settings/insertupdate/service_catalog`, payload, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        }
+      });
+
+      console.log("SAVE SUCCESS:", response.data);
+
+      // Optional: toast, redirect, etc.
+      toast({ title: "Success", description: "Form saved", status: "success", variant: "success", duration: 5000 });
+      navigate('/admin/service-catalog');
+
+    } catch (error: any) {
+      console.error("SAVE ERROR:", error);
+
+      toast({ title: "Error", description: error.response.data.message || "Failed to save", status: "error", variant: "destructive", duration: 5000 });
+    }
   };
+
 
   const generateFormJSON = () => {
     // Clean up the config for JSON serialization
@@ -92,7 +132,7 @@ const ServiceFormEditor = () => {
         ...(field.note && { note: field.note })
       }))
     };
-    
+
     return JSON.stringify(cleanConfig, null, 2);
   };
 
@@ -146,7 +186,7 @@ const ServiceFormEditor = () => {
   const moveField = (index: number, direction: 'up' | 'down') => {
     const newFields = [...(config.fields || [])];
     const newIndex = direction === 'up' ? index - 1 : index + 1;
-    
+
     if (newIndex >= 0 && newIndex < newFields.length) {
       [newFields[index], newFields[newIndex]] = [newFields[newIndex], newFields[index]];
       setConfig({ ...config, fields: newFields });
@@ -249,7 +289,7 @@ const ServiceFormEditor = () => {
                     placeholder="e.g., IT Support Request"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="url">URL Path</Label>
                   <Input
@@ -318,12 +358,12 @@ const ServiceFormEditor = () => {
               <CardContent className="space-y-4">
                 <div>
                   <Label>Approval Mode</Label>
-                  <Select 
-                    value={config.approval?.mode} 
-                    onValueChange={(value: 'sequential' | 'parallel') => 
-                      setConfig({ 
-                        ...config, 
-                        approval: { ...config.approval!, mode: value } 
+                  <Select
+                    value={config.approval?.mode}
+                    onValueChange={(value: 'sequential' | 'parallel') =>
+                      setConfig({
+                        ...config,
+                        approval: { ...config.approval!, mode: value }
                       })
                     }
                   >
@@ -344,7 +384,7 @@ const ServiceFormEditor = () => {
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                  
+
                   {config.approval?.steps.map((step, index) => (
                     <div key={index} className="flex gap-2 mb-2">
                       <Input
@@ -374,14 +414,14 @@ const ServiceFormEditor = () => {
                     <TabsTrigger value="fields">Dynamic Fields</TabsTrigger>
                     <TabsTrigger value="rowGroups">Legacy Row Groups</TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="fields" className="space-y-4 mt-4">
                     <DynamicFieldEditor
                       fields={config.fields || []}
                       onUpdate={(fields) => setConfig({ ...config, fields })}
                     />
                   </TabsContent>
-                  
+
                   <TabsContent value="rowGroups" className="mt-4">
                     <RowGroupEditor
                       rowGroups={config.rowGroups || []}

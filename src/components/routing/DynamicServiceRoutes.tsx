@@ -19,12 +19,12 @@ export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
   // Initialize with fallback data immediately if store is empty
   useEffect(() => {
     if (serviceCatalog.length === 0) {
-      console.log('Service catalog is empty, initializing with fallback data');
+      // console.log('Service catalog is empty, initializing with fallback data');
       dispatch(useFallbackData());
       
       // Still try to fetch real data in the background
       if (!isLoading) {
-        console.log('Attempting to fetch real catalog data in background');
+        // console.log('Attempting to fetch real catalog data in background');
         dispatch(fetchCatalogData());
       }
     }
@@ -32,19 +32,19 @@ export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
 
   // Memoize the routes to prevent unnecessary re-renders
   const routes = useMemo(() => {
-    console.log('useDynamicServiceRoutes - Creating routes with:', {
-      isLoading,
-      serviceCatalogLength: serviceCatalog.length,
-      serviceCatalogPreview: serviceCatalog.slice(0, 3).map(s => ({ 
-        id: s.service_id, 
-        name: s.service_name, 
-        nav_link: s.nav_link 
-      }))
-    });
+    // console.log('useDynamicServiceRoutes - Creating routes with:', {
+    //   isLoading,
+    //   serviceCatalogLength: serviceCatalog.length,
+    //   serviceCatalogPreview: serviceCatalog.slice(0, 3).map(s => ({ 
+    //     id: s.service_id, 
+    //     name: s.service_name, 
+    //     nav_link: s.nav_link 
+    //   }))
+    // });
 
     // Only return empty if truly no data available
     if (serviceCatalog.length === 0) {
-      console.log('No service catalog data available, returning empty routes array');
+      // console.log('No service catalog data available, returning empty routes array');
       return [];
     }
 
