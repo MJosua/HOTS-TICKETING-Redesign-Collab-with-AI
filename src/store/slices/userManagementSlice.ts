@@ -64,6 +64,7 @@ export const fetchUsers = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
+    console.log("teamfetch",response.data.data)
     return response.data.data;
   }
 );

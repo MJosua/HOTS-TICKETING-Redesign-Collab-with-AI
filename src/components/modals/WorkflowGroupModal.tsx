@@ -53,6 +53,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
     approval_steps: []
   });
 
+
   useEffect(() => {
     if (workflowGroup && mode === 'edit') {
       setFormData(workflowGroup);
@@ -274,9 +275,10 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                             <SelectValue placeholder="Select user" />
                           </SelectTrigger>
                           <SelectContent>
-                            {users.map((user) => (
-                              <SelectItem key={user.user_id} value={user.user_id.toString()}>
-                                {user.firstname} {user.lastname} ({user.role_name})
+                            {users
+                            .map((user) => (
+                              <SelectItem key={user.user_id} value={user.user_id}>
+                                {user.firstname} {user.lastname} ({user.role_name}) - {user.user_id}
                               </SelectItem>
                             ))}
                           </SelectContent>
