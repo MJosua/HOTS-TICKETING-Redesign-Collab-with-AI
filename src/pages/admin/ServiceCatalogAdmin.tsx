@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +15,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '@/hooks/useAppDispatch';
 import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
 
 const ServiceCatalogAdmin = () => {
@@ -39,14 +38,14 @@ const ServiceCatalogAdmin = () => {
   } = useCatalogData();
 
   const { toast } = useToast();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   // Fetch real data from API on component mount
   useEffect(() => {
     fetchData();
     // Also fetch workflow groups for the table display
     dispatch(fetchWorkflowGroups());
-  }, []);
+  }, [dispatch]);
 
   // Convert service catalog data to FormConfig format for display
   const forms: FormConfig[] = serviceCatalog.map(service => {
