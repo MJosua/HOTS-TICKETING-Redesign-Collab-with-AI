@@ -259,7 +259,7 @@ const UserManagement = () => {
           description: "Workflow group created successfully",
         });
       } else {
-        const result = await dispatch(updateWorkflowGroup({ id: selectedWorkflowGroup?.workflow_group_id!, data: group }));
+        const result = await dispatch(updateWorkflowGroup({ id: selectedWorkflowGroup?.id!, data: group }));
         
         if (result.meta.requestStatus === 'fulfilled') {
           savedGroup = result.payload;
@@ -280,7 +280,7 @@ const UserManagement = () => {
 
       // Save workflow steps if any
       if (steps.length > 0 && savedGroup) {
-        const workflowGroupId = savedGroup.workflow_group_id || group.workflow_group_id;
+        const workflowGroupId = savedGroup.id || group.id;
         
         if (workflowGroupId) {
           const stepsWithGroupId = steps.map(step => ({
@@ -320,7 +320,7 @@ const UserManagement = () => {
             description: "Team deleted successfully",
           });
         } else if (deleteTarget.type === 'workflow') {
-          await dispatch(deleteWorkflowGroup(deleteTarget.item.workflow_group_id));
+          await dispatch(deleteWorkflowGroup(deleteTarget.item.id));
           toast({
             title: "Success",
             description: "Workflow group deleted successfully",

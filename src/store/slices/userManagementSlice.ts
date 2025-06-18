@@ -95,11 +95,13 @@ export interface Superior {
 
 export interface WorkflowGroup {
   workflow_group_id: number;
+  id: number; // Add id property for consistency
   name: string;
   description: string;
   category_ids: number[];
   created_at: string;
   updated_at: string;
+  finished_date?: string | null; // Add finished_date property
   is_active: boolean;
 }
 
