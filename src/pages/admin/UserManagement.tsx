@@ -84,7 +84,7 @@ const UserManagement = () => {
     // Status filter
     const statusMatch = filters.status === 'all' || 
       (filters.status === 'active' && user.is_active) ||
-      (filters.status === 'deleted' && !user.is_active);
+      (filters.status === 'deleted' && user.is_deleted);
 
     // Team filter
     const teamMatch = !filters.team || user.team_name === filters.team;
@@ -375,7 +375,7 @@ const UserManagement = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredUsers.map((user) => (
-                        <TableRow key={user.user_id} className={!user.is_active ? 'opacity-60' : ''}>
+                        <TableRow key={user.user_id} className={user.is_deleted ? 'opacity-40' : ''}>
                           <TableCell>
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
@@ -395,7 +395,7 @@ const UserManagement = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <UserStatusBadge isActive={user.is_active} />
+                            <UserStatusBadge isActive={!user.is_deleted} />
                           </TableCell>
                           <TableCell className="text-gray-600">{user.job_title || 'No title'}</TableCell>
                           <TableCell>
