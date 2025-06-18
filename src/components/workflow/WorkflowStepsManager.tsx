@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +47,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
   const updateStep = (index: number, field: keyof WorkflowStepData, value: any) => {
     const updatedSteps = [...steps];
     updatedSteps[index] = { ...updatedSteps[index], [field]: value };
+    console.log(`Updated step ${index} ${field} to:`, value);
     onStepsChange(updatedSteps);
   };
 
@@ -82,7 +82,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
         
       case 'specific_user':
         const userOptions = users
-          .filter(user => user.firstname && user.lastname)
+          .filter(user => user.firstname && user.lastname && !user.is_deleted && user.is_active)
           .map(user => ({ 
             value: user.user_id.toString(), 
             label: `${user.firstname} ${user.lastname}` 
@@ -109,10 +109,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
   };
 
   const handleStepTypeChange = (index: number, newStepType: 'role' | 'specific_user' | 'superior' | 'team') => {
-    console.log(`Changing step ${index} type to: ${newStepType}`);
-    
-    // Update step type
-    updateStep(index, 'step_type', newStepType);
+    console.log(`Changing step ${index} type from ${steps[index]?.step_type} to: ${newStepType}`);
     
     // Get new options for the step type
     const newOptions = getAssignedValueOptions(newStepType);
@@ -122,7 +119,16 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
     const defaultValue = newOptions.length > 0 ? newOptions[0].value : '';
     console.log('Setting default value:', defaultValue);
     
-    updateStep(index, 'assigned_value', defaultValue);
+    // Update both step type and assigned value at once
+    const updatedSteps = [...steps];
+    updatedSteps[index] = { 
+      ...updatedSteps[index], 
+      step_type: newStepType,
+      assigned_value: defaultValue
+    };
+    
+    console.log(`Updated step ${index}:`, updatedSteps[index]);
+    onStepsChange(updatedSteps);
   };
 
   return (
@@ -143,7 +149,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
         const isValidValue = options.some(option => option.value === currentValue);
         const displayValue = isValidValue ? currentValue : (options.length > 0 ? options[0].value : '');
         
-        console.log(`Step ${index}: type=${step.step_type}, value=${currentValue}, isValid=${isValidValue}, display=${displayValue}`);
+        console.log(`Step ${index}: type=${step.step_type}, value=${currentValue}, isValid=${isValidValue}, display=${displayValue}, options:`, options);
         
         return (
           <Card key={index} className="border-l-4 border-l-blue-500">
@@ -188,6 +194,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
                   <Select
                     value={step.step_type}
                     onValueChange={(value: 'role' | 'specific_user' | 'superior' | 'team') => {
+                      console.log(`Step type select changed for step ${index}:`, value);
                       handleStepTypeChange(index, value);
                     }}
                   >
@@ -206,6 +213,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
                 <div>
                   <Label htmlFor={`assigned-value-${index}`}>Assigned To</Label>
                   <Select
+                    key={`${step.step_type}-${index}`}
                     value={displayValue}
                     onValueChange={(value) => {
                       console.log(`Updating step ${index} assigned_value to:`, value);
@@ -218,7 +226,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
                     <SelectContent>
                       {options.length > 0 ? (
                         options.map((option) => (
-                          <SelectItem key={option.value} value={option.value.toString()}>
+                          <SelectItem key={`${step.step_type}-${option.value}`} value={option.value.toString()}>
                             {option.label}
                           </SelectItem>
                         ))

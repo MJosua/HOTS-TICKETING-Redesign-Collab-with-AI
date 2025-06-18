@@ -5,23 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Users } from 'lucide-react';
 import { useAppSelector } from '@/hooks/useAppSelector';
-import { Team } from '@/store/slices/userManagementSlice';
+import { Team, UserType } from '@/store/slices/userManagementSlice';
 
 interface TeamModalProps {
   isOpen: boolean;
   onClose: () => void;
   team?: Team | null;
   mode: 'add' | 'edit';
-  onSave: (team: any) => void;
+  onSave: (team: any, selectedUsers?: number[]) => void;
 }
 
 const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
-  const { departments } = useAppSelector(state => state.userManagement);
+  const { departments, users } = useAppSelector(state => state.userManagement);
   const [formData, setFormData] = useState({
     team_name: '',
     department_id: '',
   });
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [teamLeader, setTeamLeader] = useState<number | null>(null);
 
   useEffect(() => {
     if (team && mode === 'edit') {
@@ -29,63 +35,166 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
         team_name: team.team_name,
         department_id: team.department_id.toString(),
       });
+      // TODO: Load existing team members when editing
+      setSelectedUsers([]);
+      setTeamLeader(null);
     } else {
       setFormData({
         team_name: '',
         department_id: '',
       });
+      setSelectedUsers([]);
+      setTeamLeader(null);
     }
   }, [team, mode, isOpen]);
 
+  const handleUserSelection = (userId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(prev => [...prev, userId]);
+    } else {
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
+      // Remove as leader if unchecked
+      if (teamLeader === userId) {
+        setTeamLeader(null);
+      }
+    }
+  };
+
   const handleSave = () => {
-    console.log("Submitting form data:", formData);
+    console.log("Submitting team data:", formData);
+    console.log("Selected users:", selectedUsers);
+    console.log("Team leader:", teamLeader);
 
     const teamToSave = {
       ...formData,
-      department_id: parseInt(formData.department_id)
+      department_id: parseInt(formData.department_id),
+      team_leader_id: teamLeader
     };
-    onSave(teamToSave);
+    
+    onSave(teamToSave, selectedUsers);
     onClose();
   };
 
+  const availableUsers = users.filter(user => 
+    !user.is_deleted && 
+    user.is_active &&
+    (!formData.department_id || user.department_id === parseInt(formData.department_id))
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === 'add' ? 'Add New Team' : 'Edit Team'}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="team_name">Team Name</Label>
-            <Input
-              id="team_name"
-              value={formData.team_name}
-              onChange={(e) => setFormData({...formData, team_name: e.target.value})}
-              placeholder="Enter team name"
-            />
+        
+        <div className="space-y-6">
+          {/* Basic Team Information */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="team_name">Team Name</Label>
+              <Input
+                id="team_name"
+                value={formData.team_name}
+                onChange={(e) => setFormData({...formData, team_name: e.target.value})}
+                placeholder="Enter team name"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Select 
+                value={formData.department_id} 
+                onValueChange={(value) => {
+                  setFormData({...formData, department_id: value});
+                  // Clear selected users when department changes
+                  setSelectedUsers([]);
+                  setTeamLeader(null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((department) => (
+                    <SelectItem key={department.department_id} value={department.department_id.toString()}>
+                      {department.department_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="department">Department</Label>
-            <Select value={formData.department_id} onValueChange={(value) => setFormData({...formData, department_id: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((department) => (
-                  <SelectItem key={department.department_id} value={department.department_id.toString()}>
-                    {department.department_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
+          {/* Team Members Section */}
+          {formData.department_id && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Team Members ({selectedUsers.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {availableUsers.length > 0 ? (
+                    availableUsers.map((user) => (
+                      <div key={user.user_id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <Checkbox
+                            checked={selectedUsers.includes(user.user_id)}
+                            onCheckedChange={(checked) => handleUserSelection(user.user_id, checked as boolean)}
+                          />
+                          <div>
+                            <div className="font-medium">{user.firstname} {user.lastname}</div>
+                            <div className="text-sm text-gray-500">{user.role_name} • {user.email}</div>
+                          </div>
+                        </div>
+                        
+                        {selectedUsers.includes(user.user_id) && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant={teamLeader === user.user_id ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setTeamLeader(teamLeader === user.user_id ? null : user.user_id)}
+                            >
+                              {teamLeader === user.user_id ? "Leader" : "Set Leader"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-gray-500">
+                      No users available for the selected department
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Selected Team Leader */}
+          {teamLeader && (
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-blue-100 text-blue-800">Team Leader</Badge>
+                <span className="font-medium">
+                  {users.find(u => u.user_id === teamLeader)?.firstname} {users.find(u => u.user_id === teamLeader)?.lastname}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}>
-            {mode === 'add' ? 'Add Team' : 'Save Changes'}
+          <Button onClick={handleSave} disabled={!formData.team_name || !formData.department_id}>
+            {mode === 'add' ? 'Create Team' : 'Save Changes'}
           </Button>
         </DialogFooter>
       </DialogContent>
