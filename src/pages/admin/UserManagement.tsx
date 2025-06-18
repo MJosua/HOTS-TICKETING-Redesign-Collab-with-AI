@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Search, Shield, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +14,27 @@ import WorkflowGroupModal from "@/components/modals/WorkflowGroupModal";
 import UserStatusBadge from "@/components/ui/UserStatusBadge";
 import UserFilters from "@/components/filters/UserFilters";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchUsers, fetchTeams, fetchDepartments, fetchWorkflowGroups, UserType, Team, WorkflowGroup, createTeam, updateTeam, deleteTeam, createWorkflowGroup, updateWorkflowGroup, deleteWorkflowGroup, createWorkflowStep, fetchWorkflowSteps } from '@/store/slices/userManagementSlice';
+import { 
+  fetchUsers, 
+  fetchTeams, 
+  fetchDepartments, 
+  fetchWorkflowGroups, 
+  fetchRoles,
+  fetchJobTitles,
+  fetchSuperiors,
+  fetchServices,
+  UserType, 
+  Team, 
+  WorkflowGroup, 
+  createTeam, 
+  updateTeam, 
+  deleteTeam, 
+  createWorkflowGroup, 
+  updateWorkflowGroup, 
+  deleteWorkflowGroup, 
+  createWorkflowStep, 
+  fetchWorkflowSteps 
+} from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +42,7 @@ import { WorkflowStepData } from '@/components/workflow/WorkflowStepsManager';
 
 const UserManagement = () => {
   const dispatch = useAppDispatch();
-  const { users, teams, departments, workflowGroups, filters, isLoading } = useAppSelector(state => state.userManagement);
+  const { users, teams, departments, workflowGroups, roles, jobTitles, superiors, services, filters, isLoading } = useAppSelector(state => state.userManagement);
   const [activeTab, setActiveTab] = useState("users");
   const [searchValue, setSearchValue] = useState("");
   
@@ -39,10 +60,15 @@ const UserManagement = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Fetch all data when component mounts
     dispatch(fetchUsers());
     dispatch(fetchTeams());
     dispatch(fetchDepartments());
     dispatch(fetchWorkflowGroups());
+    dispatch(fetchRoles());
+    dispatch(fetchJobTitles());
+    dispatch(fetchSuperiors());
+    dispatch(fetchServices());
   }, [dispatch]);
 
   // Apply filters to users
