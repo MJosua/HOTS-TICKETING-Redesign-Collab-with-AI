@@ -83,7 +83,7 @@ const UserManagement = () => {
 
     // Status filter
     const statusMatch = filters.status === 'all' || 
-      (filters.status === 'active' && user.is_active) ||
+      (filters.status === 'active' && user.is_active && !user.is_deleted) ||
       (filters.status === 'deleted' && user.is_deleted);
 
     // Team filter
@@ -398,7 +398,7 @@ const UserManagement = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <UserStatusBadge isActive={!user.is_deleted} />
+                            <UserStatusBadge isActive={!user.is_deleted && user.is_active} />
                           </TableCell>
                           <TableCell className="text-gray-600">{user.job_title || 'No title'}</TableCell>
                           <TableCell>
@@ -406,7 +406,7 @@ const UserManagement = () => {
                               <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              {user.is_active && (
+                              {!user.is_deleted && user.is_active && (
                                 <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteUser(user)}>
                                   <Trash2 className="w-4 h-4" />
                                 </Button>

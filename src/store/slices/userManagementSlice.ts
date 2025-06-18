@@ -14,9 +14,11 @@ export interface UserType {
   team_name: string;
   team_id?: number;
   job_title: string;
+  jobtitle_id?: number;
   superior_id?: number;
   finished_date?: string | null;
   is_active: boolean;
+  is_deleted: boolean;
 }
 
 export interface Team {
@@ -64,8 +66,10 @@ export interface Role {
 
 export interface JobTitle {
   jobtitle_id: number;
+  job_title: string;
   jobtitle_name: string;
   jobtitle_description: string;
+  department_id: number;
   created_date: string;
   finished_date?: string | null;
   is_active: boolean;
@@ -776,6 +780,7 @@ const userManagementSlice = createSlice({
         state.users = action.payload.map((user: any) => ({
           ...user,
           is_active: !user.finished_date,
+          is_deleted: user.is_deleted || false,
         }));
       })
       .addCase(fetchUsers.rejected, (state, action) => {
@@ -784,19 +789,28 @@ const userManagementSlice = createSlice({
       })
       .addCase(createUser.fulfilled, (state, action) => {
         if (action.payload) {
-          state.users.push(action.payload);
+          state.users.push({
+            ...action.payload,
+            is_deleted: false,
+          });
         }
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         if (action.payload) {
           const index = state.users.findIndex(u => u.user_id === action.payload.user_id);
           if (index !== -1) {
-            state.users[index] = action.payload;
+            state.users[index] = {
+              ...action.payload,
+              is_deleted: action.payload.is_deleted || false,
+            };
           }
         }
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
-        state.users = state.users.filter(u => u.user_id !== action.payload);
+        const index = state.users.findIndex(u => u.user_id === action.payload);
+        if (index !== -1) {
+          state.users[index].is_deleted = true;
+        }
       })
       // Teams - Fixed error handling
       .addCase(fetchTeams.pending, (state) => {
