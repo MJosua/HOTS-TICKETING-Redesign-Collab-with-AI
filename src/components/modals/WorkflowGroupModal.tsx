@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -225,7 +226,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                       <div className="grid gap-2">
                         <Label>Role</Label>
                         <Select
-                          value={step.value.toString()}
+                          value={step.value ? step.value.toString() : ""}
                           onValueChange={(value) => updateApprovalStep(index, 'value', value)}
                         >
                           <SelectTrigger>
@@ -246,7 +247,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                       <div className="grid gap-2">
                         <Label>Team</Label>
                         <Select
-                          value={step.value.toString()}
+                          value={step.value ? step.value.toString() : ""}
                           onValueChange={(value) => updateApprovalStep(index, 'value', value)}
                         >
                           <SelectTrigger>
@@ -267,7 +268,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                       <div className="grid gap-2">
                         <Label>User</Label>
                         <Select
-                          value={step.value.toString()}
+                          value={step.value ? step.value.toString() : ""}
                           onValueChange={(value) => updateApprovalStep(index, 'value', parseInt(value))}
                         >
                           <SelectTrigger>
