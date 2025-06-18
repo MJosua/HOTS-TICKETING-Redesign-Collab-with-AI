@@ -29,8 +29,8 @@ const DepartmentManagement = () => {
   }, [dispatch]);
 
   const filteredDepartments = departments.filter(department =>
-    department.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    department.code.toLowerCase().includes(searchValue.toLowerCase()) ||
+    department.department_name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    department.short_name.toLowerCase().includes(searchValue.toLowerCase()) ||
     (department.head_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
     department.description.toLowerCase().includes(searchValue.toLowerCase())
   );
@@ -243,10 +243,10 @@ const DepartmentManagement = () => {
                   {filteredDepartments.map((department) => (
                     <TableRow key={department.department_id}>
                       <TableCell className="font-mono font-medium">
-                        {highlightText(department.code, searchValue)}
+                        {highlightText(department.department_shortname, searchValue)}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {highlightText(department.name, searchValue)}
+                        {highlightText(department.department_name, searchValue)}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">
                         {highlightText(department.description, searchValue)}
