@@ -10,6 +10,7 @@ import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { fetchRoles, fetchJobTitles, fetchSuperiors } from '@/store/slices/userManagementSlice';
+import { User } from 'lucide-react';
 
 interface User {
   user_id?: number;
@@ -36,8 +37,8 @@ interface UserModalProps {
 
 const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
   const dispatch = useAppDispatch();
-  const { roles, jobTitles, superiors, departments, teams } = useAppSelector(state => state.userManagement);
-  
+  const { users, roles, jobTitles, superiors, departments, teams } = useAppSelector(state => state.userManagement);
+
   const [formData, setFormData] = useState<User>({
     firstname: '',
     lastname: '',
@@ -91,7 +92,7 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
 
       if (mode === 'add') {
         const response = await axios.post(`${API_URL}/hots_settings/post/user`, formData, { headers });
-        
+
         if (response.data.success) {
           toast({
             title: "Success",
@@ -104,10 +105,10 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
         }
       } else {
         const response = await axios.put(`${API_URL}/hots_settings/update/user/${user?.user_id}`, formData, { headers });
-        
+
         if (response.data.success) {
           toast({
-            title: "Success", 
+            title: "Success",
             description: "User updated successfully",
           });
           onSave(formData);
@@ -131,7 +132,7 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
   const handleChange = (field: keyof User, value: string | number) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
-      
+
       // Auto-populate role_name when role_id changes
       if (field === 'role_id') {
         const selectedRole = roles.find(r => r.role_id === value);
@@ -139,12 +140,12 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
           newData.role_name = selectedRole.role_name;
         }
       }
-      
+
       // Auto-populate department_id when team_name changes
       if (field === 'team_name') {
         // This could be enhanced to map team to department
       }
-      
+
       return newData;
     });
   };
@@ -174,7 +175,7 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
                 required
               />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="lastname">Last Name</Label>
               <Input
@@ -197,7 +198,7 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
               required
             />
           </div>
-          
+
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -209,17 +210,25 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
             />
           </div>
 
+
           <div className="grid gap-2">
-            <Label htmlFor="team_name">Team</Label>
-            <Select value={formData.team_name} onValueChange={(value) => handleChange('team_name', value)}>
+            <Label htmlFor="team_name">Department</Label>
+            <Select
+              value={formData.department_id?.toString() || ""}
+              onValueChange={(value) => handleChange('department_id', value)}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select team" />
+                <SelectValue placeholder="Select Department" />
               </SelectTrigger>
+
               <SelectContent>
-                {teams && teams.length > 0 ? (
-                  teams.map((team) => (
-                    <SelectItem key={team.team_id} value={team.team_name}>
-                      {team.team_name}
+                {departments && departments.length > 0 ? (
+                  departments.map((dept) => (
+                    <SelectItem
+                      key={dept.department_id}
+                      value={dept.department_id.toString()}
+                    >
+                      {dept.department_shortname}
                     </SelectItem>
                   ))
                 ) : (
@@ -235,19 +244,73 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
             </Select>
           </div>
 
+          {/* <div className="grid gap-2">
+            <Label htmlFor="team_name">Team</Label>
+            <Select value={formData.team_name} onValueChange={(value) => handleChange('team_name', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select team" />
+              </SelectTrigger>
+              <SelectContent>
+                {teams && teams.length > 0 ? (
+                  teams.filter(t => t.department_id.toString() === formData.department_id?.toString()).map((team) => (
+                    <SelectItem key={team.team_id} value={team.team_name}>
+                      {team.team_name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="HR">HR</SelectItem>
+                    <SelectItem value="IT">IT</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Operations">Operations</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          </div> */}
+
+          <div className="grid gap-2">
+            <Label htmlFor="job_title">Job Title</Label>
+            <Select
+              value={formData.jobtitle_id?.toString() || ""}
+              onValueChange={(value) => handleChange("jobtitle_id", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select job title" />
+              </SelectTrigger>
+              <SelectContent>
+                {jobTitles
+                  .filter(j => j.department_id.toString() === formData.department_id?.toString())
+                  .map((job) => (
+                    <SelectItem
+                      key={job.jobtitle_id}
+                      value={job.jobtitle_id.toString()} // ✅ ensure it's a string
+                    >
+                      {job.job_title}
+                    </SelectItem>
+                  ))
+                }
+              </SelectContent>
+            </Select>
+          </div>
+
+
+
+
           <div className="grid gap-2">
             <Label htmlFor="role_id">Role</Label>
-            <Select 
-              value={formData.role_id ? formData.role_id.toString() : ""} 
+            <Select
+              value={formData.role_id ? formData.role_id.toString() : ""}
               onValueChange={(value) => handleChange('role_id', parseInt(value))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                {roles.filter(role => role.is_active).map((role) => (
-                  <SelectItem 
-                    key={role.role_id} 
+                {roles.map((role) => (
+                  <SelectItem
+                    key={role.role_id}
                     value={role.role_id != null ? role.role_id.toString() : `role-${Math.random()}`}
                   >
                     {role.role_name}
@@ -258,28 +321,9 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="job_title">Job Title</Label>
-            <Select value={formData.job_title} onValueChange={(value) => handleChange('job_title', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select job title" />
-              </SelectTrigger>
-              <SelectContent>
-                {jobTitles.filter(jobTitle => jobTitle.is_active).map((jobTitle) => (
-                  <SelectItem 
-                    key={jobTitle.jobtitle_id} 
-                    value={jobTitle.jobtitle_name || `jobtitle-${jobTitle.jobtitle_id}`}
-                  >
-                    {jobTitle.jobtitle_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
             <Label htmlFor="superior_id">Superior</Label>
-            <Select 
-              value={formData.superior_id ? formData.superior_id.toString() : "no_superior"} 
+            <Select
+              value={formData.superior_id ? formData.superior_id.toString() : "no_superior"}
               onValueChange={(value) => handleChange('superior_id', value === "no_superior" ? undefined : parseInt(value))}
             >
               <SelectTrigger>
@@ -287,12 +331,12 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no_superior">No Superior</SelectItem>
-                {superiors.map((superior) => (
-                  <SelectItem 
-                    key={superior.user_id} 
-                    value={superior.user_id != null ? superior.user_id.toString() : `superior-${Math.random()}`}
+                {users.map((user) => (
+                  <SelectItem
+                    key={user.user_id}
+                    value={user.user_id != null ? user.user_id.toString() : `superior-${Math.random()}`}
                   >
-                    {superior.firstname} {superior.lastname} ({superior.role_name})
+                    {user.firstname} {user.lastname} ({user.role_name})
                   </SelectItem>
                 ))}
               </SelectContent>
