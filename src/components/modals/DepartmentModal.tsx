@@ -70,7 +70,7 @@ const DepartmentModal = ({ isOpen, onClose, department, mode, onSave }: Departme
             <Input
               id="department_name"
               value={formData.department_name}
-              onChange={(e) => setFormData({...formData, department_name: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, department_name: e.target.value })}
               placeholder="Enter department name"
             />
           </div>
@@ -79,7 +79,7 @@ const DepartmentModal = ({ isOpen, onClose, department, mode, onSave }: Departme
             <Input
               id="department_shortname"
               value={formData.department_shortname}
-              onChange={(e) => setFormData({...formData, department_shortname: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, department_shortname: e.target.value })}
               placeholder="Enter department code"
             />
           </div>
@@ -88,21 +88,25 @@ const DepartmentModal = ({ isOpen, onClose, department, mode, onSave }: Departme
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Enter description"
               rows={3}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="head">Department Head</Label>
-            <Select value={formData.department_head} onValueChange={(value) => setFormData({...formData, department_head: value})}>
+            <Select
+              value={formData.department_head}
+              onValueChange={(value) =>
+                setFormData({ ...formData, department_head: value })
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select department head" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No head assigned</SelectItem>
                 {users.map((user) => (
-                  <SelectItem key={user.user_id} value={user.user_id.toString()}>
+                  <SelectItem key={user.user_id} value={user.user_id}>
                     {user.firstname} {user.lastname}
                   </SelectItem>
                 ))}
@@ -111,7 +115,7 @@ const DepartmentModal = ({ isOpen, onClose, department, mode, onSave }: Departme
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+            <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
