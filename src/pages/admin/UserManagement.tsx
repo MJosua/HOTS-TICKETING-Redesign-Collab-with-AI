@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Search, Shield, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,84 +8,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import UserModal from "@/components/modals/UserModal";
-import RoleModal from "@/components/modals/RoleModal";
 import WorkflowGroupModal from "@/components/modals/WorkflowGroupModal";
 import UserStatusBadge from "@/components/ui/UserStatusBadge";
 import UserFilters from "@/components/filters/UserFilters";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchUsers, fetchTeams, UserType } from '@/store/slices/userManagementSlice';
+import { fetchUsers, fetchTeams, fetchWorkflowGroups, UserType, Team, WorkflowGroup, createWorkflowGroup, updateWorkflowGroup, deleteWorkflowGroup } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
 
-interface RoleType {
-  id: string;
-  name: string;
-  permissions: number;
-  description: string;
-}
-
-interface WorkflowGroup {
-  id: string;
-  name: string;
-  description: string;
-  category_ids: number[];
-  approval_steps: ApprovalStep[];
-}
-
-interface ApprovalStep {
-  order: number;
-  type: 'role' | 'specific_user' | 'superior';
-  value: string | number;
-  description: string;
-}
-
-const initialRoles: RoleType[] = [
-  { id: "1", name: "Administrator", permissions: 15, description: "Full system access" },
-  { id: "2", name: "Manager", permissions: 12, description: "Department management" },
-  { id: "3", name: "Supervisor", permissions: 8, description: "Team supervision" },
-  { id: "4", name: "Staff", permissions: 5, description: "Basic operations" },
-];
-
-const initialWorkflowGroups: WorkflowGroup[] = [
-  {
-    id: "1",
-    name: "IT Equipment Approval",
-    description: "Approval workflow for IT equipment requests",
-    category_ids: [1, 2],
-    approval_steps: [
-      { order: 1, type: 'superior', value: 0, description: 'Direct supervisor approval' },
-      { order: 2, type: 'role', value: 'IT Manager', description: 'IT Manager final approval' }
-    ]
-  }
-];
-
 const UserManagement = () => {
   const dispatch = useAppDispatch();
-  const { users, teams, filters, isLoading } = useAppSelector(state => state.userManagement);
+  const { users, teams, workflowGroups, filters, isLoading } = useAppSelector(state => state.userManagement);
   const [activeTab, setActiveTab] = useState("users");
   const [searchValue, setSearchValue] = useState("");
   
-  // Local state for roles and workflow groups
-  const [roles, setRoles] = useState<RoleType[]>(initialRoles);
-  const [workflowGroups, setWorkflowGroups] = useState<WorkflowGroup[]>(initialWorkflowGroups);
-  
   // Modal states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
-  const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
   const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<WorkflowGroup | null>(null);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [deleteTarget, setDeleteTarget] = useState<{type: 'user' | 'role' | 'workflow', item: any} | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{type: 'user' | 'team' | 'workflow', item: any} | null>(null);
 
   const { toast } = useToast();
 
   useEffect(() => {
     dispatch(fetchUsers());
     dispatch(fetchTeams());
+    dispatch(fetchWorkflowGroups());
   }, [dispatch]);
 
   // Apply filters to users
@@ -141,9 +92,9 @@ const UserManagement = () => {
     }
   };
 
-  const filteredRoles = roles.filter(role =>
-    role.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    role.description.toLowerCase().includes(searchValue.toLowerCase())
+  const filteredTeams = teams.filter(team =>
+    team.team_name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    team.description.toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const filteredWorkflowGroups = workflowGroups.filter(group =>
@@ -182,32 +133,6 @@ const UserManagement = () => {
     dispatch(fetchUsers()); // Refresh data after save
   };
 
-  // Role handlers
-  const handleAddRole = () => {
-    setSelectedRole(null);
-    setModalMode('add');
-    setIsRoleModalOpen(true);
-  };
-
-  const handleEditRole = (role: RoleType) => {
-    setSelectedRole(role);
-    setModalMode('edit');
-    setIsRoleModalOpen(true);
-  };
-
-  const handleDeleteRole = (role: RoleType) => {
-    setDeleteTarget({type: 'role', item: role});
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleSaveRole = (role: RoleType) => {
-    if (modalMode === 'add') {
-      setRoles([...roles, role]);
-    } else {
-      setRoles(roles.map(r => r.id === role.id ? role : r));
-    }
-  };
-
   // Workflow Group handlers
   const handleAddWorkflowGroup = () => {
     setSelectedWorkflowGroup(null);
@@ -226,25 +151,51 @@ const UserManagement = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSaveWorkflowGroup = (group: WorkflowGroup) => {
-    if (modalMode === 'add') {
-      setWorkflowGroups([...workflowGroups, group]);
-    } else {
-      setWorkflowGroups(workflowGroups.map(g => g.id === group.id ? group : g));
+  const handleSaveWorkflowGroup = async (group: any) => {
+    try {
+      if (modalMode === 'add') {
+        await dispatch(createWorkflowGroup(group));
+        toast({
+          title: "Success",
+          description: "Workflow group created successfully",
+        });
+      } else {
+        await dispatch(updateWorkflowGroup({ id: group.workflow_id, data: group }));
+        toast({
+          title: "Success",
+          description: "Workflow group updated successfully",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to save workflow group",
+        variant: "destructive",
+      });
     }
   };
 
   const handleConfirmDelete = async () => {
     if (deleteTarget) {
-      if (deleteTarget.type === 'user') {
-        await deleteUserFromAPI(deleteTarget.item.user_id);
-      } else if (deleteTarget.type === 'role') {
-        setRoles(roles.filter(r => r.id !== deleteTarget.item.id));
-      } else if (deleteTarget.type === 'workflow') {
-        setWorkflowGroups(workflowGroups.filter(g => g.id !== deleteTarget.item.id));
+      try {
+        if (deleteTarget.type === 'user') {
+          await deleteUserFromAPI(deleteTarget.item.user_id);
+        } else if (deleteTarget.type === 'workflow') {
+          await dispatch(deleteWorkflowGroup(deleteTarget.item.workflow_id));
+          toast({
+            title: "Success",
+            description: "Workflow group deleted successfully",
+          });
+        }
+        setIsDeleteModalOpen(false);
+        setDeleteTarget(null);
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: "Failed to delete item",
+          variant: "destructive",
+        });
       }
-      setIsDeleteModalOpen(false);
-      setDeleteTarget(null);
     }
   };
 
@@ -268,13 +219,13 @@ const UserManagement = () => {
     <AppLayout 
       searchValue={searchValue} 
       onSearchChange={setSearchValue}
-      searchPlaceholder="Search users, roles, workflows..."
+      searchPlaceholder="Search users, teams, workflows..."
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600">Manage users, roles, and workflow groups</p>
+            <p className="text-gray-600">Manage users, teams, and workflow groups</p>
           </div>
           <Button onClick={handleAddUser}>
             <Plus className="w-4 h-4 mr-2" />
@@ -285,7 +236,7 @@ const UserManagement = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
+            <TabsTrigger value="teams">Teams Management</TabsTrigger>
             <TabsTrigger value="workflows">Workflow Groups</TabsTrigger>
           </TabsList>
 
@@ -363,48 +314,42 @@ const UserManagement = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="roles" className="space-y-4">
+          <TabsContent value="teams" className="space-y-4">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center space-x-2">
-                    <Shield className="w-5 h-5" />
-                    <span>Roles & Permissions ({filteredRoles.length})</span>
-                  </CardTitle>
-                  <Button size="sm" onClick={handleAddRole}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Role
-                  </Button>
-                </div>
+                <CardTitle className="flex items-center space-x-2">
+                  <Shield className="w-5 h-5" />
+                  <span>Teams Management ({filteredTeams.length})</span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Role Name</TableHead>
-                      <TableHead>Permissions</TableHead>
+                      <TableHead>Team Name</TableHead>
+                      <TableHead>Short Name</TableHead>
+                      <TableHead>Leader</TableHead>
+                      <TableHead>Members</TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRoles.map((role) => (
-                      <TableRow key={role.id}>
-                        <TableCell className="font-medium">{highlightText(role.name, searchValue)}</TableCell>
+                    {filteredTeams.map((team) => (
+                      <TableRow key={team.team_id}>
+                        <TableCell className="font-medium">{highlightText(team.team_name, searchValue)}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{role.permissions} permissions</Badge>
+                          <Badge variant="outline">{team.team_shortname}</Badge>
                         </TableCell>
-                        <TableCell className="text-gray-600">{highlightText(role.description, searchValue)}</TableCell>
+                        <TableCell className="text-gray-600">
+                          {team.leader_firstname && team.leader_lastname 
+                            ? `${team.leader_firstname} ${team.leader_lastname}`
+                            : 'No leader assigned'
+                          }
+                        </TableCell>
                         <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm" onClick={() => handleEditRole(role)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteRole(role)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
+                          <Badge variant="outline">{team.member_count} members</Badge>
                         </TableCell>
+                        <TableCell className="text-gray-600">{highlightText(team.description, searchValue)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -437,7 +382,7 @@ const UserManagement = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredWorkflowGroups.map((group) => (
-                      <TableRow key={group.id}>
+                      <TableRow key={group.workflow_group_id}>
                         <TableCell className="font-medium">{highlightText(group.name, searchValue)}</TableCell>
                         <TableCell className="text-gray-600">{highlightText(group.description, searchValue)}</TableCell>
                         <TableCell>
@@ -474,14 +419,6 @@ const UserManagement = () => {
           onSave={handleSaveUser}
         />
 
-        <RoleModal
-          isOpen={isRoleModalOpen}
-          onClose={() => setIsRoleModalOpen(false)}
-          role={selectedRole}
-          mode={modalMode}
-          onSave={handleSaveRole}
-        />
-
         <WorkflowGroupModal
           isOpen={isWorkflowModalOpen}
           onClose={() => setIsWorkflowModalOpen(false)}
@@ -494,7 +431,7 @@ const UserManagement = () => {
         <AlertDialog open={isDeleteModalOpen} onOpenChange={handleDeleteCancel}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete {deleteTarget?.type === 'user' ? 'User' : deleteTarget?.type === 'role' ? 'Role' : 'Workflow Group'}</AlertDialogTitle>
+              <AlertDialogTitle>Delete {deleteTarget?.type === 'user' ? 'User' : 'Workflow Group'}</AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to delete "{deleteTarget?.item.name || deleteTarget?.item.firstname + ' ' + deleteTarget?.item.lastname}"? This action cannot be undone.
               </AlertDialogDescription>
