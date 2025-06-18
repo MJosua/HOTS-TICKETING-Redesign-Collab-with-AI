@@ -6,14 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { WorkflowGroup } from '@/store/slices/userManagementSlice';
+import WorkflowStepsManager, { WorkflowStepData } from '@/components/workflow/WorkflowStepsManager';
 
 interface WorkflowGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
   workflowGroup: WorkflowGroup | null;
   mode: 'add' | 'edit';
-  onSave: (workflowGroup: any) => void;
+  onSave: (workflowGroup: any, steps: WorkflowStepData[]) => void;
   users: any[];
 }
 
@@ -25,6 +27,8 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
     is_active: true
   });
 
+  const [steps, setSteps] = useState<WorkflowStepData[]>([]);
+
   useEffect(() => {
     if (workflowGroup && mode === 'edit') {
       setFormData({
@@ -33,6 +37,8 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
         category_ids: workflowGroup.category_ids,
         is_active: workflowGroup.is_active
       });
+      // TODO: Load existing steps when editing
+      setSteps([]);
     } else {
       setFormData({
         name: '',
@@ -40,6 +46,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
         category_ids: [],
         is_active: true
       });
+      setSteps([]);
     }
   }, [workflowGroup, mode, isOpen]);
 
@@ -53,13 +60,13 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
       ? { ...formData, workflow_group_id: workflowGroup.workflow_group_id }
       : formData;
     
-    onSave(workflowToSave);
+    onSave(workflowToSave, steps);
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === 'add' ? 'Create New Workflow Group' : 'Edit Workflow Group'}
@@ -99,6 +106,10 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
               <Label htmlFor="is_active">Active</Label>
             </div>
           </div>
+
+          <Separator />
+
+          <WorkflowStepsManager steps={steps} onStepsChange={setSteps} />
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
