@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,9 +114,8 @@ const ServiceFormEditor = () => {
   const handleSave = async () => {
     setIsLoading(true);
     
-    // Generate JSON from current config
-    const jsonConfig = generateFormJSON();
-    console.log('Generated JSON for saving:', jsonConfig);
+    console.log('Current config before saving:', config);
+    console.log('Selected workflow group:', selectedWorkflowGroup);
 
     try {
       // Find category_id from category name
@@ -127,14 +127,14 @@ const ServiceFormEditor = () => {
         service_name: config.title,
         category_id: selectedCategory?.category_id || null,
         service_description: config.description,
-        workflow_group_id: selectedWorkflowGroup, // Use selected workflow group
+        approval_level: 1, // Default approval level
         image_url: "", // you can add this from an image uploader
         nav_link: config.url.replace(/^\/+/, ''), // remove leading slash
         active: 1,
         team_id: null, // or set from admin UI later
         api_endpoint: config.apiEndpoint,
-        form_json: jsonConfig, // full form config object
-        m_workflow_groups: selectedWorkflowGroup
+        form_json: config, // Send the full config object - API will stringify it
+        m_workflow_groups: selectedWorkflowGroup // Use selected workflow group
       };
 
       console.log('Saving payload:', payload);
