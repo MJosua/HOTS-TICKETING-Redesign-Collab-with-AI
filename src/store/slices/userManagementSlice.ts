@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
@@ -105,7 +104,7 @@ export interface WorkflowStep {
   workflow_group_id: number;
   step_order: number;
   step_type: 'role' | 'specific_user' | 'superior' | 'team';
-  assigned_value: string | number; // role_id, user_id, or team_id
+  assigned_value: string | number;
   description: string;
   is_active: boolean;
   created_at: string;
@@ -192,53 +191,17 @@ export const fetchUsers = createAsyncThunk(
   }
 );
 
-export const createUser = createAsyncThunk(
-  'userManagement/createUser',
-  async (userData: Omit<UserType, 'user_id' | 'is_active'>) => {
-    const response = await axios.post(`${API_URL}/hots_settings/post/user`, userData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
-      }
-    });
-    return response.data.data;
-  }
-);
-
-export const updateUser = createAsyncThunk(
-  'userManagement/updateUser',
-  async ({ id, data }: { id: number; data: Partial<UserType> }) => {
-    const response = await axios.put(`${API_URL}/hots_settings/update/user/${id}`, data, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
-      }
-    });
-    return response.data.data;
-  }
-);
-
-export const deleteUser = createAsyncThunk(
-  'userManagement/deleteUser',
-  async (id: number) => {
-    await axios.delete(`${API_URL}/hots_settings/delete/user/${id}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
-      }
-    });
-    return id;
-  }
-);
-
-// Fixed teams API integration - changed from /get/teams to /get/team
+// Fixed Teams API - using consistent endpoints
 export const fetchTeams = createAsyncThunk(
   'userManagement/fetchTeams',
   async () => {
-    const response = await axios.get(`${API_URL}/hots_settings/get/teams`, {
+    const response = await axios.get(`${API_URL}/hots_settings/get/team`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("teams fetch", response.data.data);
-    return response.data.data;
+    console.log("teams fetch", response.data);
+    return response.data.data || response.data;
   }
 );
 
@@ -248,9 +211,11 @@ export const createTeam = createAsyncThunk(
     const response = await axios.post(`${API_URL}/hots_settings/post/team`, teamData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        'Content-Type': 'application/json'
       }
     });
-    return response.data.data;
+    console.log("team created", response.data);
+    return response.data.data || response.data;
   }
 );
 
@@ -260,20 +225,23 @@ export const updateTeam = createAsyncThunk(
     const response = await axios.put(`${API_URL}/hots_settings/update/team/${id}`, data, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        'Content-Type': 'application/json'
       }
     });
-    return response.data.data;
+    console.log("team updated", response.data);
+    return response.data.data || response.data;
   }
 );
 
 export const deleteTeam = createAsyncThunk(
   'userManagement/deleteTeam',
   async (id: number) => {
-    await axios.delete(`${API_URL}/hots_settings/delete/team/${id}`, {
+    const response = await axios.delete(`${API_URL}/hots_settings/delete/team/${id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
+    console.log("team deleted", response.data);
     return id;
   }
 );
@@ -409,7 +377,8 @@ export const fetchRoles = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    return response.data.data;
+    console.log("roles fetch", response.data);
+    return response.data.data || response.data;
   }
 );
 
@@ -458,7 +427,8 @@ export const fetchJobTitles = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    return response.data.data;
+    console.log("job titles fetch", response.data);
+    return response.data.data || response.data;
   }
 );
 
@@ -556,7 +526,8 @@ export const fetchSuperiors = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    return response.data.data;
+    console.log("superiors fetch", response.data);
+    return response.data.data || response.data;
   }
 );
 
@@ -569,8 +540,8 @@ export const fetchWorkflowGroups = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("workflow groups fetch", response.data.data);
-    return response.data.data;
+    console.log("workflow groups fetch", response.data);
+    return response.data.data || response.data;
   }
 );
 
@@ -580,9 +551,11 @@ export const createWorkflowGroup = createAsyncThunk(
     const response = await axios.post(`${API_URL}/hots_settings/post/workflow_group`, workflowData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        'Content-Type': 'application/json'
       }
     });
-    return response.data.data;
+    console.log("workflow group created", response.data);
+    return response.data.data || response.data;
   }
 );
 
@@ -592,20 +565,23 @@ export const updateWorkflowGroup = createAsyncThunk(
     const response = await axios.put(`${API_URL}/hots_settings/update/workflow_group/${id}`, data, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        'Content-Type': 'application/json'
       }
     });
-    return response.data.data;
+    console.log("workflow group updated", response.data);
+    return response.data.data || response.data;
   }
 );
 
 export const deleteWorkflowGroup = createAsyncThunk(
   'userManagement/deleteWorkflowGroup',
   async (id: number) => {
-    await axios.delete(`${API_URL}/hots_settings/delete/workflow_group/${id}`, {
+    const response = await axios.delete(`${API_URL}/hots_settings/delete/workflow_group/${id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
+    console.log("workflow group deleted", response.data);
     return id;
   }
 );
@@ -618,8 +594,8 @@ export const fetchWorkflowSteps = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("workflow steps fetch", response.data.data);
-    return response.data.data;
+    console.log("workflow steps fetch", response.data);
+    return response.data.data || response.data;
   }
 );
 
@@ -629,9 +605,11 @@ export const createWorkflowStep = createAsyncThunk(
     const response = await axios.post(`${API_URL}/hots_settings/post/workflow_step`, stepData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        'Content-Type': 'application/json'
       }
     });
-    return response.data.data;
+    console.log("workflow step created", response.data);
+    return response.data.data || response.data;
   }
 );
 
@@ -641,20 +619,23 @@ export const updateWorkflowStep = createAsyncThunk(
     const response = await axios.put(`${API_URL}/hots_settings/update/workflow_step/${id}`, data, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        'Content-Type': 'application/json'
       }
     });
-    return response.data.data;
+    console.log("workflow step updated", response.data);
+    return response.data.data || response.data;
   }
 );
 
 export const deleteWorkflowStep = createAsyncThunk(
   'userManagement/deleteWorkflowStep',
   async (id: number) => {
-    await axios.delete(`${API_URL}/hots_settings/delete/workflow_step/${id}`, {
+    const response = await axios.delete(`${API_URL}/hots_settings/delete/workflow_step/${id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
+    console.log("workflow step deleted", response.data);
     return id;
   }
 );
@@ -747,126 +728,115 @@ const userManagementSlice = createSlice({
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.users = state.users.filter(u => u.user_id !== action.payload);
       })
-      // Teams
+      // Teams - Fixed error handling
+      .addCase(fetchTeams.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(fetchTeams.fulfilled, (state, action) => {
-        state.teams = action.payload;
+        state.isLoading = false;
+        state.teams = Array.isArray(action.payload) ? action.payload : [];
+        console.log("Teams updated in state:", state.teams);
+      })
+      .addCase(fetchTeams.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch teams';
+        console.error("Teams fetch error:", action.error);
       })
       .addCase(createTeam.fulfilled, (state, action) => {
-        state.teams.push(action.payload);
+        if (action.payload) {
+          state.teams.push(action.payload);
+        }
+      })
+      .addCase(createTeam.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to create team';
+        console.error("Team creation error:", action.error);
       })
       .addCase(updateTeam.fulfilled, (state, action) => {
-        const index = state.teams.findIndex(t => t.team_id === action.payload.team_id);
-        if (index !== -1) {
-          state.teams[index] = action.payload;
+        if (action.payload) {
+          const index = state.teams.findIndex(t => t.team_id === action.payload.team_id);
+          if (index !== -1) {
+            state.teams[index] = action.payload;
+          }
         }
+      })
+      .addCase(updateTeam.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to update team';
+        console.error("Team update error:", action.error);
       })
       .addCase(deleteTeam.fulfilled, (state, action) => {
         state.teams = state.teams.filter(t => t.team_id !== action.payload);
       })
-      .addCase(fetchTeamMembers.fulfilled, (state, action) => {
-        state.teamMembers = action.payload;
-      })
-      .addCase(addTeamMember.fulfilled, (state, action) => {
-        state.teamMembers.push(action.payload);
-      })
-      .addCase(updateTeamMember.fulfilled, (state, action) => {
-        const index = state.teamMembers.findIndex(m => m.member_id === action.payload.member_id);
-        if (index !== -1) {
-          state.teamMembers[index] = action.payload;
-        }
-      })
-      .addCase(removeTeamMember.fulfilled, (state, action) => {
-        state.teamMembers = state.teamMembers.filter(m => m.member_id !== action.payload);
+      .addCase(deleteTeam.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to delete team';
+        console.error("Team deletion error:", action.error);
       })
       // Departments
       .addCase(fetchDepartments.fulfilled, (state, action) => {
-        state.departments = action.payload;
-      })
-      .addCase(createDepartment.fulfilled, (state, action) => {
-        state.departments.push(action.payload);
-      })
-      .addCase(updateDepartment.fulfilled, (state, action) => {
-        const index = state.departments.findIndex(d => d.department_id === action.payload.department_id);
-        if (index !== -1) {
-          state.departments[index] = action.payload;
-        }
-      })
-      .addCase(deleteDepartment.fulfilled, (state, action) => {
-        state.departments = state.departments.filter(d => d.department_id !== action.payload);
+        state.departments = Array.isArray(action.payload) ? action.payload : [];
       })
       // Roles
       .addCase(fetchRoles.fulfilled, (state, action) => {
-        state.roles = action.payload;
-      })
-      .addCase(createRole.fulfilled, (state, action) => {
-        state.roles.push(action.payload);
-      })
-      .addCase(updateRole.fulfilled, (state, action) => {
-        const index = state.roles.findIndex(r => r.role_id === action.payload.role_id);
-        if (index !== -1) {
-          state.roles[index] = action.payload;
-        }
-      })
-      .addCase(deleteRole.fulfilled, (state, action) => {
-        state.roles = state.roles.filter(r => r.role_id !== action.payload);
+        state.roles = Array.isArray(action.payload) ? action.payload : [];
       })
       // Job Titles
       .addCase(fetchJobTitles.fulfilled, (state, action) => {
-        state.jobTitles = action.payload;
-      })
-      .addCase(createJobTitle.fulfilled, (state, action) => {
-        state.jobTitles.push(action.payload);
-      })
-      .addCase(updateJobTitle.fulfilled, (state, action) => {
-        const index = state.jobTitles.findIndex(j => j.jobtitle_id === action.payload.jobtitle_id);
-        if (index !== -1) {
-          state.jobTitles[index] = action.payload;
-        }
-      })
-      .addCase(deleteJobTitle.fulfilled, (state, action) => {
-        state.jobTitles = state.jobTitles.filter(j => j.jobtitle_id !== action.payload);
-      })
-      // Services
-      .addCase(fetchServices.fulfilled, (state, action) => {
-        state.services = action.payload;
-      })
-      .addCase(fetchActiveServices.fulfilled, (state, action) => {
-        state.services = action.payload;
-      })
-      .addCase(fetchInactiveServices.fulfilled, (state, action) => {
-        state.services = action.payload;
-      })
-      .addCase(toggleServiceStatus.fulfilled, (state, action) => {
-        const index = state.services.findIndex(s => s.service_id === action.payload.service_id);
-        if (index !== -1) {
-          state.services[index] = action.payload;
-        }
+        state.jobTitles = Array.isArray(action.payload) ? action.payload : [];
       })
       // Superiors
       .addCase(fetchSuperiors.fulfilled, (state, action) => {
-        state.superiors = action.payload;
+        state.superiors = Array.isArray(action.payload) ? action.payload : [];
       })
-      // Workflow Groups
+      // Workflow Groups - Fixed error handling
+      .addCase(fetchWorkflowGroups.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(fetchWorkflowGroups.fulfilled, (state, action) => {
-        state.workflowGroups = action.payload;
+        state.isLoading = false;
+        state.workflowGroups = Array.isArray(action.payload) ? action.payload : [];
+        console.log("Workflow groups updated in state:", state.workflowGroups);
+      })
+      .addCase(fetchWorkflowGroups.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to fetch workflow groups';
+        console.error("Workflow groups fetch error:", action.error);
       })
       .addCase(createWorkflowGroup.fulfilled, (state, action) => {
-        state.workflowGroups.push(action.payload);
+        if (action.payload) {
+          state.workflowGroups.push(action.payload);
+        }
+      })
+      .addCase(createWorkflowGroup.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to create workflow group';
+        console.error("Workflow group creation error:", action.error);
       })
       .addCase(updateWorkflowGroup.fulfilled, (state, action) => {
-        const index = state.workflowGroups.findIndex(w => w.workflow_group_id === action.payload.workflow_group_id);
-        if (index !== -1) {
-          state.workflowGroups[index] = action.payload;
+        if (action.payload) {
+          const index = state.workflowGroups.findIndex(w => w.workflow_group_id === action.payload.workflow_group_id);
+          if (index !== -1) {
+            state.workflowGroups[index] = action.payload;
+          }
         }
+      })
+      .addCase(updateWorkflowGroup.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to update workflow group';
+        console.error("Workflow group update error:", action.error);
       })
       .addCase(deleteWorkflowGroup.fulfilled, (state, action) => {
         state.workflowGroups = state.workflowGroups.filter(w => w.workflow_group_id !== action.payload);
       })
+      .addCase(deleteWorkflowGroup.rejected, (state, action) => {
+        state.error = action.error.message || 'Failed to delete workflow group';
+        console.error("Workflow group deletion error:", action.error);
+      })
       .addCase(fetchWorkflowSteps.fulfilled, (state, action) => {
-        state.workflowSteps = action.payload;
+        state.workflowSteps = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(createWorkflowStep.fulfilled, (state, action) => {
-        state.workflowSteps.push(action.payload);
+        if (action.payload) {
+          state.workflowSteps.push(action.payload);
+        }
       })
       .addCase(updateWorkflowStep.fulfilled, (state, action) => {
         const index = state.workflowSteps.findIndex(s => s.step_id === action.payload.step_id);
