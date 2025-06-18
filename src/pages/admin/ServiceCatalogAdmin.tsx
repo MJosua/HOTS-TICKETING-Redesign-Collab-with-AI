@@ -15,6 +15,8 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
+import { useDispatch } from 'react-redux';
+import { fetchWorkflowGroups } from '@/actions/workflowActions';
 
 const ServiceCatalogAdmin = () => {
   const navigate = useNavigate();
@@ -36,10 +38,13 @@ const ServiceCatalogAdmin = () => {
   } = useCatalogData();
 
   const { toast } = useToast();
+  const dispatch = useDispatch();
 
   // Fetch real data from API on component mount
   useEffect(() => {
     fetchData();
+    // Also fetch workflow groups for the table display
+    dispatch(fetchWorkflowGroups());
   }, []);
 
   // Convert service catalog data to FormConfig format for display

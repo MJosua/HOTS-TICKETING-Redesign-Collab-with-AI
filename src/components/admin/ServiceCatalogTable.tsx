@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { FormConfig } from '@/types/formTypes';
 import { ServiceCatalogItem } from '@/store/slices/catalogSlice';
+import { useAppSelector } from '@/hooks/useAppSelector';
 
 interface ServiceCatalogTableProps {
   forms: FormConfig[];
@@ -34,6 +35,18 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
   isDeleting,
   isReloading
 }) => {
+  const { workflowGroups } = useAppSelector(state => state.userManagement);
+
+  const getWorkflowGroupName = (serviceId: string) => {
+    const service = serviceCatalog.find(s => s.service_id.toString() === serviceId);
+    if (!service?.workflow_group_id) {
+      return 'No Workflow';
+    }
+    
+    const workflowGroup = workflowGroups.find(wg => wg.id === service.workflow_group_id);
+    return workflowGroup ? workflowGroup.name : 'Unknown Workflow';
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -59,7 +72,7 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
               <TableHead>Category</TableHead>
               <TableHead>URL</TableHead>
               <TableHead>Form Status</TableHead>
-              <TableHead>Approval Steps</TableHead>
+              <TableHead>Workflow</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -67,6 +80,7 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
             {forms.map((form) => {
               const service = serviceCatalog.find(s => s.service_id.toString() === form.id);
               const hasFormJson = service?.form_json && service.form_json.trim() !== '';
+              const workflowName = getWorkflowGroupName(form.id!);
               
               return (
                 <TableRow key={form.id}>
@@ -81,16 +95,9 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
-                      {form.approval?.steps.map((step, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {step}
-                        </Badge>
-                      ))}
-                      {form.approval?.steps.length === 0 && (
-                        <Badge variant="outline" className="text-xs">No Approval</Badge>
-                      )}
-                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {workflowName}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">

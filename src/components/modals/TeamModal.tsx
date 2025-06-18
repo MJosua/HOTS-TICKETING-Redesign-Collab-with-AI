@@ -8,37 +8,63 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Users } from 'lucide-react';
-import { useAppSelector } from '@/hooks/useAppSelector';
-import { Team, UserType } from '@/store/slices/userManagementSlice';
+import { Users } from 'lucide-react';
+import { useAppSelector, useAppDispatch } from '@/hooks/useAppSelector';
+import { Team, UserType, fetchTeamMembers } from '@/store/slices/userManagementSlice';
 
 interface TeamModalProps {
   isOpen: boolean;
   onClose: () => void;
   team?: Team | null;
   mode: 'add' | 'edit';
-  onSave: (team: any, selectedUsers?: number[]) => void;
+  onSave: (team: any, selectedUsers?: number[], teamLeaderId?: number) => void;
 }
 
 const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
-  const { departments, users } = useAppSelector(state => state.userManagement);
+  const dispatch = useAppDispatch();
+  const { departments, users, teamMembers } = useAppSelector(state => state.userManagement);
   const [formData, setFormData] = useState({
     team_name: '',
     department_id: '',
   });
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [teamLeader, setTeamLeader] = useState<number | null>(null);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
   useEffect(() => {
     if (team && mode === 'edit') {
+      console.log('Editing team:', team);
       setFormData({
         team_name: team.team_name,
         department_id: team.department_id.toString(),
       });
-      // TODO: Load existing team members when editing
-      setSelectedUsers([]);
-      setTeamLeader(null);
+      
+      // Load existing team members
+      if (team.team_id) {
+        setIsLoadingMembers(true);
+        dispatch(fetchTeamMembers(team.team_id))
+          .then((result) => {
+            if (result.payload && Array.isArray(result.payload)) {
+              const memberUserIds = result.payload.map((member: any) => member.user_id);
+              const leader = result.payload.find((member: any) => member.team_leader);
+              
+              console.log('Loaded team members:', result.payload);
+              console.log('Member user IDs:', memberUserIds);
+              console.log('Team leader:', leader);
+              
+              setSelectedUsers(memberUserIds);
+              setTeamLeader(leader ? leader.user_id : null);
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to load team members:', error);
+          })
+          .finally(() => {
+            setIsLoadingMembers(false);
+          });
+      }
     } else {
+      // Reset for add mode
       setFormData({
         team_name: '',
         department_id: '',
@@ -46,9 +72,10 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
       setSelectedUsers([]);
       setTeamLeader(null);
     }
-  }, [team, mode, isOpen]);
+  }, [team, mode, isOpen, dispatch]);
 
   const handleUserSelection = (userId: number, checked: boolean) => {
+    console.log('User selection changed:', userId, checked);
     if (checked) {
       setSelectedUsers(prev => [...prev, userId]);
     } else {
@@ -71,7 +98,7 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
       team_leader_id: teamLeader
     };
     
-    onSave(teamToSave, selectedUsers);
+    onSave(teamToSave, selectedUsers, teamLeader);
     onClose();
   };
 
@@ -136,6 +163,7 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Users className="w-5 h-5" />
                   Team Members ({selectedUsers.length})
+                  {isLoadingMembers && <span className="text-sm text-gray-500">Loading...</span>}
                 </CardTitle>
               </CardHeader>
               <CardContent>
