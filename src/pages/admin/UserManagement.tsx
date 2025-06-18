@@ -13,10 +13,11 @@ import WorkflowGroupModal from "@/components/modals/WorkflowGroupModal";
 import UserStatusBadge from "@/components/ui/UserStatusBadge";
 import UserFilters from "@/components/filters/UserFilters";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchUsers, fetchTeams, fetchDepartments, fetchWorkflowGroups, UserType, Team, WorkflowGroup, createTeam, updateTeam, deleteTeam, createWorkflowGroup, updateWorkflowGroup, deleteWorkflowGroup } from '@/store/slices/userManagementSlice';
+import { fetchUsers, fetchTeams, fetchDepartments, fetchWorkflowGroups, UserType, Team, WorkflowGroup, createTeam, updateTeam, deleteTeam, createWorkflowGroup, updateWorkflowGroup, deleteWorkflowGroup, createWorkflowStep, fetchWorkflowSteps } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
+import { WorkflowStepData } from '@/components/workflow/WorkflowStepsManager';
 
 const UserManagement = () => {
   const dispatch = useAppDispatch();
@@ -196,19 +197,41 @@ const UserManagement = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSaveWorkflowGroup = async (group: any) => {
+  const handleSaveWorkflowGroup = async (group: any, steps: WorkflowStepData[]) => {
     try {
+      let savedGroup;
+      
       if (modalMode === 'add') {
-        await dispatch(createWorkflowGroup(group));
+        const result = await dispatch(createWorkflowGroup(group));
+        savedGroup = result.payload;
         toast({
           title: "Success",
           description: "Workflow group created successfully",
         });
       } else {
-        await dispatch(updateWorkflowGroup({ id: group.workflow_id, data: group }));
+        const result = await dispatch(updateWorkflowGroup({ id: selectedWorkflowGroup?.workflow_group_id!, data: group }));
+        savedGroup = result.payload;
         toast({
           title: "Success",
           description: "Workflow group updated successfully",
+        });
+      }
+
+      // Save workflow steps if any
+      if (steps.length > 0 && savedGroup) {
+        const stepsWithGroupId = steps.map(step => ({
+          ...step,
+          workflow_group_id: savedGroup.workflow_group_id
+        }));
+
+        // Create all steps
+        for (const step of stepsWithGroupId) {
+          await dispatch(createWorkflowStep(step));
+        }
+
+        toast({
+          title: "Success",
+          description: `Workflow group and ${steps.length} steps saved successfully`,
         });
       }
     } catch (error: any) {
@@ -443,8 +466,8 @@ const UserManagement = () => {
                     <TableRow>
                       <TableHead>Group Name</TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead>Approval Steps</TableHead>
                       <TableHead>Categories</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -454,10 +477,12 @@ const UserManagement = () => {
                         <TableCell className="font-medium">{highlightText(group.name, searchValue)}</TableCell>
                         <TableCell className="text-gray-600">{highlightText(group.description, searchValue)}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{group.approval_steps.length} steps</Badge>
+                          <Badge variant="outline">{group.category_ids.length} categories</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{group.category_ids.length} categories</Badge>
+                          <Badge variant={group.is_active ? "default" : "secondary"}>
+                            {group.is_active ? "Active" : "Inactive"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">

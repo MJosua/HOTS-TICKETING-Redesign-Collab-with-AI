@@ -57,17 +57,33 @@ export interface WorkflowGroup {
   name: string;
   description: string;
   category_ids: number[];
-  approval_steps: ApprovalStep[];
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
+
+export interface WorkflowStep {
+  step_id: number;
+  workflow_group_id: number;
+  step_order: number;
+  step_type: 'role' | 'specific_user' | 'superior' | 'team';
+  assigned_value: string | number; // role_id, user_id, or team_id
+  description: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
 
-export interface ApprovalStep {
-  step_id: number;
-  order: number;
-  type: 'role' | 'specific_user' | 'superior' | 'team';
-  value: string | number;
-  description: string;
+export interface WorkflowStepExecution {
+  id: number;
+  workflow_id: number;
+  step_order: number;
+  assigned_user_id: number;
+  status: string;
+  action_date: string;
+  action_by_user_id?: number;
+  comments?: string;
+  rejection_reason?: string;
 }
 
 interface UserManagementState {
@@ -76,6 +92,8 @@ interface UserManagementState {
   teamMembers: TeamMember[];
   departments: Department[];
   workflowGroups: WorkflowGroup[];
+  workflowSteps: WorkflowStep[];
+  workflowStepExecutions: WorkflowStepExecution[];
   isLoading: boolean;
   error: string | null;
   filters: {
@@ -91,6 +109,8 @@ const initialState: UserManagementState = {
   teamMembers: [],
   departments: [],
   workflowGroups: [],
+  workflowSteps: [],
+  workflowStepExecutions: [],
   isLoading: false,
   error: null,
   filters: {
@@ -113,10 +133,11 @@ export const fetchUsers = createAsyncThunk(
   }
 );
 
+// Fixed teams API integration
 export const fetchTeams = createAsyncThunk(
   'userManagement/fetchTeams',
   async () => {
-    const response = await axios.get(`${API_URL}/hots_settings/get/team`, {
+    const response = await axios.get(`${API_URL}/hots_settings/get/teams`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
@@ -272,6 +293,67 @@ export const deleteWorkflowGroup = createAsyncThunk(
   }
 );
 
+export const fetchWorkflowSteps = createAsyncThunk(
+  'userManagement/fetchWorkflowSteps',
+  async (workflowGroupId: number) => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/workflow_steps/${workflowGroupId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    console.log("workflow steps fetch", response.data.data);
+    return response.data.data;
+  }
+);
+
+export const createWorkflowStep = createAsyncThunk(
+  'userManagement/createWorkflowStep',
+  async (stepData: Omit<WorkflowStep, 'step_id' | 'created_at' | 'updated_at'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/post/workflow_step`, stepData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const updateWorkflowStep = createAsyncThunk(
+  'userManagement/updateWorkflowStep',
+  async ({ id, data }: { id: number; data: Partial<WorkflowStep> }) => {
+    const response = await axios.put(`${API_URL}/hots_settings/update/workflow_step/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const deleteWorkflowStep = createAsyncThunk(
+  'userManagement/deleteWorkflowStep',
+  async (id: number) => {
+    await axios.delete(`${API_URL}/hots_settings/delete/workflow_step/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return id;
+  }
+);
+
+export const fetchWorkflowStepExecutions = createAsyncThunk(
+  'userManagement/fetchWorkflowStepExecutions',
+  async (workflowId: number) => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/workflow_step_executions/${workflowId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
 const userManagementSlice = createSlice({
   name: 'userManagement',
   initialState,
@@ -357,6 +439,24 @@ const userManagementSlice = createSlice({
       })
       .addCase(deleteWorkflowGroup.fulfilled, (state, action) => {
         state.workflowGroups = state.workflowGroups.filter(w => w.workflow_group_id !== action.payload);
+      })
+      .addCase(fetchWorkflowSteps.fulfilled, (state, action) => {
+        state.workflowSteps = action.payload;
+      })
+      .addCase(createWorkflowStep.fulfilled, (state, action) => {
+        state.workflowSteps.push(action.payload);
+      })
+      .addCase(updateWorkflowStep.fulfilled, (state, action) => {
+        const index = state.workflowSteps.findIndex(s => s.step_id === action.payload.step_id);
+        if (index !== -1) {
+          state.workflowSteps[index] = action.payload;
+        }
+      })
+      .addCase(deleteWorkflowStep.fulfilled, (state, action) => {
+        state.workflowSteps = state.workflowSteps.filter(s => s.step_id !== action.payload);
+      })
+      .addCase(fetchWorkflowStepExecutions.fulfilled, (state, action) => {
+        state.workflowStepExecutions = action.payload;
       });
   },
 });
