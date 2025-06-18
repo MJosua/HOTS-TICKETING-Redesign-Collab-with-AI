@@ -14,26 +14,26 @@ import WorkflowGroupModal from "@/components/modals/WorkflowGroupModal";
 import UserStatusBadge from "@/components/ui/UserStatusBadge";
 import UserFilters from "@/components/filters/UserFilters";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { 
-  fetchUsers, 
-  fetchTeams, 
-  fetchDepartments, 
-  fetchWorkflowGroups, 
+import {
+  fetchUsers,
+  fetchTeams,
+  fetchDepartments,
+  fetchWorkflowGroups,
   fetchRoles,
   fetchJobTitles,
   fetchSuperiors,
   fetchServices,
-  UserType, 
-  Team, 
-  WorkflowGroup, 
-  createTeam, 
-  updateTeam, 
-  deleteTeam, 
-  createWorkflowGroup, 
-  updateWorkflowGroup, 
-  deleteWorkflowGroup, 
-  createWorkflowStep, 
-  fetchWorkflowSteps 
+  UserType,
+  Team,
+  WorkflowGroup,
+  createTeam,
+  updateTeam,
+  deleteTeam,
+  createWorkflowGroup,
+  updateWorkflowGroup,
+  deleteWorkflowGroup,
+  createWorkflowStep,
+  fetchWorkflowSteps
 } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
@@ -45,7 +45,7 @@ const UserManagement = () => {
   const { users, teams, departments, workflowGroups, roles, jobTitles, superiors, services, filters, isLoading } = useAppSelector(state => state.userManagement);
   const [activeTab, setActiveTab] = useState("users");
   const [searchValue, setSearchValue] = useState("");
-  
+
   // Modal states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
@@ -55,7 +55,7 @@ const UserManagement = () => {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<WorkflowGroup | null>(null);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [deleteTarget, setDeleteTarget] = useState<{type: 'user' | 'team' | 'workflow', item: any} | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'user' | 'team' | 'workflow', item: any } | null>(null);
 
   const { toast } = useToast();
 
@@ -74,7 +74,7 @@ const UserManagement = () => {
   // Apply filters to users
   const filteredUsers = users.filter(user => {
     // Search filter
-    const searchMatch = searchValue === '' || 
+    const searchMatch = searchValue === '' ||
       `${user.firstname || ''} ${user.lastname || ''}`.toLowerCase().includes(searchValue.toLowerCase()) ||
       (user.email || '').toLowerCase().includes(searchValue.toLowerCase()) ||
       (user.team_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -82,7 +82,7 @@ const UserManagement = () => {
       (user.uid || '').toLowerCase().includes(searchValue.toLowerCase());
 
     // Status filter
-    const statusMatch = filters.status === 'all' || 
+    const statusMatch = filters.status === 'all' ||
       (filters.status === 'active' && user.is_active && !user.is_deleted) ||
       (filters.status === 'deleted' && user.is_deleted);
 
@@ -135,8 +135,8 @@ const UserManagement = () => {
   const highlightText = (text: string, highlight: string) => {
     if (!highlight) return text;
     const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
-    return parts.map((part, index) => 
-      part.toLowerCase() === highlight.toLowerCase() ? 
+    return parts.map((part, index) =>
+      part.toLowerCase() === highlight.toLowerCase() ?
         <mark key={index} className="bg-yellow-200">{part}</mark> : part
     );
   };
@@ -155,7 +155,7 @@ const UserManagement = () => {
   };
 
   const handleDeleteUser = (user: UserType) => {
-    setDeleteTarget({type: 'user', item: user});
+    setDeleteTarget({ type: 'user', item: user });
     setIsDeleteModalOpen(true);
   };
 
@@ -177,7 +177,7 @@ const UserManagement = () => {
   };
 
   const handleDeleteTeam = (team: Team) => {
-    setDeleteTarget({type: 'team', item: team});
+    setDeleteTarget({ type: 'team', item: team });
     setIsDeleteModalOpen(true);
   };
 
@@ -222,14 +222,14 @@ const UserManagement = () => {
   };
 
   const handleDeleteWorkflowGroup = (group: WorkflowGroup) => {
-    setDeleteTarget({type: 'workflow', item: group});
+    setDeleteTarget({ type: 'workflow', item: group });
     setIsDeleteModalOpen(true);
   };
 
   const handleSaveWorkflowGroup = async (group: any, steps: WorkflowStepData[]) => {
     try {
       let savedGroup;
-      
+
       if (modalMode === 'add') {
         const result = await dispatch(createWorkflowGroup(group));
         savedGroup = result.payload;
@@ -284,14 +284,18 @@ const UserManagement = () => {
             description: "Team deleted successfully",
           });
         } else if (deleteTarget.type === 'workflow') {
-          await dispatch(deleteWorkflowGroup(deleteTarget.item.workflow_group_id));
+          await dispatch(deleteWorkflowGroup(deleteTarget.item.id));
+          console.log("deleteTarget", deleteTarget)
           toast({
             title: "Success",
             description: "Workflow group deleted successfully",
           });
+          dispatch(fetchWorkflowGroups());
+
         }
         setIsDeleteModalOpen(false);
         setDeleteTarget(null);
+
       } catch (error: any) {
         toast({
           title: "Error",
@@ -323,9 +327,17 @@ const UserManagement = () => {
     }
   };
 
+  const getStatusBadge = (department: Department) => {
+    const isActive = !department.finished_date;
+    return isActive ? (
+      <Badge className="bg-green-100 text-green-800">Active</Badge>
+    ) : (
+      <Badge className="bg-red-100 text-red-800">Inactive</Badge>
+    );
+  };
   return (
-    <AppLayout 
-      searchValue={searchValue} 
+    <AppLayout
+      searchValue={searchValue}
       onSearchChange={setSearchValue}
       searchPlaceholder="Search users, teams, workflows..."
     >
@@ -350,7 +362,7 @@ const UserManagement = () => {
 
           <TabsContent value="users" className="space-y-4">
             <UserFilters />
-            
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -459,7 +471,7 @@ const UserManagement = () => {
                         <TableCell className="text-gray-600">
                           {team.leader_name || 'No leader assigned'}
                         </TableCell>
-                        <TableCell>{new Date(team.creation_date).toLocaleDateString()}</TableCell>
+                        <TableCell>{new Date(team.created_date).toLocaleDateString()}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Button variant="outline" size="sm" onClick={() => handleEditTeam(team)}>
@@ -509,9 +521,9 @@ const UserManagement = () => {
                           <Badge variant="outline">{group.category_ids.length} categories</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={group.is_active ? "default" : "secondary"}>
-                            {group.is_active ? "Active" : "Inactive"}
-                          </Badge>
+                        {getStatusBadge(group)}
+
+                         
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
