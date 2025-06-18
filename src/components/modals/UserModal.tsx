@@ -36,7 +36,7 @@ interface UserModalProps {
 
 const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
   const dispatch = useAppDispatch();
-  const { roles, jobTitles, superiors, departments } = useAppSelector(state => state.userManagement);
+  const { roles, jobTitles, superiors, departments, teams } = useAppSelector(state => state.userManagement);
   
   const [formData, setFormData] = useState<User>({
     firstname: '',
@@ -216,11 +216,21 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
                 <SelectValue placeholder="Select team" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="HR">HR</SelectItem>
-                <SelectItem value="IT">IT</SelectItem>
-                <SelectItem value="Finance">Finance</SelectItem>
-                <SelectItem value="Marketing">Marketing</SelectItem>
-                <SelectItem value="Operations">Operations</SelectItem>
+                {teams && teams.length > 0 ? (
+                  teams.map((team) => (
+                    <SelectItem key={team.team_id} value={team.team_name}>
+                      {team.team_name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="HR">HR</SelectItem>
+                    <SelectItem value="IT">IT</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Operations">Operations</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -236,7 +246,10 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
               </SelectTrigger>
               <SelectContent>
                 {roles.filter(role => role.is_active).map((role) => (
-                  <SelectItem key={role.role_id} value={role.role_id.toString()}>
+                  <SelectItem 
+                    key={role.role_id} 
+                    value={role.role_id != null ? role.role_id.toString() : `role-${Math.random()}`}
+                  >
                     {role.role_name}
                   </SelectItem>
                 ))}
@@ -252,7 +265,10 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
               </SelectTrigger>
               <SelectContent>
                 {jobTitles.filter(jobTitle => jobTitle.is_active).map((jobTitle) => (
-                  <SelectItem key={jobTitle.jobtitle_id} value={jobTitle.jobtitle_name}>
+                  <SelectItem 
+                    key={jobTitle.jobtitle_id} 
+                    value={jobTitle.jobtitle_name || `jobtitle-${jobTitle.jobtitle_id}`}
+                  >
                     {jobTitle.jobtitle_name}
                   </SelectItem>
                 ))}
@@ -272,7 +288,10 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
               <SelectContent>
                 <SelectItem value="no_superior">No Superior</SelectItem>
                 {superiors.map((superior) => (
-                  <SelectItem key={superior.user_id} value={superior.user_id.toString()}>
+                  <SelectItem 
+                    key={superior.user_id} 
+                    value={superior.user_id != null ? superior.user_id.toString() : `superior-${Math.random()}`}
+                  >
                     {superior.firstname} {superior.lastname} ({superior.role_name})
                   </SelectItem>
                 ))}
