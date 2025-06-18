@@ -1,3 +1,4 @@
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
@@ -52,6 +53,43 @@ export interface Department {
   status: 'active' | 'inactive';
 }
 
+export interface Role {
+  role_id: number;
+  role_name: string;
+  role_description: string;
+  permissions: number;
+  created_date: string;
+  finished_date?: string | null;
+  is_active: boolean;
+}
+
+export interface JobTitle {
+  jobtitle_id: number;
+  jobtitle_name: string;
+  jobtitle_description: string;
+  created_date: string;
+  finished_date?: string | null;
+  is_active: boolean;
+}
+
+export interface Service {
+  service_id: number;
+  service_name: string;
+  service_description: string;
+  is_active: boolean;
+  created_date: string;
+  updated_date: string;
+}
+
+export interface Superior {
+  user_id: number;
+  firstname: string;
+  lastname: string;
+  uid: string;
+  role_name: string;
+  department_name: string;
+}
+
 export interface WorkflowGroup {
   workflow_group_id: number;
   name: string;
@@ -74,6 +112,16 @@ export interface WorkflowStep {
   updated_at: string;
 }
 
+export interface WorkflowInstance {
+  workflow_id: number;
+  workflow_group_id: number;
+  ticket_id: number;
+  current_step: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface WorkflowStepExecution {
   id: number;
   workflow_id: number;
@@ -91,8 +139,13 @@ interface UserManagementState {
   teams: Team[];
   teamMembers: TeamMember[];
   departments: Department[];
+  roles: Role[];
+  jobTitles: JobTitle[];
+  services: Service[];
+  superiors: Superior[];
   workflowGroups: WorkflowGroup[];
   workflowSteps: WorkflowStep[];
+  workflowInstances: WorkflowInstance[];
   workflowStepExecutions: WorkflowStepExecution[];
   isLoading: boolean;
   error: string | null;
@@ -108,8 +161,13 @@ const initialState: UserManagementState = {
   teams: [],
   teamMembers: [],
   departments: [],
+  roles: [],
+  jobTitles: [],
+  services: [],
+  superiors: [],
   workflowGroups: [],
   workflowSteps: [],
+  workflowInstances: [],
   workflowStepExecutions: [],
   isLoading: false,
   error: null,
@@ -120,6 +178,7 @@ const initialState: UserManagementState = {
   },
 };
 
+// User Management
 export const fetchUsers = createAsyncThunk(
   'userManagement/fetchUsers',
   async () => {
@@ -133,7 +192,43 @@ export const fetchUsers = createAsyncThunk(
   }
 );
 
-// Fixed teams API integration
+export const createUser = createAsyncThunk(
+  'userManagement/createUser',
+  async (userData: Omit<UserType, 'user_id' | 'is_active'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/post/user`, userData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const updateUser = createAsyncThunk(
+  'userManagement/updateUser',
+  async ({ id, data }: { id: number; data: Partial<UserType> }) => {
+    const response = await axios.put(`${API_URL}/hots_settings/update/user/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const deleteUser = createAsyncThunk(
+  'userManagement/deleteUser',
+  async (id: number) => {
+    await axios.delete(`${API_URL}/hots_settings/delete/user/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return id;
+  }
+);
+
+// Fixed teams API integration - changed from /get/teams to /get/team
 export const fetchTeams = createAsyncThunk(
   'userManagement/fetchTeams',
   async () => {
@@ -195,6 +290,18 @@ export const fetchTeamMembers = createAsyncThunk(
   }
 );
 
+export const fetchTeamLeaders = createAsyncThunk(
+  'userManagement/fetchTeamLeaders',
+  async (teamId: number) => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/team_leaders/${teamId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
 export const addTeamMember = createAsyncThunk(
   'userManagement/addTeamMember',
   async (memberData: Omit<TeamMember, 'member_id' | 'creation_date'>) => {
@@ -231,6 +338,7 @@ export const removeTeamMember = createAsyncThunk(
   }
 );
 
+// Department Management
 export const fetchDepartments = createAsyncThunk(
   'userManagement/fetchDepartments',
   async () => {
@@ -244,6 +352,215 @@ export const fetchDepartments = createAsyncThunk(
   }
 );
 
+export const createDepartment = createAsyncThunk(
+  'userManagement/createDepartment',
+  async (departmentData: Omit<Department, 'department_id' | 'created_date'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/post/department`, departmentData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const updateDepartment = createAsyncThunk(
+  'userManagement/updateDepartment',
+  async ({ id, data }: { id: number; data: Partial<Department> }) => {
+    const response = await axios.put(`${API_URL}/hots_settings/update/department/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const deleteDepartment = createAsyncThunk(
+  'userManagement/deleteDepartment',
+  async (id: number) => {
+    await axios.delete(`${API_URL}/hots_settings/delete/department/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return id;
+  }
+);
+
+export const fetchTeamsByDepartment = createAsyncThunk(
+  'userManagement/fetchTeamsByDepartment',
+  async (departmentId: number) => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/departments/${departmentId}/teams`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+// Role Management
+export const fetchRoles = createAsyncThunk(
+  'userManagement/fetchRoles',
+  async () => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/role`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const createRole = createAsyncThunk(
+  'userManagement/createRole',
+  async (roleData: Omit<Role, 'role_id' | 'created_date'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/post/role`, roleData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const updateRole = createAsyncThunk(
+  'userManagement/updateRole',
+  async ({ id, data }: { id: number; data: Partial<Role> }) => {
+    const response = await axios.put(`${API_URL}/hots_settings/update/role/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const deleteRole = createAsyncThunk(
+  'userManagement/deleteRole',
+  async (id: number) => {
+    await axios.delete(`${API_URL}/hots_settings/delete/role/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return id;
+  }
+);
+
+// Job Title Management
+export const fetchJobTitles = createAsyncThunk(
+  'userManagement/fetchJobTitles',
+  async () => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/jobtitle`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const createJobTitle = createAsyncThunk(
+  'userManagement/createJobTitle',
+  async (jobTitleData: Omit<JobTitle, 'jobtitle_id' | 'created_date'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/post/jobtitle`, jobTitleData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const updateJobTitle = createAsyncThunk(
+  'userManagement/updateJobTitle',
+  async ({ id, data }: { id: number; data: Partial<JobTitle> }) => {
+    const response = await axios.put(`${API_URL}/hots_settings/update/jobtitle/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const deleteJobTitle = createAsyncThunk(
+  'userManagement/deleteJobTitle',
+  async (id: number) => {
+    await axios.delete(`${API_URL}/hots_settings/delete/jobtitle/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return id;
+  }
+);
+
+// Service/Menu Management
+export const fetchServices = createAsyncThunk(
+  'userManagement/fetchServices',
+  async () => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/services`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const fetchActiveServices = createAsyncThunk(
+  'userManagement/fetchActiveServices',
+  async () => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/services/active`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const fetchInactiveServices = createAsyncThunk(
+  'userManagement/fetchInactiveServices',
+  async () => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/services/inactive`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const toggleServiceStatus = createAsyncThunk(
+  'userManagement/toggleServiceStatus',
+  async (serviceData: { service_id: number; is_active: boolean }) => {
+    const response = await axios.post(`${API_URL}/hots_settings/toggle/service`, serviceData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+// Superior Management
+export const fetchSuperiors = createAsyncThunk(
+  'userManagement/fetchSuperiors',
+  async () => {
+    const response = await axios.get(`${API_URL}/hots_settings/get_superior`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+// Workflow Groups
 export const fetchWorkflowGroups = createAsyncThunk(
   'userManagement/fetchWorkflowGroups',
   async () => {
@@ -342,6 +659,31 @@ export const deleteWorkflowStep = createAsyncThunk(
   }
 );
 
+// Workflow Instances
+export const fetchWorkflowInstances = createAsyncThunk(
+  'userManagement/fetchWorkflowInstances',
+  async () => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/workflow_instances`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const createWorkflowInstance = createAsyncThunk(
+  'userManagement/createWorkflowInstance',
+  async (instanceData: Omit<WorkflowInstance, 'workflow_id' | 'created_at' | 'updated_at'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/create/workflow_instance`, instanceData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
 export const fetchWorkflowStepExecutions = createAsyncThunk(
   'userManagement/fetchWorkflowStepExecutions',
   async (workflowId: number) => {
@@ -377,6 +719,7 @@ const userManagementSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Users
       .addCase(fetchUsers.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -392,6 +735,19 @@ const userManagementSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || 'Failed to fetch users';
       })
+      .addCase(createUser.fulfilled, (state, action) => {
+        state.users.push(action.payload);
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        const index = state.users.findIndex(u => u.user_id === action.payload.user_id);
+        if (index !== -1) {
+          state.users[index] = action.payload;
+        }
+      })
+      .addCase(deleteUser.fulfilled, (state, action) => {
+        state.users = state.users.filter(u => u.user_id !== action.payload);
+      })
+      // Teams
       .addCase(fetchTeams.fulfilled, (state, action) => {
         state.teams = action.payload;
       })
@@ -422,9 +778,75 @@ const userManagementSlice = createSlice({
       .addCase(removeTeamMember.fulfilled, (state, action) => {
         state.teamMembers = state.teamMembers.filter(m => m.member_id !== action.payload);
       })
+      // Departments
       .addCase(fetchDepartments.fulfilled, (state, action) => {
         state.departments = action.payload;
       })
+      .addCase(createDepartment.fulfilled, (state, action) => {
+        state.departments.push(action.payload);
+      })
+      .addCase(updateDepartment.fulfilled, (state, action) => {
+        const index = state.departments.findIndex(d => d.department_id === action.payload.department_id);
+        if (index !== -1) {
+          state.departments[index] = action.payload;
+        }
+      })
+      .addCase(deleteDepartment.fulfilled, (state, action) => {
+        state.departments = state.departments.filter(d => d.department_id !== action.payload);
+      })
+      // Roles
+      .addCase(fetchRoles.fulfilled, (state, action) => {
+        state.roles = action.payload;
+      })
+      .addCase(createRole.fulfilled, (state, action) => {
+        state.roles.push(action.payload);
+      })
+      .addCase(updateRole.fulfilled, (state, action) => {
+        const index = state.roles.findIndex(r => r.role_id === action.payload.role_id);
+        if (index !== -1) {
+          state.roles[index] = action.payload;
+        }
+      })
+      .addCase(deleteRole.fulfilled, (state, action) => {
+        state.roles = state.roles.filter(r => r.role_id !== action.payload);
+      })
+      // Job Titles
+      .addCase(fetchJobTitles.fulfilled, (state, action) => {
+        state.jobTitles = action.payload;
+      })
+      .addCase(createJobTitle.fulfilled, (state, action) => {
+        state.jobTitles.push(action.payload);
+      })
+      .addCase(updateJobTitle.fulfilled, (state, action) => {
+        const index = state.jobTitles.findIndex(j => j.jobtitle_id === action.payload.jobtitle_id);
+        if (index !== -1) {
+          state.jobTitles[index] = action.payload;
+        }
+      })
+      .addCase(deleteJobTitle.fulfilled, (state, action) => {
+        state.jobTitles = state.jobTitles.filter(j => j.jobtitle_id !== action.payload);
+      })
+      // Services
+      .addCase(fetchServices.fulfilled, (state, action) => {
+        state.services = action.payload;
+      })
+      .addCase(fetchActiveServices.fulfilled, (state, action) => {
+        state.services = action.payload;
+      })
+      .addCase(fetchInactiveServices.fulfilled, (state, action) => {
+        state.services = action.payload;
+      })
+      .addCase(toggleServiceStatus.fulfilled, (state, action) => {
+        const index = state.services.findIndex(s => s.service_id === action.payload.service_id);
+        if (index !== -1) {
+          state.services[index] = action.payload;
+        }
+      })
+      // Superiors
+      .addCase(fetchSuperiors.fulfilled, (state, action) => {
+        state.superiors = action.payload;
+      })
+      // Workflow Groups
       .addCase(fetchWorkflowGroups.fulfilled, (state, action) => {
         state.workflowGroups = action.payload;
       })
@@ -454,6 +876,13 @@ const userManagementSlice = createSlice({
       })
       .addCase(deleteWorkflowStep.fulfilled, (state, action) => {
         state.workflowSteps = state.workflowSteps.filter(s => s.step_id !== action.payload);
+      })
+      // Workflow Instances
+      .addCase(fetchWorkflowInstances.fulfilled, (state, action) => {
+        state.workflowInstances = action.payload;
+      })
+      .addCase(createWorkflowInstance.fulfilled, (state, action) => {
+        state.workflowInstances.push(action.payload);
       })
       .addCase(fetchWorkflowStepExecutions.fulfilled, (state, action) => {
         state.workflowStepExecutions = action.payload;
