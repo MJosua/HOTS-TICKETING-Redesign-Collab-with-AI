@@ -9,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { WorkflowGroup } from '@/store/slices/userManagementSlice';
 import WorkflowStepsManager, { WorkflowStepData } from '@/components/workflow/WorkflowStepsManager';
+import { useAppDispatch } from '@/hooks/useAppSelector';
+import { fetchWorkflowSteps } from '@/store/slices/userManagementSlice';
 
 interface WorkflowGroupModalProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ interface WorkflowGroupModalProps {
 }
 
 const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: WorkflowGroupModalProps) => {
+  const dispatch = useAppDispatch();
   const [formData, setFormData] = useState<any>({
     name: '',
     description: '',
@@ -28,6 +31,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
   });
 
   const [steps, setSteps] = useState<WorkflowStepData[]>([]);
+  const [isLoadingSteps, setIsLoadingSteps] = useState(false);
 
   useEffect(() => {
     if (workflowGroup && mode === 'edit') {
@@ -37,8 +41,34 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
         category_ids: workflowGroup.category_ids,
         is_active: workflowGroup.is_active
       });
-      // TODO: Load existing steps when editing
-      setSteps([]);
+      
+      // Load existing steps when editing
+      if (workflowGroup.id || workflowGroup.workflow_group_id) {
+        setIsLoadingSteps(true);
+        const groupId = workflowGroup.id || workflowGroup.workflow_group_id;
+        console.log(`Loading workflow steps for group ID: ${groupId}`);
+        
+        dispatch(fetchWorkflowSteps(groupId))
+          .then((result) => {
+            console.log('Fetched workflow steps:', result.payload);
+            if (result.payload && Array.isArray(result.payload)) {
+              const formattedSteps: WorkflowStepData[] = result.payload.map((step: any) => ({
+                step_order: step.step_order,
+                step_type: step.step_type,
+                assigned_value: step.assigned_value,
+                description: step.description,
+                is_active: step.is_active
+              }));
+              setSteps(formattedSteps);
+            }
+          })
+          .catch((error) => {
+            console.error('Error fetching workflow steps:', error);
+          })
+          .finally(() => {
+            setIsLoadingSteps(false);
+          });
+      }
     } else {
       setFormData({
         name: '',
@@ -48,7 +78,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
       });
       setSteps([]);
     }
-  }, [workflowGroup, mode, isOpen]);
+  }, [workflowGroup, mode, isOpen, dispatch]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,9 +87,10 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
 
   const handleSave = () => {
     const workflowToSave = mode === 'edit' && workflowGroup 
-      ? { ...formData, workflow_group_id: workflowGroup.workflow_group_id }
+      ? { ...formData, workflow_group_id: workflowGroup.workflow_group_id, id: workflowGroup.id }
       : formData;
     
+    console.log('Saving workflow group with steps:', { workflowToSave, steps });
     onSave(workflowToSave, steps);
     onClose();
   };
@@ -109,13 +140,19 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
 
           <Separator />
 
-          <WorkflowStepsManager steps={steps} onStepsChange={setSteps} />
+          {isLoadingSteps ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-sm text-gray-500">Loading workflow steps...</div>
+            </div>
+          ) : (
+            <WorkflowStepsManager steps={steps} onStepsChange={setSteps} />
+          )}
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={isLoadingSteps}>
               {mode === 'add' ? 'Create Workflow Group' : 'Save Changes'}
             </Button>
           </div>
