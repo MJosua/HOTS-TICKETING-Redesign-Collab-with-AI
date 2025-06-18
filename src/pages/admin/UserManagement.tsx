@@ -335,6 +335,7 @@ const UserManagement = () => {
       <Badge className="bg-red-100 text-red-800">Inactive</Badge>
     );
   };
+
   return (
     <AppLayout
       searchValue={searchValue}
@@ -456,7 +457,7 @@ const UserManagement = () => {
                       <TableHead>Department</TableHead>
                       <TableHead>Members</TableHead>
                       <TableHead>Leader</TableHead>
-                      <TableHead>Created</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -471,7 +472,9 @@ const UserManagement = () => {
                         <TableCell className="text-gray-600">
                           {team.leader_name || 'No leader assigned'}
                         </TableCell>
-                        <TableCell>{new Date(team.created_date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {getStatusBadge(team)}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Button variant="outline" size="sm" onClick={() => handleEditTeam(team)}>
@@ -521,9 +524,9 @@ const UserManagement = () => {
                           <Badge variant="outline">{group.category_ids.length} categories</Badge>
                         </TableCell>
                         <TableCell>
-                        {getStatusBadge(group)}
+                          {getStatusBadge(group)}
 
-                         
+
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
