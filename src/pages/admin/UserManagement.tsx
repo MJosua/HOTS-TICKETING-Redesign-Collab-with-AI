@@ -144,11 +144,11 @@ const UserManagement = () => {
   };
 
   const filteredUsers = users.filter(user =>
-    `${user.firstname} ${user.lastname}`.toLowerCase().includes(searchValue.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchValue.toLowerCase()) ||
-    user.team_name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    user.role_name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    user.uid.toLowerCase().includes(searchValue.toLowerCase())
+    `${user.firstname || ''} ${user.lastname || ''}`.toLowerCase().includes(searchValue.toLowerCase()) ||
+    (user.email || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+    (user.team_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+    (user.role_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+    (user.uid || '').toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const filteredRoles = roles.filter(role =>
@@ -333,16 +333,16 @@ const UserManagement = () => {
                                 <User className="w-4 h-4 text-gray-600" />
                               </div>
                               <div>
-                                <div className="font-medium">{highlightText(`${user.firstname} ${user.lastname}`, searchValue)}</div>
-                                <div className="text-sm text-gray-500">{user.uid}</div>
+                                <div className="font-medium">{highlightText(`${user.firstname || ''} ${user.lastname || ''}`, searchValue)}</div>
+                                <div className="text-sm text-gray-500">{user.uid || 'No UID'}</div>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell className="text-gray-600">{highlightText(user.email || 'No email', searchValue)}</TableCell>
                           <TableCell>{highlightText(user.team_name || 'No team', searchValue)}</TableCell>
                           <TableCell>
-                            <Badge className={getRoleColor(user.role_name)}>
-                              {highlightText(user.role_name, searchValue)}
+                            <Badge className={getRoleColor(user.role_name || '')}>
+                              {highlightText(user.role_name || 'No role', searchValue)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-gray-600">{user.job_title || 'No title'}</TableCell>
