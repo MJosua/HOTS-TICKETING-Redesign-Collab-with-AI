@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Search, Shield, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -238,7 +239,7 @@ const UserManagement = () => {
         savedGroup = result.payload;
         toast({
           title: "Success",
-8          description: "Workflow group updated successfully",
+          description: "Workflow group updated successfully",
         });
       }
 
