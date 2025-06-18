@@ -106,7 +106,7 @@ const DepartmentModal = ({ isOpen, onClose, department, mode, onSave }: Departme
               </SelectTrigger>
               <SelectContent>
                 {users.map((user) => (
-                  <SelectItem key={user.user_id} value={user.user_id}>
+                  <SelectItem key={user.user_id} value={user.user_id.toString()}>
                     {user.firstname} {user.lastname}
                   </SelectItem>
                 ))}

@@ -191,17 +191,63 @@ export const fetchUsers = createAsyncThunk(
   }
 );
 
-// Fixed Teams API - using consistent endpoints
-export const fetchTeams = createAsyncThunk(
-  'userManagement/fetchTeams',
-  async () => {
-    const response = await axios.get(`${API_URL}/hots_settings/get/team`, {
+export const createUser = createAsyncThunk(
+  'userManagement/createUser',
+  async (userData: Omit<UserType, 'user_id' | 'is_active'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/post/user`, userData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log("user created", response.data);
+    return response.data.data || response.data;
+  }
+);
+
+export const updateUser = createAsyncThunk(
+  'userManagement/updateUser',
+  async ({ id, data }: { id: number; data: Partial<UserType> }) => {
+    const response = await axios.put(`${API_URL}/hots_settings/update/user/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log("user updated", response.data);
+    return response.data.data || response.data;
+  }
+);
+
+export const deleteUser = createAsyncThunk(
+  'userManagement/deleteUser',
+  async (id: number) => {
+    const response = await axios.delete(`${API_URL}/hots_settings/delete/user/${id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("teams fetch", response.data);
-    return response.data.data || response.data;
+    console.log("user deleted", response.data);
+    return id;
+  }
+);
+
+// Fixed Teams API - using consistent endpoints
+export const fetchTeams = createAsyncThunk(
+  'userManagement/fetchTeams',
+  async () => {
+    try {
+      const response = await axios.get(`${API_URL}/hots_settings/get/team`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        }
+      });
+      console.log("teams fetch", response.data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      console.error("Teams fetch error:", error);
+      throw error;
+    }
   }
 );
 
@@ -535,54 +581,74 @@ export const fetchSuperiors = createAsyncThunk(
 export const fetchWorkflowGroups = createAsyncThunk(
   'userManagement/fetchWorkflowGroups',
   async () => {
-    const response = await axios.get(`${API_URL}/hots_settings/get/workflow_groups`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
-      }
-    });
-    console.log("workflow groups fetch", response.data);
-    return response.data.data || response.data;
+    try {
+      const response = await axios.get(`${API_URL}/hots_settings/get/workflow_groups`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        }
+      });
+      console.log("workflow groups fetch", response.data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      console.error("Workflow groups fetch error:", error);
+      throw error;
+    }
   }
 );
 
 export const createWorkflowGroup = createAsyncThunk(
   'userManagement/createWorkflowGroup',
   async (workflowData: Omit<WorkflowGroup, 'workflow_group_id' | 'created_at' | 'updated_at'>) => {
-    const response = await axios.post(`${API_URL}/hots_settings/post/workflow_group`, workflowData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    console.log("workflow group created", response.data);
-    return response.data.data || response.data;
+    try {
+      const response = await axios.post(`${API_URL}/hots_settings/post/workflow_group`, workflowData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log("workflow group created", response.data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      console.error("Workflow group creation error:", error);
+      throw error;
+    }
   }
 );
 
 export const updateWorkflowGroup = createAsyncThunk(
   'userManagement/updateWorkflowGroup',
   async ({ id, data }: { id: number; data: Partial<WorkflowGroup> }) => {
-    const response = await axios.put(`${API_URL}/hots_settings/update/workflow_group/${id}`, data, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    console.log("workflow group updated", response.data);
-    return response.data.data || response.data;
+    try {
+      const response = await axios.put(`${API_URL}/hots_settings/update/workflow_group/${id}`, data, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log("workflow group updated", response.data);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      console.error("Workflow group update error:", error);
+      throw error;
+    }
   }
 );
 
 export const deleteWorkflowGroup = createAsyncThunk(
   'userManagement/deleteWorkflowGroup',
   async (id: number) => {
-    const response = await axios.delete(`${API_URL}/hots_settings/delete/workflow_group/${id}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
-      }
-    });
-    console.log("workflow group deleted", response.data);
-    return id;
+    try {
+      const response = await axios.delete(`${API_URL}/hots_settings/delete/workflow_group/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        }
+      });
+      console.log("workflow group deleted", response.data);
+      return id;
+    } catch (error: any) {
+      console.error("Workflow group deletion error:", error);
+      throw error;
+    }
   }
 );
 
@@ -717,12 +783,16 @@ const userManagementSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch users';
       })
       .addCase(createUser.fulfilled, (state, action) => {
-        state.users.push(action.payload);
+        if (action.payload) {
+          state.users.push(action.payload);
+        }
       })
       .addCase(updateUser.fulfilled, (state, action) => {
-        const index = state.users.findIndex(u => u.user_id === action.payload.user_id);
-        if (index !== -1) {
-          state.users[index] = action.payload;
+        if (action.payload) {
+          const index = state.users.findIndex(u => u.user_id === action.payload.user_id);
+          if (index !== -1) {
+            state.users[index] = action.payload;
+          }
         }
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
