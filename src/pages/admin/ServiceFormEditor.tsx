@@ -101,7 +101,7 @@ const ServiceFormEditor = () => {
       }
     } else if (!isEdit) {
       // For new services, set default workflow group (direct superior)
-      const defaultWorkflow = workflowGroups.find(wg => wg.name.toLowerCase().includes('direct superior') || wg.name.toLowerCase().includes('default'));
+      const defaultWorkflow = workflowGroups.find(wg => wg.name?.toLowerCase().includes('direct superior') || wg.name?.toLowerCase().includes('default'));
       if (defaultWorkflow) {
         setSelectedWorkflowGroup(defaultWorkflow.id);
       }
@@ -133,7 +133,8 @@ const ServiceFormEditor = () => {
         active: 1,
         team_id: null, // or set from admin UI later
         api_endpoint: config.apiEndpoint,
-        form_json: jsonConfig // full form config object
+        form_json: jsonConfig, // full form config object
+        m_workflow_groups: selectedWorkflowGroup
       };
 
       console.log('Saving payload:', payload);

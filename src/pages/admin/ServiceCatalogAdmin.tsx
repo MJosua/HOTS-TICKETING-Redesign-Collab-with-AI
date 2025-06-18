@@ -82,7 +82,7 @@ const ServiceCatalogAdmin = () => {
   });
 
   const filteredForms = forms.filter(form =>
-    form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    form.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     form.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -109,7 +109,7 @@ const ServiceCatalogAdmin = () => {
     try {
       console.log('Deleting service with ID:', deleteModal.serviceId);
       
-      const response = await axios.delete(`${API_URL}/hots_settings/delete/${deleteModal.serviceId}`, {
+      const response = await axios.delete(`${API_URL}/hots_settings/delete/service/${deleteModal.serviceId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
         }
