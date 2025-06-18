@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
@@ -9,7 +8,8 @@ export interface ServiceCatalogItem {
   category_id: number;
   service_name: string;
   service_description: string;
-  approval_level: number;
+  approval_level?: number; // Made optional for backward compatibility
+  workflow_group_id?: number; // New field for workflow group assignment
   image_url: string;
   nav_link: string;
   active: number;
@@ -48,7 +48,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
     category_id: 1,
     service_name: "PC/Notebook Request",
     service_description: "Request a new or replacement computer",
-    approval_level: 2,
+    workflow_group_id: 1, // Default workflow group
     image_url: "itassetrequest.png",
     nav_link: "asset-request",
     active: 1,
@@ -81,11 +81,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
           required: true,
           columnSpan: 3
         }
-      ],
-      approval: {
-        steps: ["Manager", "IT Team"],
-        mode: "sequential"
-      }
+      ]
     })
   },
   {
@@ -93,7 +89,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
     category_id: 3,
     service_name: "IT Technical Support",
     service_description: "Get help with IT issues from computer to software errors",
-    approval_level: 1,
+    workflow_group_id: 1, // Default workflow group
     image_url: "ittechnicalsupport.png",
     nav_link: "it-support",
     active: 1,
@@ -127,11 +123,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
           required: true,
           columnSpan: 3
         }
-      ],
-      approval: {
-        steps: ["Supervisor", "IT Team"],
-        mode: "sequential"
-      }
+      ]
     })
   },
   {
@@ -139,7 +131,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
     category_id: 1,
     service_name: "Sample Request Form",
     service_description: "Submit sample requests with detailed item specifications",
-    approval_level: 0,
+    workflow_group_id: 1, // Default workflow group
     image_url: "srf.png",
     nav_link: "sample-request-form",
     active: 1,

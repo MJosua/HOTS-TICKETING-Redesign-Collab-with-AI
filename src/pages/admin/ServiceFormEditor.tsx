@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,9 +12,10 @@ import { Plus, Trash2, Save, ArrowUp, ArrowDown, ArrowLeft } from 'lucide-react'
 import { FormConfig, FormField, RowGroup } from '@/types/formTypes';
 import { DynamicForm } from '@/components/forms/DynamicForm';
 import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
-import { ApprovalFlowCard } from '@/components/ui/ApprovalFlowCard';
 import { DynamicFieldEditor } from '@/components/forms/DynamicFieldEditor';
 import { useCatalogData } from '@/hooks/useCatalogData';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
+import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
@@ -23,8 +23,10 @@ import { useToast } from '@/hooks/use-toast';
 const ServiceFormEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const isEdit = !!id;
   const { categoryList, serviceCatalog } = useCatalogData();
+  const { workflowGroups } = useAppSelector(state => state.userManagement);
 
   const [config, setConfig] = useState<FormConfig>({
     title: '',
@@ -33,12 +35,17 @@ const ServiceFormEditor = () => {
     category: '',
     apiEndpoint: '',
     fields: [],
-    rowGroups: [],
-    approval: { steps: [], mode: 'sequential' }
+    rowGroups: []
   });
 
+  const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch workflow groups on component mount
+  useEffect(() => {
+    dispatch(fetchWorkflowGroups());
+  }, [dispatch]);
 
   useEffect(() => {
     if (isEdit && id && serviceCatalog.length > 0) {
@@ -62,10 +69,6 @@ const ServiceFormEditor = () => {
           category: categoryName,
           description: serviceData.service_description,
           apiEndpoint: `/api/${serviceData.nav_link}`,
-          approval: { 
-            steps: serviceData.approval_level > 0 ? ['Manager', 'Supervisor'] : [], 
-            mode: 'sequential' as const 
-          },
           fields: [],
           rowGroups: []
         };
@@ -88,11 +91,22 @@ const ServiceFormEditor = () => {
         }
 
         setConfig(parsedConfig);
+        
+        // Set workflow group from service data if available
+        if (serviceData.workflow_group_id) {
+          setSelectedWorkflowGroup(serviceData.workflow_group_id);
+        }
       } else {
         console.warn('Service not found for ID:', id);
       }
+    } else if (!isEdit) {
+      // For new services, set default workflow group (direct superior)
+      const defaultWorkflow = workflowGroups.find(wg => wg.name.toLowerCase().includes('direct superior') || wg.name.toLowerCase().includes('default'));
+      if (defaultWorkflow) {
+        setSelectedWorkflowGroup(defaultWorkflow.workflow_group_id);
+      }
     }
-  }, [isEdit, id, serviceCatalog, categoryList]);
+  }, [isEdit, id, serviceCatalog, categoryList, workflowGroups]);
 
   const {toast} = useToast()
 
@@ -113,7 +127,7 @@ const ServiceFormEditor = () => {
         service_name: config.title,
         category_id: selectedCategory?.category_id || null,
         service_description: config.description,
-        approval_level: config.approval?.steps?.length || 0,
+        workflow_group_id: selectedWorkflowGroup, // Use selected workflow group
         image_url: "", // you can add this from an image uploader
         nav_link: config.url.replace(/^\/+/, ''), // remove leading slash
         active: 1,
@@ -378,65 +392,48 @@ const ServiceFormEditor = () => {
               </CardContent>
             </Card>
 
-            {/* Approval Flow Preview */}
-            <ApprovalFlowCard
-              steps={config.approval?.steps.map((step, index) => ({
-                id: `step-${index}`,
-                name: step,
-                status: 'waiting' as const,
-                approver: step,
-                role: 'Approver'
-              })) || []}
-              mode={config.approval?.mode}
-            />
-
             <Card>
               <CardHeader>
-                <CardTitle>Approval Flow Settings</CardTitle>
+                <CardTitle>Workflow Assignment</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Approval Mode</Label>
-                  <Select
-                    value={config.approval?.mode}
-                    onValueChange={(value: 'sequential' | 'parallel') =>
-                      setConfig({
-                        ...config,
-                        approval: { ...config.approval!, mode: value }
-                      })
-                    }
+                  <Label htmlFor="workflowGroup">Workflow Group</Label>
+                  <Select 
+                    value={selectedWorkflowGroup?.toString() || ''} 
+                    onValueChange={(value) => setSelectedWorkflowGroup(parseInt(value))}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select workflow group" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sequential">Sequential</SelectItem>
-                      <SelectItem value="parallel">Parallel</SelectItem>
+                      {workflowGroups
+                        .filter(wg => wg.is_active)
+                        .map((workflowGroup) => (
+                          <SelectItem key={workflowGroup.workflow_group_id} value={workflowGroup.workflow_group_id.toString()}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{workflowGroup.name}</span>
+                              <span className="text-sm text-gray-500">{workflowGroup.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Select the workflow group that will handle the approval process for this service.
+                  </p>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Approval Steps</Label>
-                    <Button size="sm" onClick={addApprovalStep}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                {selectedWorkflowGroup && (
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Selected Workflow:</strong> {workflowGroups.find(wg => wg.workflow_group_id === selectedWorkflowGroup)?.name}
+                    </p>
+                    <p className="text-sm text-blue-600 mt-1">
+                      {workflowGroups.find(wg => wg.workflow_group_id === selectedWorkflowGroup)?.description}
+                    </p>
                   </div>
-
-                  {config.approval?.steps.map((step, index) => (
-                    <div key={index} className="flex gap-2 mb-2">
-                      <Input
-                        value={step}
-                        onChange={(e) => updateApprovalStep(index, e.target.value)}
-                        placeholder="Approver role"
-                      />
-                      <Button size="sm" variant="outline" onClick={() => removeApprovalStep(index)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
