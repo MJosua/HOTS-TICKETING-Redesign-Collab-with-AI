@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +17,7 @@ import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
 import { useDispatch } from 'react-redux';
-import { fetchWorkflowGroups } from '@/actions/workflowActions';
+import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
 
 const ServiceCatalogAdmin = () => {
   const navigate = useNavigate();
