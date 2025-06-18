@@ -100,11 +100,12 @@ const DivisionModal = ({ isOpen, onClose, division, mode, onSave }: DivisionModa
           </div>
           <div className="space-y-2">
             <Label htmlFor="head">Division Head</Label>
-            <Select value={formData.head} onValueChange={(value) => setFormData({...formData, head: value})}>
+            <Select value={formData.head || "no_head"} onValueChange={(value) => setFormData({...formData, head: value === "no_head" ? "" : value})}>
               <SelectTrigger>
                 <SelectValue placeholder="Select division head" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="no_head">No Head Assigned</SelectItem>
                 <SelectItem value="john.doe">John Doe</SelectItem>
                 <SelectItem value="jane.smith">Jane Smith</SelectItem>
                 <SelectItem value="ahmad.rahman">Ahmad Rahman</SelectItem>

@@ -32,7 +32,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
     const newStep: WorkflowStepData = {
       step_order: steps.length + 1,
       step_type: 'role',
-      assigned_value: '',
+      assigned_value: 'default_role',
       description: '',
       is_active: true,
     };
@@ -72,21 +72,21 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
   const getAssignedValueOptions = (stepType: string) => {
     switch (stepType) {
       case 'role':
-        return uniqueRoles.map(role => ({ value: role, label: role }));
+        return uniqueRoles.filter(role => role && role.trim() !== "").map(role => ({ value: role, label: role }));
       case 'specific_user':
-        return users.map(user => ({ 
+        return users.filter(user => user.firstname && user.lastname).map(user => ({ 
           value: user.user_id.toString(), 
           label: `${user.firstname} ${user.lastname}` 
         }));
       case 'team':
-        return teams.map(team => ({ 
+        return teams.filter(team => team.team_name && team.team_name.trim() !== "").map(team => ({ 
           value: team.team_id.toString(), 
           label: team.team_name 
         }));
       case 'superior':
         return [{ value: 'superior', label: 'Direct Superior' }];
       default:
-        return [];
+        return [{ value: 'default', label: 'Select an option' }];
     }
   };
 
@@ -100,98 +100,109 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
         </Button>
       </div>
 
-      {steps.map((step, index) => (
-        <Card key={index} className="border-l-4 border-l-blue-500">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Step {step.step_order}</CardTitle>
-              <div className="flex items-center space-x-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => moveStep(index, 'up')}
-                  disabled={index === 0}
-                >
-                  <ArrowUp className="w-4 h-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => moveStep(index, 'down')}
-                  disabled={index === steps.length - 1}
-                >
-                  <ArrowDown className="w-4 h-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeStep(index)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+      {steps.map((step, index) => {
+        const options = getAssignedValueOptions(step.step_type);
+        const currentValue = step.assigned_value?.toString() || (options.length > 0 ? options[0].value : 'default');
+        
+        return (
+          <Card key={index} className="border-l-4 border-l-blue-500">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Step {step.step_order}</CardTitle>
+                <div className="flex items-center space-x-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => moveStep(index, 'up')}
+                    disabled={index === 0}
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => moveStep(index, 'down')}
+                    disabled={index === steps.length - 1}
+                  >
+                    <ArrowDown className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeStep(index)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor={`step-type-${index}`}>Step Type</Label>
-                <Select
-                  value={step.step_type}
-                  onValueChange={(value: 'role' | 'specific_user' | 'superior' | 'team') => {
-                    updateStep(index, 'step_type', value);
-                    updateStep(index, 'assigned_value', ''); // Reset assigned value
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="role">Role Based</SelectItem>
-                    <SelectItem value="specific_user">Specific User</SelectItem>
-                    <SelectItem value="superior">Superior</SelectItem>
-                    <SelectItem value="team">Team Based</SelectItem>
-                  </SelectContent>
-                </Select>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor={`step-type-${index}`}>Step Type</Label>
+                  <Select
+                    value={step.step_type}
+                    onValueChange={(value: 'role' | 'specific_user' | 'superior' | 'team') => {
+                      updateStep(index, 'step_type', value);
+                      const newOptions = getAssignedValueOptions(value);
+                      const defaultValue = newOptions.length > 0 ? newOptions[0].value : 'default';
+                      updateStep(index, 'assigned_value', defaultValue);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="role">Role Based</SelectItem>
+                      <SelectItem value="specific_user">Specific User</SelectItem>
+                      <SelectItem value="superior">Superior</SelectItem>
+                      <SelectItem value="team">Team Based</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor={`assigned-value-${index}`}>Assigned To</Label>
+                  <Select
+                    value={currentValue}
+                    onValueChange={(value) => updateStep(index, 'assigned_value', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select assignment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.length > 0 ? (
+                        options.map((option) => (
+                          <SelectItem key={option.value} value={option.value.toString()}>
+                            {option.label}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no_options">No options available</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div>
-                <Label htmlFor={`assigned-value-${index}`}>Assigned To</Label>
-                <Select
-                  value={step.assigned_value.toString()}
-                  onValueChange={(value) => updateStep(index, 'assigned_value', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select assignment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getAssignedValueOptions(step.step_type).map((option) => (
-                      <SelectItem key={option.value} value={option.value.toString()}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor={`description-${index}`}>Description</Label>
+                <Textarea
+                  id={`description-${index}`}
+                  value={step.description}
+                  onChange={(e) => updateStep(index, 'description', e.target.value)}
+                  placeholder="Describe this approval step"
+                  rows={2}
+                />
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor={`description-${index}`}>Description</Label>
-              <Textarea
-                id={`description-${index}`}
-                value={step.description}
-                onChange={(e) => updateStep(index, 'description', e.target.value)}
-                placeholder="Describe this approval step"
-                rows={2}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        );
+      })}
 
       {steps.length === 0 && (
         <div className="text-center py-8 text-gray-500">

@@ -39,7 +39,7 @@ const UserFilters = () => {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all_teams">All Teams</SelectItem>
-          {uniqueTeams.map((team) => (
+          {uniqueTeams.filter(team => team && team.trim() !== "").map((team) => (
             <SelectItem key={team} value={team}>
               {team}
             </SelectItem>
@@ -53,7 +53,7 @@ const UserFilters = () => {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all_roles">All Roles</SelectItem>
-          {uniqueRoles.map((role) => (
+          {uniqueRoles.filter(role => role && role.trim() !== "").map((role) => (
             <SelectItem key={role} value={role}>
               {role}
             </SelectItem>
