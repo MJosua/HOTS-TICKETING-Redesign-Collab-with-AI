@@ -38,6 +38,8 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
   }, [team, mode, isOpen]);
 
   const handleSave = () => {
+    console.log("Submitting form data:", formData);
+
     const teamToSave = {
       ...formData,
       department_id: parseInt(formData.department_id)

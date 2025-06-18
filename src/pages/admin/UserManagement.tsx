@@ -124,7 +124,7 @@ const UserManagement = () => {
   };
 
   const filteredTeams = teams.filter(team =>
-    team.team_name.toLowerCase().includes(searchValue.toLowerCase())
+    team.team_name?.toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const filteredWorkflowGroups = workflowGroups.filter(group =>
@@ -191,10 +191,13 @@ const UserManagement = () => {
         });
       } else {
         await dispatch(updateTeam({ id: selectedTeam?.team_id!, data: team }));
+        dispatch(fetchTeams());
+
         toast({
           title: "Success",
           description: "Team updated successfully",
         });
+
       }
     } catch (error: any) {
       toast({
