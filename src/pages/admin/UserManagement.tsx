@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Search, Shield, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -383,7 +382,7 @@ const UserManagement = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredWorkflowGroups.map((group) => (
-                      <TableRow key={group.workflow_id}>
+                      <TableRow key={group.workflow_group_id}>
                         <TableCell className="font-medium">{highlightText(group.name, searchValue)}</TableCell>
                         <TableCell className="text-gray-600">{highlightText(group.description, searchValue)}</TableCell>
                         <TableCell>

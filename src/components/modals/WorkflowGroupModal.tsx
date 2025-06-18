@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -43,15 +42,13 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
   useEffect(() => {
     if (workflowGroup && mode === 'edit') {
       setFormData({
-        workflow_id: workflowGroup.workflow_id,
         name: workflowGroup.name,
         description: workflowGroup.description,
-        category_ids: workflowGroup.category_ids || [],
-        approval_steps: workflowGroup.approval_steps || []
+        category_ids: workflowGroup.category_ids,
+        approval_steps: workflowGroup.approval_steps
       });
     } else {
       setFormData({
-        workflow_id: null,
         name: '',
         description: '',
         category_ids: [],
@@ -116,6 +113,15 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
     return teams
       .map(team => team.team_name)
       .filter(teamName => teamName != null && teamName !== '' && teamName.trim() !== '');
+  };
+
+  const handleSave = () => {
+    const workflowToSave = mode === 'edit' && workflowGroup 
+      ? { ...formData, workflow_group_id: workflowGroup.workflow_group_id }
+      : formData;
+    
+    onSave(workflowToSave);
+    onClose();
   };
 
   return (
@@ -306,7 +312,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" onClick={handleSave}>
               {mode === 'add' ? 'Create Workflow Group' : 'Save Changes'}
             </Button>
           </div>
