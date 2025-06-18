@@ -141,7 +141,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                 required
               />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -206,7 +206,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                       <Label>Approval Type</Label>
                       <Select
                         value={step.type}
-                        onValueChange={(value: 'role' | 'specific_user' | 'superior' | 'team') => 
+                        onValueChange={(value: 'role' | 'specific_user' | 'superior' | 'team') =>
                           updateApprovalStep(index, 'type', value)
                         }
                       >
@@ -266,25 +266,29 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
 
                     {step.type === 'specific_user' && (
                       <div className="grid gap-2">
-                        <Label>User</Label>
+                        <Label htmlFor={`user-select-${index}`}>User</Label>
                         <Select
                           value={step.value ? step.value.toString() : ""}
                           onValueChange={(value) => updateApprovalStep(index, 'value', parseInt(value))}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger id={`user-select-${index}`}>
                             <SelectValue placeholder="Select user" />
                           </SelectTrigger>
                           <SelectContent>
-                            {users
-                            .map((user) => (
-                              <SelectItem key={user.user_id} value={user.user_id}>
-                                {user.firstname} {user.lastname} ({user.role_name}) - {user.user_id}
-                              </SelectItem>
-                            ))}
+                            {users?.length > 0 ? (
+                              users.map((user) => (
+                                <SelectItem key={user.user_id} value={user.user_id.toString()}>
+                                  {user.firstname} {user.lastname} ({user.role_name}) – {user.user_id}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="px-2 py-1 text-sm text-muted-foreground">No users available</div>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
                     )}
+
 
                     <div className="grid gap-2">
                       <Label>Description</Label>
