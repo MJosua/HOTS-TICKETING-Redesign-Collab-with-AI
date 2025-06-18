@@ -1,3 +1,4 @@
+
 import React, { useCallback } from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
@@ -16,7 +17,7 @@ import MyTickets from "./pages/MyTickets";
 import GoodsRequest from "./pages/GoodsRequest";
 import SystemSettings from "./pages/admin/SystemSettings";
 import UserManagement from "./pages/admin/UserManagement";
-import DivisionManagement from "./pages/admin/DivisionManagement";
+import DepartmentManagement from "./pages/admin/DepartmentManagement";
 import ServiceCatalogAdmin from "./pages/admin/ServiceCatalogAdmin";
 import ServiceFormEditor from "./pages/admin/ServiceFormEditor";
 import NotFound from "./pages/NotFound";
@@ -102,7 +103,12 @@ const AppContent = () => {
           } />
           <Route path="/admin/divisions" element={
             <ProtectedRoute>
-              <DivisionManagement />
+              <DepartmentManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/departments" element={
+            <ProtectedRoute>
+              <DepartmentManagement />
             </ProtectedRoute>
           } />
           <Route path="/admin/service-catalog" element={
