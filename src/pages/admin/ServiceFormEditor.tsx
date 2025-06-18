@@ -103,7 +103,7 @@ const ServiceFormEditor = () => {
       // For new services, set default workflow group (direct superior)
       const defaultWorkflow = workflowGroups.find(wg => wg.name.toLowerCase().includes('direct superior') || wg.name.toLowerCase().includes('default'));
       if (defaultWorkflow) {
-        setSelectedWorkflowGroup(defaultWorkflow.workflow_group_id);
+        setSelectedWorkflowGroup(defaultWorkflow.id);
       }
     }
   }, [isEdit, id, serviceCatalog, categoryList, workflowGroups]);
@@ -410,7 +410,7 @@ const ServiceFormEditor = () => {
                       {workflowGroups
                         .filter(wg => wg.is_active)
                         .map((workflowGroup) => (
-                          <SelectItem key={workflowGroup.workflow_group_id} value={workflowGroup.workflow_group_id.toString()}>
+                          <SelectItem key={workflowGroup.id} value={workflowGroup.id.toString()}>
                             <div className="flex flex-col">
                               <span className="font-medium">{workflowGroup.name}</span>
                               <span className="text-sm text-gray-500">{workflowGroup.description}</span>
@@ -427,10 +427,10 @@ const ServiceFormEditor = () => {
                 {selectedWorkflowGroup && (
                   <div className="p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800">
-                      <strong>Selected Workflow:</strong> {workflowGroups.find(wg => wg.workflow_group_id === selectedWorkflowGroup)?.name}
+                      <strong>Selected Workflow:</strong> {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.name}
                     </p>
                     <p className="text-sm text-blue-600 mt-1">
-                      {workflowGroups.find(wg => wg.workflow_group_id === selectedWorkflowGroup)?.description}
+                      {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.description}
                     </p>
                   </div>
                 )}
