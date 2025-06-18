@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Search, Shield, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -116,6 +115,34 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
+  // Delete user function
+  const deleteUserFromAPI = async (userId: number) => {
+    try {
+      const response = await axios.delete(`${API_URL}/hots_settings/delete/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        }
+      });
+
+      if (response.data.success) {
+        toast({
+          title: "Success",
+          description: "User deleted successfully",
+        });
+        fetchUsers(); // Refresh the list
+      } else {
+        throw new Error(response.data.message || 'Failed to delete user');
+      }
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || 'Failed to delete user',
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredUsers = users.filter(user =>
     `${user.firstname} ${user.lastname}`.toLowerCase().includes(searchValue.toLowerCase()) ||
     user.email.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -162,12 +189,7 @@ const UserManagement = () => {
   };
 
   const handleSaveUser = (user: any) => {
-    if (modalMode === 'add') {
-      setUsers([...users, user]);
-    } else {
-      setUsers(users.map(u => u.user_id === user.user_id ? user : u));
-    }
-    fetchUsers(); // Refresh data
+    fetchUsers(); // Refresh data after save
   };
 
   // Role handlers
@@ -222,10 +244,10 @@ const UserManagement = () => {
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deleteTarget) {
       if (deleteTarget.type === 'user') {
-        setUsers(users.filter(u => u.user_id !== deleteTarget.item.user_id));
+        await deleteUserFromAPI(deleteTarget.item.user_id);
       } else if (deleteTarget.type === 'role') {
         setRoles(roles.filter(r => r.id !== deleteTarget.item.id));
       } else if (deleteTarget.type === 'workflow') {

@@ -1,10 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import axios from 'axios';
+import { API_URL } from '@/config/sourceConfig';
+import { useToast } from '@/hooks/use-toast';
 
 interface User {
   user_id?: number;
@@ -41,6 +43,8 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
     team_name: '',
     job_title: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user && mode === 'edit') {
@@ -60,10 +64,54 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
     }
   }, [user, mode, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem('tokek');
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      if (mode === 'add') {
+        const response = await axios.post(`${API_URL}/hots_settings/post/user`, formData, { headers });
+        
+        if (response.data.success) {
+          toast({
+            title: "Success",
+            description: "User created successfully",
+          });
+          onSave(formData);
+          onClose();
+        } else {
+          throw new Error(response.data.message || 'Failed to create user');
+        }
+      } else {
+        const response = await axios.put(`${API_URL}/hots_settings/update/user/${user?.user_id}`, formData, { headers });
+        
+        if (response.data.success) {
+          toast({
+            title: "Success", 
+            description: "User updated successfully",
+          });
+          onSave(formData);
+          onClose();
+        } else {
+          throw new Error(response.data.message || 'Failed to update user');
+        }
+      }
+    } catch (error: any) {
+      console.error('Error saving user:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || error.message || 'Failed to save user',
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (field: keyof User, value: string | number) => {
@@ -168,11 +216,11 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit">
-              {mode === 'add' ? 'Add User' : 'Save Changes'}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Saving...' : mode === 'add' ? 'Add User' : 'Save Changes'}
             </Button>
           </div>
         </form>
