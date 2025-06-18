@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
@@ -23,27 +22,34 @@ export interface UserType {
 export interface Team {
   team_id: number;
   team_name: string;
-  team_shortname: string;
-  team_leader: number;
   department_id: number;
-  description: string;
+  creation_date: string;
+  finished_date?: string | null;
   member_count: number;
-  leader_firstname?: string;
-  leader_lastname?: string;
+  leader_name?: string;
+}
+
+export interface TeamMember {
+  member_id: number;
+  team_id: number;
+  user_id: number;
+  member_desc: string;
+  creation_date: string;
+  finished_date?: string | null;
+  team_leader: boolean;
+  user_name?: string;
 }
 
 export interface Department {
   department_id: number;
-  name: string;
-  code: string;
+  department_name: string;
+  department_shortname: string;
+  department_head?: number;
   description: string;
-  parent_department_id?: number;
-  head_user_id?: number;
+  finished_date?: string | null;
+  created_date: string;
   head_name?: string;
   status: 'active' | 'inactive';
-  employee_count: number;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface WorkflowGroup {
@@ -67,6 +73,7 @@ export interface ApprovalStep {
 interface UserManagementState {
   users: UserType[];
   teams: Team[];
+  teamMembers: TeamMember[];
   departments: Department[];
   workflowGroups: WorkflowGroup[];
   isLoading: boolean;
@@ -81,6 +88,7 @@ interface UserManagementState {
 const initialState: UserManagementState = {
   users: [],
   teams: [],
+  teamMembers: [],
   departments: [],
   workflowGroups: [],
   isLoading: false,
@@ -115,6 +123,90 @@ export const fetchTeams = createAsyncThunk(
     });
     console.log("teams fetch", response.data.data);
     return response.data.data;
+  }
+);
+
+export const createTeam = createAsyncThunk(
+  'userManagement/createTeam',
+  async (teamData: Omit<Team, 'team_id' | 'creation_date' | 'member_count'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/post/team`, teamData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const updateTeam = createAsyncThunk(
+  'userManagement/updateTeam',
+  async ({ id, data }: { id: number; data: Partial<Team> }) => {
+    const response = await axios.put(`${API_URL}/hots_settings/update/team/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const deleteTeam = createAsyncThunk(
+  'userManagement/deleteTeam',
+  async (id: number) => {
+    await axios.delete(`${API_URL}/hots_settings/delete/team/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return id;
+  }
+);
+
+export const fetchTeamMembers = createAsyncThunk(
+  'userManagement/fetchTeamMembers',
+  async (teamId: number) => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/team_members/${teamId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const addTeamMember = createAsyncThunk(
+  'userManagement/addTeamMember',
+  async (memberData: Omit<TeamMember, 'member_id' | 'creation_date'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/post/team_member`, memberData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const updateTeamMember = createAsyncThunk(
+  'userManagement/updateTeamMember',
+  async ({ id, data }: { id: number; data: Partial<TeamMember> }) => {
+    const response = await axios.put(`${API_URL}/hots_settings/update/team_member/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const removeTeamMember = createAsyncThunk(
+  'userManagement/removeTeamMember',
+  async (id: number) => {
+    await axios.delete(`${API_URL}/hots_settings/delete/team_member/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return id;
   }
 );
 
@@ -220,6 +312,33 @@ const userManagementSlice = createSlice({
       })
       .addCase(fetchTeams.fulfilled, (state, action) => {
         state.teams = action.payload;
+      })
+      .addCase(createTeam.fulfilled, (state, action) => {
+        state.teams.push(action.payload);
+      })
+      .addCase(updateTeam.fulfilled, (state, action) => {
+        const index = state.teams.findIndex(t => t.team_id === action.payload.team_id);
+        if (index !== -1) {
+          state.teams[index] = action.payload;
+        }
+      })
+      .addCase(deleteTeam.fulfilled, (state, action) => {
+        state.teams = state.teams.filter(t => t.team_id !== action.payload);
+      })
+      .addCase(fetchTeamMembers.fulfilled, (state, action) => {
+        state.teamMembers = action.payload;
+      })
+      .addCase(addTeamMember.fulfilled, (state, action) => {
+        state.teamMembers.push(action.payload);
+      })
+      .addCase(updateTeamMember.fulfilled, (state, action) => {
+        const index = state.teamMembers.findIndex(m => m.member_id === action.payload.member_id);
+        if (index !== -1) {
+          state.teamMembers[index] = action.payload;
+        }
+      })
+      .addCase(removeTeamMember.fulfilled, (state, action) => {
+        state.teamMembers = state.teamMembers.filter(m => m.member_id !== action.payload);
       })
       .addCase(fetchDepartments.fulfilled, (state, action) => {
         state.departments = action.payload;

@@ -9,14 +9,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { AppLayout } from "@/components/layout/AppLayout";
 import DepartmentModal from "@/components/modals/DepartmentModal";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchDepartments, Department } from '@/store/slices/userManagementSlice';
+import { fetchDepartments, fetchUsers, Department } from '@/store/slices/userManagementSlice';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 
 const DepartmentManagement = () => {
   const dispatch = useAppDispatch();
-  const { departments, isLoading } = useAppSelector(state => state.userManagement);
+  const { departments, users, isLoading } = useAppSelector(state => state.userManagement);
   const [searchValue, setSearchValue] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -26,13 +26,19 @@ const DepartmentManagement = () => {
 
   useEffect(() => {
     dispatch(fetchDepartments());
+    dispatch(fetchUsers());
   }, [dispatch]);
+
+  // Calculate employee count for each department
+  const getDepartmentEmployeeCount = (departmentId: number) => {
+    return users.filter(user => user.department_id === departmentId).length;
+  };
 
   const filteredDepartments = departments.filter(department =>
     department.department_name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    department.short_name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    department.department_shortname.toLowerCase().includes(searchValue.toLowerCase()) ||
     (department.head_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
-    department.description.toLowerCase().includes(searchValue.toLowerCase())
+    (department.description || '').toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const handleAddDepartment = () => {
@@ -124,13 +130,18 @@ const DepartmentManagement = () => {
     );
   };
 
-  const getStatusBadge = (status: string) => {
-    return status === 'active' ? (
+  const getStatusBadge = (department: Department) => {
+    const isActive = !department.finished_date;
+    return isActive ? (
       <Badge className="bg-green-100 text-green-800">Active</Badge>
     ) : (
       <Badge className="bg-red-100 text-red-800">Inactive</Badge>
     );
   };
+
+  const totalEmployees = users.length;
+  const activeDepartments = departments.filter(d => !d.finished_date).length;
+  const avgDepartmentSize = departments.length > 0 ? Math.round(totalEmployees / departments.length) : 0;
 
   return (
     <AppLayout 
@@ -175,9 +186,7 @@ const DepartmentManagement = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Active Departments</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {departments.filter(d => d.status === 'active').length}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{activeDepartments}</p>
                 </div>
               </div>
             </CardContent>
@@ -191,9 +200,7 @@ const DepartmentManagement = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Total Employees</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {departments.reduce((sum, d) => sum + d.employee_count, 0)}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{totalEmployees}</p>
                 </div>
               </div>
             </CardContent>
@@ -207,9 +214,7 @@ const DepartmentManagement = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Avg. Department Size</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {departments.length > 0 ? Math.round(departments.reduce((sum, d) => sum + d.employee_count, 0) / departments.length) : 0}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{avgDepartmentSize}</p>
                 </div>
               </div>
             </CardContent>
@@ -249,11 +254,11 @@ const DepartmentManagement = () => {
                         {highlightText(department.department_name, searchValue)}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">
-                        {highlightText(department.description, searchValue)}
+                        {highlightText(department.description || '', searchValue)}
                       </TableCell>
                       <TableCell>{highlightText(department.head_name || 'Unassigned', searchValue)}</TableCell>
-                      <TableCell>{department.employee_count}</TableCell>
-                      <TableCell>{getStatusBadge(department.status)}</TableCell>
+                      <TableCell>{getDepartmentEmployeeCount(department.department_id)}</TableCell>
+                      <TableCell>{getStatusBadge(department)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end space-x-2">
                           <Button
@@ -295,7 +300,7 @@ const DepartmentManagement = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Department</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{selectedDepartment?.name}"? This action cannot be undone and will affect all employees in this department.
+                Are you sure you want to delete "{selectedDepartment?.department_name}"? This action cannot be undone and will affect all employees in this department.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

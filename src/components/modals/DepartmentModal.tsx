@@ -20,28 +20,28 @@ interface DepartmentModalProps {
 const DepartmentModal = ({ isOpen, onClose, department, mode, onSave }: DepartmentModalProps) => {
   const { users } = useAppSelector(state => state.userManagement);
   const [formData, setFormData] = useState({
-    name: '',
-    code: '',
+    department_name: '',
+    department_shortname: '',
     description: '',
-    head_user_id: '',
+    department_head: '',
     status: 'active'
   });
 
   useEffect(() => {
     if (department && mode === 'edit') {
       setFormData({
-        name: department.name,
-        code: department.code,
-        description: department.description,
-        head_user_id: department.head_user_id?.toString() || '',
-        status: department.status
+        department_name: department.department_name,
+        department_shortname: department.department_shortname,
+        description: department.description || '',
+        department_head: department.department_head?.toString() || '',
+        status: department.finished_date ? 'inactive' : 'active'
       });
     } else {
       setFormData({
-        name: '',
-        code: '',
+        department_name: '',
+        department_shortname: '',
         description: '',
-        head_user_id: '',
+        department_head: '',
         status: 'active'
       });
     }
@@ -50,7 +50,7 @@ const DepartmentModal = ({ isOpen, onClose, department, mode, onSave }: Departme
   const handleSave = () => {
     const departmentToSave = {
       ...formData,
-      head_user_id: formData.head_user_id ? parseInt(formData.head_user_id) : null
+      department_head: formData.department_head ? parseInt(formData.department_head) : null
     };
     onSave(departmentToSave);
     onClose();
@@ -66,20 +66,20 @@ const DepartmentModal = ({ isOpen, onClose, department, mode, onSave }: Departme
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Department Name</Label>
+            <Label htmlFor="department_name">Department Name</Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              id="department_name"
+              value={formData.department_name}
+              onChange={(e) => setFormData({...formData, department_name: e.target.value})}
               placeholder="Enter department name"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="code">Department Code</Label>
+            <Label htmlFor="department_shortname">Department Code</Label>
             <Input
-              id="code"
-              value={formData.code}
-              onChange={(e) => setFormData({...formData, code: e.target.value})}
+              id="department_shortname"
+              value={formData.department_shortname}
+              onChange={(e) => setFormData({...formData, department_shortname: e.target.value})}
               placeholder="Enter department code"
             />
           </div>
@@ -95,7 +95,7 @@ const DepartmentModal = ({ isOpen, onClose, department, mode, onSave }: Departme
           </div>
           <div className="space-y-2">
             <Label htmlFor="head">Department Head</Label>
-            <Select value={formData.head_user_id} onValueChange={(value) => setFormData({...formData, head_user_id: value})}>
+            <Select value={formData.department_head} onValueChange={(value) => setFormData({...formData, department_head: value})}>
               <SelectTrigger>
                 <SelectValue placeholder="Select department head" />
               </SelectTrigger>

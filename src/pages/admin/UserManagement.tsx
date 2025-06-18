@@ -8,26 +8,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import UserModal from "@/components/modals/UserModal";
+import TeamModal from "@/components/modals/TeamModal";
 import WorkflowGroupModal from "@/components/modals/WorkflowGroupModal";
 import UserStatusBadge from "@/components/ui/UserStatusBadge";
 import UserFilters from "@/components/filters/UserFilters";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchUsers, fetchTeams, fetchWorkflowGroups, UserType, Team, WorkflowGroup, createWorkflowGroup, updateWorkflowGroup, deleteWorkflowGroup } from '@/store/slices/userManagementSlice';
+import { fetchUsers, fetchTeams, fetchDepartments, fetchWorkflowGroups, UserType, Team, WorkflowGroup, createTeam, updateTeam, deleteTeam, createWorkflowGroup, updateWorkflowGroup, deleteWorkflowGroup } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
 
 const UserManagement = () => {
   const dispatch = useAppDispatch();
-  const { users, teams, workflowGroups, filters, isLoading } = useAppSelector(state => state.userManagement);
+  const { users, teams, departments, workflowGroups, filters, isLoading } = useAppSelector(state => state.userManagement);
   const [activeTab, setActiveTab] = useState("users");
   const [searchValue, setSearchValue] = useState("");
   
   // Modal states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<WorkflowGroup | null>(null);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [deleteTarget, setDeleteTarget] = useState<{type: 'user' | 'team' | 'workflow', item: any} | null>(null);
@@ -37,6 +40,7 @@ const UserManagement = () => {
   useEffect(() => {
     dispatch(fetchUsers());
     dispatch(fetchTeams());
+    dispatch(fetchDepartments());
     dispatch(fetchWorkflowGroups());
   }, [dispatch]);
 
@@ -93,8 +97,7 @@ const UserManagement = () => {
   };
 
   const filteredTeams = teams.filter(team =>
-    team.team_name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    team.description.toLowerCase().includes(searchValue.toLowerCase())
+    team.team_name.toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const filteredWorkflowGroups = workflowGroups.filter(group =>
@@ -131,6 +134,48 @@ const UserManagement = () => {
 
   const handleSaveUser = (user: any) => {
     dispatch(fetchUsers()); // Refresh data after save
+  };
+
+  // Team handlers
+  const handleAddTeam = () => {
+    setSelectedTeam(null);
+    setModalMode('add');
+    setIsTeamModalOpen(true);
+  };
+
+  const handleEditTeam = (team: Team) => {
+    setSelectedTeam(team);
+    setModalMode('edit');
+    setIsTeamModalOpen(true);
+  };
+
+  const handleDeleteTeam = (team: Team) => {
+    setDeleteTarget({type: 'team', item: team});
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleSaveTeam = async (team: any) => {
+    try {
+      if (modalMode === 'add') {
+        await dispatch(createTeam(team));
+        toast({
+          title: "Success",
+          description: "Team created successfully",
+        });
+      } else {
+        await dispatch(updateTeam({ id: selectedTeam?.team_id!, data: team }));
+        toast({
+          title: "Success",
+          description: "Team updated successfully",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to save team",
+        variant: "destructive",
+      });
+    }
   };
 
   // Workflow Group handlers
@@ -180,8 +225,14 @@ const UserManagement = () => {
       try {
         if (deleteTarget.type === 'user') {
           await deleteUserFromAPI(deleteTarget.item.user_id);
+        } else if (deleteTarget.type === 'team') {
+          await dispatch(deleteTeam(deleteTarget.item.team_id));
+          toast({
+            title: "Success",
+            description: "Team deleted successfully",
+          });
         } else if (deleteTarget.type === 'workflow') {
-          await dispatch(deleteWorkflowGroup(deleteTarget.item.workflow_id));
+          await dispatch(deleteWorkflowGroup(deleteTarget.item.workflow_group_id));
           toast({
             title: "Success",
             description: "Workflow group deleted successfully",
@@ -197,6 +248,11 @@ const UserManagement = () => {
         });
       }
     }
+  };
+
+  const getDepartmentName = (departmentId: number) => {
+    const department = departments.find(d => d.department_id === departmentId);
+    return department ? department.department_name : 'Unknown Department';
   };
 
   const handleDeleteCancel = () => {
@@ -317,39 +373,51 @@ const UserManagement = () => {
           <TabsContent value="teams" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="w-5 h-5" />
-                  <span>Teams Management ({filteredTeams.length})</span>
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center space-x-2">
+                    <Shield className="w-5 h-5" />
+                    <span>Teams Management ({filteredTeams.length})</span>
+                  </CardTitle>
+                  <Button size="sm" onClick={handleAddTeam}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Team
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Team Name</TableHead>
-                      <TableHead>Short Name</TableHead>
-                      <TableHead>Leader</TableHead>
+                      <TableHead>Department</TableHead>
                       <TableHead>Members</TableHead>
-                      <TableHead>Description</TableHead>
+                      <TableHead>Leader</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredTeams.map((team) => (
                       <TableRow key={team.team_id}>
                         <TableCell className="font-medium">{highlightText(team.team_name, searchValue)}</TableCell>
+                        <TableCell>{getDepartmentName(team.department_id)}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{team.team_shortname}</Badge>
+                          <Badge variant="outline">{team.member_count || 0} members</Badge>
                         </TableCell>
                         <TableCell className="text-gray-600">
-                          {team.leader_firstname && team.leader_lastname 
-                            ? `${team.leader_firstname} ${team.leader_lastname}`
-                            : 'No leader assigned'
-                          }
+                          {team.leader_name || 'No leader assigned'}
                         </TableCell>
+                        <TableCell>{new Date(team.creation_date).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{team.member_count} members</Badge>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => handleEditTeam(team)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteTeam(team)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-gray-600">{highlightText(team.description, searchValue)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -419,6 +487,14 @@ const UserManagement = () => {
           onSave={handleSaveUser}
         />
 
+        <TeamModal
+          isOpen={isTeamModalOpen}
+          onClose={() => setIsTeamModalOpen(false)}
+          team={selectedTeam}
+          mode={modalMode}
+          onSave={handleSaveTeam}
+        />
+
         <WorkflowGroupModal
           isOpen={isWorkflowModalOpen}
           onClose={() => setIsWorkflowModalOpen(false)}
@@ -431,9 +507,9 @@ const UserManagement = () => {
         <AlertDialog open={isDeleteModalOpen} onOpenChange={handleDeleteCancel}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete {deleteTarget?.type === 'user' ? 'User' : 'Workflow Group'}</AlertDialogTitle>
+              <AlertDialogTitle>Delete {deleteTarget?.type === 'user' ? 'User' : deleteTarget?.type === 'team' ? 'Team' : 'Workflow Group'}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{deleteTarget?.item.name || deleteTarget?.item.firstname + ' ' + deleteTarget?.item.lastname}"? This action cannot be undone.
+                Are you sure you want to delete "{deleteTarget?.item.team_name || deleteTarget?.item.name || deleteTarget?.item.firstname + ' ' + deleteTarget?.item.lastname}"? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
