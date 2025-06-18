@@ -128,8 +128,8 @@ const UserManagement = () => {
   );
 
   const filteredWorkflowGroups = workflowGroups.filter(group =>
-    group.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    group.description.toLowerCase().includes(searchValue.toLowerCase())
+    group.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+    group.description?.toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const highlightText = (text: string, highlight: string) => {
@@ -238,12 +238,24 @@ const UserManagement = () => {
           description: "Workflow group created successfully",
         });
       } else {
-        const result = await dispatch(updateWorkflowGroup({ id: selectedWorkflowGroup?.workflow_group_id!, data: group }));
+        const result = await dispatch(updateWorkflowGroup({ id: selectedWorkflowGroup?.id!, data: group }));
         savedGroup = result.payload;
-        toast({
-          title: "Success",
-          description: "Workflow group updated successfully",
-        });
+        console.log("result",result)
+        if (result.payload.success === true) {
+          toast({
+            title: "Success",
+            description: "Workflow group updated successfully",
+          });
+          dispatch(fetchWorkflowGroups());
+          
+        }else{
+          toast({
+            title: "Error",
+            description: `Failed to update workflow group ${result.error.message}`,
+            variant: "destructive",
+          });
+        }
+
       }
 
       // Save workflow steps if any
