@@ -32,7 +32,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
     const newStep: WorkflowStepData = {
       step_order: steps.length + 1,
       step_type: 'role',
-      assigned_value: 'default_role',
+      assigned_value: '',
       description: '',
       is_active: true,
     };
@@ -70,24 +70,59 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
   };
 
   const getAssignedValueOptions = (stepType: string) => {
+    console.log(`Getting options for step type: ${stepType}`);
+    
     switch (stepType) {
       case 'role':
-        return uniqueRoles.filter(role => role && role.trim() !== "").map(role => ({ value: role, label: role }));
+        const roleOptions = uniqueRoles
+          .filter(role => role && role.trim() !== "")
+          .map(role => ({ value: role, label: role }));
+        console.log('Role options:', roleOptions);
+        return roleOptions;
+        
       case 'specific_user':
-        return users.filter(user => user.firstname && user.lastname).map(user => ({ 
-          value: user.user_id.toString(), 
-          label: `${user.firstname} ${user.lastname}` 
-        }));
+        const userOptions = users
+          .filter(user => user.firstname && user.lastname)
+          .map(user => ({ 
+            value: user.user_id.toString(), 
+            label: `${user.firstname} ${user.lastname}` 
+          }));
+        console.log('User options:', userOptions);
+        return userOptions;
+        
       case 'team':
-        return teams.filter(team => team.team_name && team.team_name.trim() !== "").map(team => ({ 
-          value: team.team_id.toString(), 
-          label: team.team_name 
-        }));
+        const teamOptions = teams
+          .filter(team => team.team_name && team.team_name.trim() !== "")
+          .map(team => ({ 
+            value: team.team_id.toString(), 
+            label: team.team_name 
+          }));
+        console.log('Team options:', teamOptions);
+        return teamOptions;
+        
       case 'superior':
         return [{ value: 'superior', label: 'Direct Superior' }];
+        
       default:
-        return [{ value: 'default', label: 'Select an option' }];
+        return [];
     }
+  };
+
+  const handleStepTypeChange = (index: number, newStepType: 'role' | 'specific_user' | 'superior' | 'team') => {
+    console.log(`Changing step ${index} type to: ${newStepType}`);
+    
+    // Update step type
+    updateStep(index, 'step_type', newStepType);
+    
+    // Get new options for the step type
+    const newOptions = getAssignedValueOptions(newStepType);
+    console.log('New options for step type:', newOptions);
+    
+    // Set default assigned value based on new step type
+    const defaultValue = newOptions.length > 0 ? newOptions[0].value : '';
+    console.log('Setting default value:', defaultValue);
+    
+    updateStep(index, 'assigned_value', defaultValue);
   };
 
   return (
@@ -102,7 +137,13 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
 
       {steps.map((step, index) => {
         const options = getAssignedValueOptions(step.step_type);
-        const currentValue = step.assigned_value?.toString() || (options.length > 0 ? options[0].value : 'default');
+        const currentValue = step.assigned_value?.toString() || '';
+        
+        // Check if current value exists in options
+        const isValidValue = options.some(option => option.value === currentValue);
+        const displayValue = isValidValue ? currentValue : (options.length > 0 ? options[0].value : '');
+        
+        console.log(`Step ${index}: type=${step.step_type}, value=${currentValue}, isValid=${isValidValue}, display=${displayValue}`);
         
         return (
           <Card key={index} className="border-l-4 border-l-blue-500">
@@ -147,10 +188,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
                   <Select
                     value={step.step_type}
                     onValueChange={(value: 'role' | 'specific_user' | 'superior' | 'team') => {
-                      updateStep(index, 'step_type', value);
-                      const newOptions = getAssignedValueOptions(value);
-                      const defaultValue = newOptions.length > 0 ? newOptions[0].value : 'default';
-                      updateStep(index, 'assigned_value', defaultValue);
+                      handleStepTypeChange(index, value);
                     }}
                   >
                     <SelectTrigger>
@@ -168,8 +206,11 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
                 <div>
                   <Label htmlFor={`assigned-value-${index}`}>Assigned To</Label>
                   <Select
-                    value={currentValue}
-                    onValueChange={(value) => updateStep(index, 'assigned_value', value)}
+                    value={displayValue}
+                    onValueChange={(value) => {
+                      console.log(`Updating step ${index} assigned_value to:`, value);
+                      updateStep(index, 'assigned_value', value);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select assignment" />
@@ -182,7 +223,9 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
                           </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="no_options">No options available</SelectItem>
+                        <SelectItem value="no_options" disabled>
+                          No options available for {step.step_type}
+                        </SelectItem>
                       )}
                     </SelectContent>
                   </Select>
