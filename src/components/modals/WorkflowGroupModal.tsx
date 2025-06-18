@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -113,12 +112,12 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
   };
 
   const getUniqueRoles = () => {
-    const roles = users.map(user => user.role_name);
+    const roles = users.map(user => user.role_name).filter(role => role != null && role !== '');
     return [...new Set(roles)];
   };
 
   const getUniqueTeams = () => {
-    return teams.map(team => team.team_name);
+    return teams.map(team => team.team_name).filter(teamName => teamName != null && teamName !== '');
   };
 
   return (
