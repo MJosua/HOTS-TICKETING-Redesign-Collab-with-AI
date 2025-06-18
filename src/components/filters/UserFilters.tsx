@@ -33,12 +33,12 @@ const UserFilters = () => {
         </SelectContent>
       </Select>
 
-      <Select value={filters.team} onValueChange={(value) => dispatch(setTeamFilter(value))}>
+      <Select value={filters.team || "all_teams"} onValueChange={(value) => dispatch(setTeamFilter(value === "all_teams" ? "" : value))}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="All Teams" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Teams</SelectItem>
+          <SelectItem value="all_teams">All Teams</SelectItem>
           {uniqueTeams.map((team) => (
             <SelectItem key={team} value={team}>
               {team}
@@ -47,12 +47,12 @@ const UserFilters = () => {
         </SelectContent>
       </Select>
 
-      <Select value={filters.role} onValueChange={(value) => dispatch(setRoleFilter(value))}>
+      <Select value={filters.role || "all_roles"} onValueChange={(value) => dispatch(setRoleFilter(value === "all_roles" ? "" : value))}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="All Roles" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Roles</SelectItem>
+          <SelectItem value="all_roles">All Roles</SelectItem>
           {uniqueRoles.map((role) => (
             <SelectItem key={role} value={role}>
               {role}
