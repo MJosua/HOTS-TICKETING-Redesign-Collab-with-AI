@@ -10,6 +10,10 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import UserModal from "@/components/modals/UserModal";
 import RoleModal from "@/components/modals/RoleModal";
 import WorkflowGroupModal from "@/components/modals/WorkflowGroupModal";
+import UserStatusBadge from "@/components/ui/UserStatusBadge";
+import UserFilters from "@/components/filters/UserFilters";
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
+import { fetchUsers, fetchTeams, UserType } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +31,7 @@ interface UserType {
   job_title: string;
   superior_id?: number;
   team_id?: number;
+  is_active: boolean;
 }
 
 interface RoleType {
@@ -59,12 +64,10 @@ const initialRoles: RoleType[] = [
 ];
 
 const UserManagement = () => {
+  const dispatch = useAppDispatch();
+  const { users, teams, filters, isLoading } = useAppSelector(state => state.userManagement);
   const [activeTab, setActiveTab] = useState("users");
   const [searchValue, setSearchValue] = useState("");
-  const [users, setUsers] = useState<UserType[]>([]);
-  const [roles, setRoles] = useState<RoleType[]>(initialRoles);
-  const [workflowGroups, setWorkflowGroups] = useState<WorkflowGroup[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   
   // Modal states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -79,41 +82,34 @@ const UserManagement = () => {
 
   const { toast } = useToast();
 
-  // Fetch users from API
-  const fetchUsers = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get(`${API_URL}/hots_settings/get/user`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
-        }
-      });
-
-      if (response.data.success) {
-        setUsers(response.data.data);
-        console.log('Users fetched:', response.data.data);
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to fetch users",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch users from server",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    dispatch(fetchUsers());
+    dispatch(fetchTeams());
+  }, [dispatch]);
+
+  // Apply filters to users
+  const filteredUsers = users.filter(user => {
+    // Search filter
+    const searchMatch = searchValue === '' || 
+      `${user.firstname || ''} ${user.lastname || ''}`.toLowerCase().includes(searchValue.toLowerCase()) ||
+      (user.email || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+      (user.team_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+      (user.role_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
+      (user.uid || '').toLowerCase().includes(searchValue.toLowerCase());
+
+    // Status filter
+    const statusMatch = filters.status === 'all' || 
+      (filters.status === 'active' && user.is_active) ||
+      (filters.status === 'deleted' && !user.is_active);
+
+    // Team filter
+    const teamMatch = !filters.team || user.team_name === filters.team;
+
+    // Role filter
+    const roleMatch = !filters.role || user.role_name === filters.role;
+
+    return searchMatch && statusMatch && teamMatch && roleMatch;
+  });
 
   // Delete user function
   const deleteUserFromAPI = async (userId: number) => {
@@ -129,7 +125,7 @@ const UserManagement = () => {
           title: "Success",
           description: "User deleted successfully",
         });
-        fetchUsers(); // Refresh the list
+        dispatch(fetchUsers()); // Refresh the list
       } else {
         throw new Error(response.data.message || 'Failed to delete user');
       }
@@ -142,14 +138,6 @@ const UserManagement = () => {
       });
     }
   };
-
-  const filteredUsers = users.filter(user =>
-    `${user.firstname || ''} ${user.lastname || ''}`.toLowerCase().includes(searchValue.toLowerCase()) ||
-    (user.email || '').toLowerCase().includes(searchValue.toLowerCase()) ||
-    (user.team_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
-    (user.role_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
-    (user.uid || '').toLowerCase().includes(searchValue.toLowerCase())
-  );
 
   const filteredRoles = roles.filter(role =>
     role.name.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -189,7 +177,7 @@ const UserManagement = () => {
   };
 
   const handleSaveUser = (user: any) => {
-    fetchUsers(); // Refresh data after save
+    dispatch(fetchUsers()); // Refresh data after save
   };
 
   // Role handlers
@@ -300,6 +288,8 @@ const UserManagement = () => {
           </TabsList>
 
           <TabsContent value="users" className="space-y-4">
+            <UserFilters />
+            
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -320,13 +310,14 @@ const UserManagement = () => {
                         <TableHead>Email</TableHead>
                         <TableHead>Team</TableHead>
                         <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Job Title</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredUsers.map((user) => (
-                        <TableRow key={user.user_id}>
+                        <TableRow key={user.user_id} className={!user.is_active ? 'opacity-60' : ''}>
                           <TableCell>
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
@@ -345,15 +336,20 @@ const UserManagement = () => {
                               {highlightText(user.role_name || 'No role', searchValue)}
                             </Badge>
                           </TableCell>
+                          <TableCell>
+                            <UserStatusBadge isActive={user.is_active} />
+                          </TableCell>
                           <TableCell className="text-gray-600">{user.job_title || 'No title'}</TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
                               <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteUser(user)}>
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              {user.is_active && (
+                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteUser(user)}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

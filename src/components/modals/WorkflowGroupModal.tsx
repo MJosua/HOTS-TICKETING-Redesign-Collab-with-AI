@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { useAppSelector } from '@/hooks/useAppSelector';
 
 interface ApprovalStep {
   order: number;
-  type: 'role' | 'specific_user' | 'superior';
+  type: 'role' | 'specific_user' | 'superior' | 'team';
   value: string | number;
   description: string;
 }
@@ -31,6 +31,7 @@ interface UserType {
   lastname: string;
   uid: string;
   role_name: string;
+  team_name: string;
 }
 
 interface WorkflowGroupModalProps {
@@ -43,6 +44,7 @@ interface WorkflowGroupModalProps {
 }
 
 const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, users }: WorkflowGroupModalProps) => {
+  const { teams } = useAppSelector(state => state.userManagement);
   const [formData, setFormData] = useState<WorkflowGroup>({
     id: '',
     name: '',
@@ -112,6 +114,10 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
   const getUniqueRoles = () => {
     const roles = users.map(user => user.role_name);
     return [...new Set(roles)];
+  };
+
+  const getUniqueTeams = () => {
+    return teams.map(team => team.team_name);
   };
 
   return (
@@ -199,7 +205,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                       <Label>Approval Type</Label>
                       <Select
                         value={step.type}
-                        onValueChange={(value: 'role' | 'specific_user' | 'superior') => 
+                        onValueChange={(value: 'role' | 'specific_user' | 'superior' | 'team') => 
                           updateApprovalStep(index, 'type', value)
                         }
                       >
@@ -210,6 +216,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                           <SelectItem value="role">By Role</SelectItem>
                           <SelectItem value="specific_user">Specific User</SelectItem>
                           <SelectItem value="superior">Direct Superior</SelectItem>
+                          <SelectItem value="team">By Team</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -228,6 +235,27 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                             {getUniqueRoles().map((role) => (
                               <SelectItem key={role} value={role}>
                                 {role}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {step.type === 'team' && (
+                      <div className="grid gap-2">
+                        <Label>Team</Label>
+                        <Select
+                          value={step.value.toString()}
+                          onValueChange={(value) => updateApprovalStep(index, 'value', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select team" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getUniqueTeams().map((team) => (
+                              <SelectItem key={team} value={team}>
+                                {team}
                               </SelectItem>
                             ))}
                           </SelectContent>
