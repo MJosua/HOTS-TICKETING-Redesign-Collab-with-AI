@@ -1,4 +1,3 @@
-
 export interface FormField {
   label: string;
   name: string; // New field for API data mapping
@@ -41,12 +40,24 @@ export interface ApprovalStep {
   description: string;
 }
 
+export interface WorkflowStepExecution {
+  id: number;
+  workflow_id: number;
+  step_order: number;
+  assigned_user_id: number;
+  status: string;
+  action_date: string;
+  action_by_user_id?: number;
+  comments?: string;
+  rejection_reason?: string;
+}
+
 export interface WorkflowGroup {
   id: string;
   name: string;
   description: string;
   category_ids: number[];
-  approval_steps: ApprovalStep[];
+  is_active: boolean;
 }
 
 export interface ApprovalFlow {

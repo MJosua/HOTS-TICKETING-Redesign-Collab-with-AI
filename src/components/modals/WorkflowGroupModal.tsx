@@ -1,24 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
-import { useAppSelector } from '@/hooks/useAppSelector';
-import { WorkflowGroup, ApprovalStep } from '@/store/slices/userManagementSlice';
-
-interface UserType {
-  user_id: number;
-  firstname: string;
-  lastname: string;
-  uid: string;
-  role_name: string;
-  team_name: string;
-}
+import { Switch } from "@/components/ui/switch";
+import { WorkflowGroup } from '@/store/slices/userManagementSlice';
 
 interface WorkflowGroupModalProps {
   isOpen: boolean;
@@ -26,17 +14,15 @@ interface WorkflowGroupModalProps {
   workflowGroup: WorkflowGroup | null;
   mode: 'add' | 'edit';
   onSave: (workflowGroup: any) => void;
-  users: UserType[];
+  users: any[];
 }
 
-const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, users }: WorkflowGroupModalProps) => {
-  const { teams } = useAppSelector(state => state.userManagement);
+const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: WorkflowGroupModalProps) => {
   const [formData, setFormData] = useState<any>({
-    workflow_id: null,
     name: '',
     description: '',
     category_ids: [],
-    approval_steps: []
+    is_active: true
   });
 
   useEffect(() => {
@@ -45,74 +31,21 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
         name: workflowGroup.name,
         description: workflowGroup.description,
         category_ids: workflowGroup.category_ids,
-        approval_steps: workflowGroup.approval_steps
+        is_active: workflowGroup.is_active
       });
     } else {
       setFormData({
         name: '',
         description: '',
         category_ids: [],
-        approval_steps: []
+        is_active: true
       });
     }
   }, [workflowGroup, mode, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
-  };
-
-  const addApprovalStep = () => {
-    const newStep: any = {
-      step_id: Date.now(),
-      order: formData.approval_steps.length + 1,
-      type: 'role',
-      value: '',
-      description: ''
-    };
-    setFormData({
-      ...formData,
-      approval_steps: [...formData.approval_steps, newStep]
-    });
-  };
-
-  const updateApprovalStep = (index: number, field: string, value: any) => {
-    const newSteps = [...formData.approval_steps];
-    newSteps[index] = { ...newSteps[index], [field]: value };
-    setFormData({ ...formData, approval_steps: newSteps });
-  };
-
-  const removeApprovalStep = (index: number) => {
-    const newSteps = formData.approval_steps.filter((_: any, i: number) => i !== index);
-    // Reorder the remaining steps
-    const reorderedSteps = newSteps.map((step: any, i: number) => ({ ...step, order: i + 1 }));
-    setFormData({ ...formData, approval_steps: reorderedSteps });
-  };
-
-  const moveStep = (index: number, direction: 'up' | 'down') => {
-    const newSteps = [...formData.approval_steps];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-
-    if (newIndex >= 0 && newIndex < newSteps.length) {
-      [newSteps[index], newSteps[newIndex]] = [newSteps[newIndex], newSteps[index]];
-      // Update order numbers
-      newSteps.forEach((step: any, i: number) => step.order = i + 1);
-      setFormData({ ...formData, approval_steps: newSteps });
-    }
-  };
-
-  const getUniqueRoles = () => {
-    const roles = users
-      .map(user => user.role_name)
-      .filter(role => role != null && role !== '' && role.trim() !== '');
-    return [...new Set(roles)];
-  };
-
-  const getUniqueTeams = () => {
-    return teams
-      .map(team => team.team_name)
-      .filter(teamName => teamName != null && teamName !== '' && teamName.trim() !== '');
+    handleSave();
   };
 
   const handleSave = () => {
@@ -126,7 +59,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {mode === 'add' ? 'Create New Workflow Group' : 'Edit Workflow Group'}
@@ -156,168 +89,22 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                 required
               />
             </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_active"
+                checked={formData.is_active}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+              />
+              <Label htmlFor="is_active">Active</Label>
+            </div>
           </div>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Approval Steps</CardTitle>
-                <Button type="button" size="sm" onClick={addApprovalStep}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Step
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {formData.approval_steps.map((step: any, index: number) => (
-                <Card key={index} className="p-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline">Step {step.order}</Badge>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => moveStep(index, 'up')}
-                          disabled={index === 0}
-                        >
-                          <ArrowUp className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => moveStep(index, 'down')}
-                          disabled={index === formData.approval_steps.length - 1}
-                        >
-                          <ArrowDown className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() => removeApprovalStep(index)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label>Approval Type</Label>
-                      <Select
-                        value={step.type}
-                        onValueChange={(value: 'role' | 'specific_user' | 'superior' | 'team') =>
-                          updateApprovalStep(index, 'type', value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="role">By Role</SelectItem>
-                          <SelectItem value="specific_user">Specific User</SelectItem>
-                          <SelectItem value="superior">Direct Superior</SelectItem>
-                          <SelectItem value="team">By Team</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {step.type === 'role' && (
-                      <div className="grid gap-2">
-                        <Label>Role</Label>
-                        <Select
-                          value={step.value && step.value.toString ? step.value.toString() : ""}
-                          onValueChange={(value) => updateApprovalStep(index, 'value', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getUniqueRoles().map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {role}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {step.type === 'team' && (
-                      <div className="grid gap-2">
-                        <Label>Team</Label>
-                        <Select
-                          value={step.value && step.value.toString ? step.value.toString() : ""}
-                          onValueChange={(value) => updateApprovalStep(index, 'value', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select team" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getUniqueTeams().map((team) => (
-                              <SelectItem key={team} value={team}>
-                                {team}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {step.type === 'specific_user' && (
-                      <div className="grid gap-2">
-                        <Label htmlFor={`user-select-${index}`}>User</Label>
-                        <Select
-                          value={step.value && step.value.toString ? step.value.toString() : ""}
-                          onValueChange={(value) => updateApprovalStep(index, 'value', parseInt(value))}
-                        >
-                          <SelectTrigger id={`user-select-${index}`}>
-                            <SelectValue placeholder="Select user" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {users?.length > 0 ? (
-                              users.map((user) => (
-                                <SelectItem key={user.user_id} value={user.user_id.toString()}>
-                                  {user.firstname} {user.lastname} ({user.role_name}) – {user.user_id}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <div className="px-2 py-1 text-sm text-muted-foreground">No users available</div>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-
-                    <div className="grid gap-2">
-                      <Label>Description</Label>
-                      <Input
-                        value={step.description}
-                        onChange={(e) => updateApprovalStep(index, 'description', e.target.value)}
-                        placeholder="Describe this approval step"
-                      />
-                    </div>
-                  </div>
-                </Card>
-              ))}
-
-              {formData.approval_steps.length === 0 && (
-                <div className="text-center text-gray-500 py-8">
-                  No approval steps defined. Click "Add Step" to create one.
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" onClick={handleSave}>
+            <Button type="submit">
               {mode === 'add' ? 'Create Workflow Group' : 'Save Changes'}
             </Button>
           </div>

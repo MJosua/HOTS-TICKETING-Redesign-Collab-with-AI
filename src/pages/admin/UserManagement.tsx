@@ -205,7 +205,7 @@ const UserManagement = () => {
           description: "Workflow group created successfully",
         });
       } else {
-        await dispatch(updateWorkflowGroup({ id: group.workflow_id, data: group }));
+        await dispatch(updateWorkflowGroup({ id: selectedWorkflowGroup?.workflow_group_id!, data: group }));
         toast({
           title: "Success",
           description: "Workflow group updated successfully",
@@ -443,8 +443,8 @@ const UserManagement = () => {
                     <TableRow>
                       <TableHead>Group Name</TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead>Approval Steps</TableHead>
                       <TableHead>Categories</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -454,10 +454,12 @@ const UserManagement = () => {
                         <TableCell className="font-medium">{highlightText(group.name, searchValue)}</TableCell>
                         <TableCell className="text-gray-600">{highlightText(group.description, searchValue)}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{group.approval_steps.length} steps</Badge>
+                          <Badge variant="outline">{group.category_ids.length} categories</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{group.category_ids.length} categories</Badge>
+                          <Badge variant={group.is_active ? "default" : "secondary"}>
+                            {group.is_active ? "Active" : "Inactive"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">

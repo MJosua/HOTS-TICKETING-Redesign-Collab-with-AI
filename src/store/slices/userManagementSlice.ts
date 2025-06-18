@@ -57,9 +57,21 @@ export interface WorkflowGroup {
   name: string;
   description: string;
   category_ids: number[];
-  approval_steps: ApprovalStep[];
   created_at: string;
   updated_at: string;
+  is_active: boolean;
+}
+
+export interface WorkflowStepExecution {
+  id: number;
+  workflow_id: number;
+  step_order: number;
+  assigned_user_id: number;
+  status: string;
+  action_date: string;
+  action_by_user_id?: number;
+  comments?: string;
+  rejection_reason?: string;
 }
 
 export interface ApprovalStep {
@@ -76,6 +88,7 @@ interface UserManagementState {
   teamMembers: TeamMember[];
   departments: Department[];
   workflowGroups: WorkflowGroup[];
+  workflowStepExecutions: WorkflowStepExecution[];
   isLoading: boolean;
   error: string | null;
   filters: {
@@ -91,6 +104,7 @@ const initialState: UserManagementState = {
   teamMembers: [],
   departments: [],
   workflowGroups: [],
+  workflowStepExecutions: [],
   isLoading: false,
   error: null,
   filters: {
@@ -272,6 +286,18 @@ export const deleteWorkflowGroup = createAsyncThunk(
   }
 );
 
+export const fetchWorkflowStepExecutions = createAsyncThunk(
+  'userManagement/fetchWorkflowStepExecutions',
+  async (workflowId: number) => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/workflow_step_executions/${workflowId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
 const userManagementSlice = createSlice({
   name: 'userManagement',
   initialState,
@@ -357,6 +383,9 @@ const userManagementSlice = createSlice({
       })
       .addCase(deleteWorkflowGroup.fulfilled, (state, action) => {
         state.workflowGroups = state.workflowGroups.filter(w => w.workflow_group_id !== action.payload);
+      })
+      .addCase(fetchWorkflowStepExecutions.fulfilled, (state, action) => {
+        state.workflowStepExecutions = action.payload;
       });
   },
 });
