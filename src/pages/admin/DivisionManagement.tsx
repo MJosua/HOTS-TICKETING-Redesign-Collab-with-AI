@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Users, Monitor } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,73 +8,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import DivisionModal from "@/components/modals/DivisionModal";
-
-interface Division {
-  id: string;
-  name: string;
-  code: string;
-  description: string;
-  parentDivision: string;
-  head: string;
-  status: string;
-  employeeCount: number;
-}
-
-const initialDivisions: Division[] = [
-  {
-    id: "1",
-    name: "Noodle Division",
-    code: "NDL",
-    description: "Main noodle production and operations",
-    parentDivision: "Production",
-    head: "John Doe",
-    status: "active",
-    employeeCount: 245
-  },
-  {
-    id: "2", 
-    name: "Quality Control",
-    code: "QC",
-    description: "Product quality assurance and testing",
-    parentDivision: "Noodle Division",
-    head: "Jane Smith",
-    status: "active",
-    employeeCount: 32
-  },
-  {
-    id: "3",
-    name: "Maintenance",
-    code: "MNT",
-    description: "Equipment and facility maintenance",
-    parentDivision: "Operations",
-    head: "Ahmad Rahman",
-    status: "active",
-    employeeCount: 18
-  },
-  {
-    id: "4",
-    name: "Human Resources",
-    code: "HR",
-    description: "Employee management and development",
-    parentDivision: "Corporate",
-    head: "Siti Nurhaliza",
-    status: "inactive",
-    employeeCount: 12
-  }
-];
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
+import { fetchDivisions, Division } from '@/store/slices/userManagementSlice';
+import { useToast } from '@/hooks/use-toast';
+import axios from 'axios';
+import { API_URL } from '@/config/sourceConfig';
 
 const DivisionManagement = () => {
-  const [divisions, setDivisions] = useState<Division[]>(initialDivisions);
+  const dispatch = useAppDispatch();
+  const { divisions, isLoading } = useAppSelector(state => state.userManagement);
   const [searchValue, setSearchValue] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedDivision, setSelectedDivision] = useState<Division | null>(null);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    dispatch(fetchDivisions());
+  }, [dispatch]);
 
   const filteredDivisions = divisions.filter(division =>
     division.name.toLowerCase().includes(searchValue.toLowerCase()) ||
     division.code.toLowerCase().includes(searchValue.toLowerCase()) ||
-    division.head.toLowerCase().includes(searchValue.toLowerCase()) ||
+    (division.head_name || '').toLowerCase().includes(searchValue.toLowerCase()) ||
     division.description.toLowerCase().includes(searchValue.toLowerCase())
   );
 
@@ -94,19 +52,61 @@ const DivisionManagement = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSaveDivision = (division: Division) => {
-    if (modalMode === 'add') {
-      setDivisions([...divisions, { ...division, employeeCount: 0 }]);
-    } else {
-      setDivisions(divisions.map(d => d.id === division.id ? { ...division, employeeCount: d.employeeCount } : d));
+  const handleSaveDivision = async (division: any) => {
+    try {
+      if (modalMode === 'add') {
+        await axios.post(`${API_URL}/hots_settings/create/division`, division, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          }
+        });
+        toast({
+          title: "Success",
+          description: "Division created successfully",
+        });
+      } else {
+        await axios.put(`${API_URL}/hots_settings/update/division/${selectedDivision?.division_id}`, division, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          }
+        });
+        toast({
+          title: "Success",
+          description: "Division updated successfully",
+        });
+      }
+      dispatch(fetchDivisions());
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || 'Failed to save division',
+        variant: "destructive",
+      });
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedDivision) {
-      setDivisions(divisions.filter(d => d.id !== selectedDivision.id));
-      setIsDeleteModalOpen(false);
-      setSelectedDivision(null);
+      try {
+        await axios.delete(`${API_URL}/hots_settings/delete/division/${selectedDivision.division_id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          }
+        });
+        toast({
+          title: "Success",
+          description: "Division deleted successfully",
+        });
+        dispatch(fetchDivisions());
+        setIsDeleteModalOpen(false);
+        setSelectedDivision(null);
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.response?.data?.message || 'Failed to delete division',
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -192,7 +192,7 @@ const DivisionManagement = () => {
                 <div>
                   <p className="text-sm text-gray-600">Total Employees</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {divisions.reduce((sum, d) => sum + d.employeeCount, 0)}
+                    {divisions.reduce((sum, d) => sum + d.employee_count, 0)}
                   </p>
                 </div>
               </div>
@@ -208,7 +208,7 @@ const DivisionManagement = () => {
                 <div>
                   <p className="text-sm text-gray-600">Avg. Division Size</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {Math.round(divisions.reduce((sum, d) => sum + d.employeeCount, 0) / divisions.length)}
+                    {divisions.length > 0 ? Math.round(divisions.reduce((sum, d) => sum + d.employee_count, 0) / divisions.length) : 0}
                   </p>
                 </div>
               </div>
@@ -222,56 +222,62 @@ const DivisionManagement = () => {
             <CardTitle>Divisions ({filteredDivisions.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Division Code</TableHead>
-                  <TableHead>Division Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Head</TableHead>
-                  <TableHead>Employees</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDivisions.map((division) => (
-                  <TableRow key={division.id}>
-                    <TableCell className="font-mono font-medium">
-                      {highlightText(division.code, searchValue)}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {highlightText(division.name, searchValue)}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {highlightText(division.description, searchValue)}
-                    </TableCell>
-                    <TableCell>{highlightText(division.head, searchValue)}</TableCell>
-                    <TableCell>{division.employeeCount}</TableCell>
-                    <TableCell>{getStatusBadge(division.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditDivision(division)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteDivision(division)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-lg">Loading divisions...</div>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Division Code</TableHead>
+                    <TableHead>Division Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Head</TableHead>
+                    <TableHead>Employees</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredDivisions.map((division) => (
+                    <TableRow key={division.division_id}>
+                      <TableCell className="font-mono font-medium">
+                        {highlightText(division.code, searchValue)}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {highlightText(division.name, searchValue)}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {highlightText(division.description, searchValue)}
+                      </TableCell>
+                      <TableCell>{highlightText(division.head_name || 'Unassigned', searchValue)}</TableCell>
+                      <TableCell>{division.employee_count}</TableCell>
+                      <TableCell>{getStatusBadge(division.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditDivision(division)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteDivision(division)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 

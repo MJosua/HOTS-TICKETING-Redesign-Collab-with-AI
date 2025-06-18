@@ -32,9 +32,43 @@ export interface Team {
   leader_lastname?: string;
 }
 
+export interface Division {
+  division_id: number;
+  name: string;
+  code: string;
+  description: string;
+  parent_division_id?: number;
+  head_user_id?: number;
+  head_name?: string;
+  status: 'active' | 'inactive';
+  employee_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkflowGroup {
+  workflow_id: number;
+  name: string;
+  description: string;
+  category_ids: number[];
+  approval_steps: ApprovalStep[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApprovalStep {
+  step_id: number;
+  order: number;
+  type: 'role' | 'specific_user' | 'superior' | 'team';
+  value: string | number;
+  description: string;
+}
+
 interface UserManagementState {
   users: UserType[];
   teams: Team[];
+  divisions: Division[];
+  workflowGroups: WorkflowGroup[];
   isLoading: boolean;
   error: string | null;
   filters: {
@@ -47,6 +81,8 @@ interface UserManagementState {
 const initialState: UserManagementState = {
   users: [],
   teams: [],
+  divisions: [],
+  workflowGroups: [],
   isLoading: false,
   error: null,
   filters: {
@@ -64,7 +100,7 @@ export const fetchUsers = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("teamfetch",response.data.data)
+    console.log("users fetch", response.data.data);
     return response.data.data;
   }
 );
@@ -77,7 +113,70 @@ export const fetchTeams = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
+    console.log("teams fetch", response.data.data);
     return response.data.data;
+  }
+);
+
+export const fetchDivisions = createAsyncThunk(
+  'userManagement/fetchDivisions',
+  async () => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/division`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    console.log("divisions fetch", response.data.data);
+    return response.data.data;
+  }
+);
+
+export const fetchWorkflowGroups = createAsyncThunk(
+  'userManagement/fetchWorkflowGroups',
+  async () => {
+    const response = await axios.get(`${API_URL}/hots_settings/get/workflow`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    console.log("workflow groups fetch", response.data.data);
+    return response.data.data;
+  }
+);
+
+export const createWorkflowGroup = createAsyncThunk(
+  'userManagement/createWorkflowGroup',
+  async (workflowData: Omit<WorkflowGroup, 'workflow_id' | 'created_at' | 'updated_at'>) => {
+    const response = await axios.post(`${API_URL}/hots_settings/create/workflow`, workflowData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const updateWorkflowGroup = createAsyncThunk(
+  'userManagement/updateWorkflowGroup',
+  async ({ id, data }: { id: number; data: Partial<WorkflowGroup> }) => {
+    const response = await axios.put(`${API_URL}/hots_settings/update/workflow/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return response.data.data;
+  }
+);
+
+export const deleteWorkflowGroup = createAsyncThunk(
+  'userManagement/deleteWorkflowGroup',
+  async (id: number) => {
+    await axios.delete(`${API_URL}/hots_settings/delete/workflow/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      }
+    });
+    return id;
   }
 );
 
@@ -121,6 +220,24 @@ const userManagementSlice = createSlice({
       })
       .addCase(fetchTeams.fulfilled, (state, action) => {
         state.teams = action.payload;
+      })
+      .addCase(fetchDivisions.fulfilled, (state, action) => {
+        state.divisions = action.payload;
+      })
+      .addCase(fetchWorkflowGroups.fulfilled, (state, action) => {
+        state.workflowGroups = action.payload;
+      })
+      .addCase(createWorkflowGroup.fulfilled, (state, action) => {
+        state.workflowGroups.push(action.payload);
+      })
+      .addCase(updateWorkflowGroup.fulfilled, (state, action) => {
+        const index = state.workflowGroups.findIndex(w => w.workflow_id === action.payload.workflow_id);
+        if (index !== -1) {
+          state.workflowGroups[index] = action.payload;
+        }
+      })
+      .addCase(deleteWorkflowGroup.fulfilled, (state, action) => {
+        state.workflowGroups = state.workflowGroups.filter(w => w.workflow_id !== action.payload);
       });
   },
 });

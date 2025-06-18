@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,21 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAppSelector } from '@/hooks/useAppSelector';
-
-interface ApprovalStep {
-  order: number;
-  type: 'role' | 'specific_user' | 'superior' | 'team';
-  value: string | number;
-  description: string;
-}
-
-interface WorkflowGroup {
-  id: string;
-  name: string;
-  description: string;
-  category_ids: number[];
-  approval_steps: ApprovalStep[];
-}
+import { WorkflowGroup, ApprovalStep } from '@/store/slices/userManagementSlice';
 
 interface UserType {
   user_id: number;
@@ -39,27 +26,32 @@ interface WorkflowGroupModalProps {
   onClose: () => void;
   workflowGroup: WorkflowGroup | null;
   mode: 'add' | 'edit';
-  onSave: (workflowGroup: WorkflowGroup) => void;
+  onSave: (workflowGroup: any) => void;
   users: UserType[];
 }
 
 const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, users }: WorkflowGroupModalProps) => {
   const { teams } = useAppSelector(state => state.userManagement);
-  const [formData, setFormData] = useState<WorkflowGroup>({
-    id: '',
+  const [formData, setFormData] = useState<any>({
+    workflow_id: null,
     name: '',
     description: '',
     category_ids: [],
     approval_steps: []
   });
 
-
   useEffect(() => {
     if (workflowGroup && mode === 'edit') {
-      setFormData(workflowGroup);
+      setFormData({
+        workflow_id: workflowGroup.workflow_id,
+        name: workflowGroup.name,
+        description: workflowGroup.description,
+        category_ids: workflowGroup.category_ids || [],
+        approval_steps: workflowGroup.approval_steps || []
+      });
     } else {
       setFormData({
-        id: Date.now().toString(),
+        workflow_id: null,
         name: '',
         description: '',
         category_ids: [],
@@ -75,7 +67,8 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
   };
 
   const addApprovalStep = () => {
-    const newStep: ApprovalStep = {
+    const newStep: any = {
+      step_id: Date.now(),
       order: formData.approval_steps.length + 1,
       type: 'role',
       value: '',
@@ -87,16 +80,16 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
     });
   };
 
-  const updateApprovalStep = (index: number, field: keyof ApprovalStep, value: any) => {
+  const updateApprovalStep = (index: number, field: string, value: any) => {
     const newSteps = [...formData.approval_steps];
     newSteps[index] = { ...newSteps[index], [field]: value };
     setFormData({ ...formData, approval_steps: newSteps });
   };
 
   const removeApprovalStep = (index: number) => {
-    const newSteps = formData.approval_steps.filter((_, i) => i !== index);
+    const newSteps = formData.approval_steps.filter((_: any, i: number) => i !== index);
     // Reorder the remaining steps
-    const reorderedSteps = newSteps.map((step, i) => ({ ...step, order: i + 1 }));
+    const reorderedSteps = newSteps.map((step: any, i: number) => ({ ...step, order: i + 1 }));
     setFormData({ ...formData, approval_steps: reorderedSteps });
   };
 
@@ -107,18 +100,22 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
     if (newIndex >= 0 && newIndex < newSteps.length) {
       [newSteps[index], newSteps[newIndex]] = [newSteps[newIndex], newSteps[index]];
       // Update order numbers
-      newSteps.forEach((step, i) => step.order = i + 1);
+      newSteps.forEach((step: any, i: number) => step.order = i + 1);
       setFormData({ ...formData, approval_steps: newSteps });
     }
   };
 
   const getUniqueRoles = () => {
-    const roles = users.map(user => user.role_name).filter(role => role != null && role !== '');
+    const roles = users
+      .map(user => user.role_name)
+      .filter(role => role != null && role !== '' && role.trim() !== '');
     return [...new Set(roles)];
   };
 
   const getUniqueTeams = () => {
-    return teams.map(team => team.team_name).filter(teamName => teamName != null && teamName !== '');
+    return teams
+      .map(team => team.team_name)
+      .filter(teamName => teamName != null && teamName !== '' && teamName.trim() !== '');
   };
 
   return (
@@ -166,7 +163,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {formData.approval_steps.map((step, index) => (
+              {formData.approval_steps.map((step: any, index: number) => (
                 <Card key={index} className="p-4">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -226,7 +223,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                       <div className="grid gap-2">
                         <Label>Role</Label>
                         <Select
-                          value={step.value ? step.value.toString() : ""}
+                          value={step.value && step.value.toString ? step.value.toString() : ""}
                           onValueChange={(value) => updateApprovalStep(index, 'value', value)}
                         >
                           <SelectTrigger>
@@ -247,7 +244,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                       <div className="grid gap-2">
                         <Label>Team</Label>
                         <Select
-                          value={step.value ? step.value.toString() : ""}
+                          value={step.value && step.value.toString ? step.value.toString() : ""}
                           onValueChange={(value) => updateApprovalStep(index, 'value', value)}
                         >
                           <SelectTrigger>
@@ -268,16 +265,15 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave, user
                       <div className="grid gap-2">
                         <Label>User</Label>
                         <Select
-                          value={step.value ? step.value.toString() : ""}
+                          value={step.value && step.value.toString ? step.value.toString() : ""}
                           onValueChange={(value) => updateApprovalStep(index, 'value', parseInt(value))}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select user" />
                           </SelectTrigger>
                           <SelectContent>
-                            {users
-                            .map((user) => (
-                              <SelectItem key={user.user_id} value={user.user_id}>
+                            {users.map((user) => (
+                              <SelectItem key={user.user_id} value={user.user_id.toString()}>
                                 {user.firstname} {user.lastname} ({user.role_name}) - {user.user_id}
                               </SelectItem>
                             ))}
