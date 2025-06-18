@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Search, Shield, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,22 +18,6 @@ import { fetchUsers, fetchTeams, UserType } from '@/store/slices/userManagementS
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
-
-interface UserType {
-  user_id: number;
-  firstname: string;
-  lastname: string;
-  uid: string;
-  email: string;
-  role_id: number;
-  role_name: string;
-  department_id: number;
-  team_name: string;
-  job_title: string;
-  superior_id?: number;
-  team_id?: number;
-  is_active: boolean;
-}
 
 interface RoleType {
   id: string;
@@ -63,11 +48,28 @@ const initialRoles: RoleType[] = [
   { id: "4", name: "Staff", permissions: 5, description: "Basic operations" },
 ];
 
+const initialWorkflowGroups: WorkflowGroup[] = [
+  {
+    id: "1",
+    name: "IT Equipment Approval",
+    description: "Approval workflow for IT equipment requests",
+    category_ids: [1, 2],
+    approval_steps: [
+      { order: 1, type: 'superior', value: 0, description: 'Direct supervisor approval' },
+      { order: 2, type: 'role', value: 'IT Manager', description: 'IT Manager final approval' }
+    ]
+  }
+];
+
 const UserManagement = () => {
   const dispatch = useAppDispatch();
   const { users, teams, filters, isLoading } = useAppSelector(state => state.userManagement);
   const [activeTab, setActiveTab] = useState("users");
   const [searchValue, setSearchValue] = useState("");
+  
+  // Local state for roles and workflow groups
+  const [roles, setRoles] = useState<RoleType[]>(initialRoles);
+  const [workflowGroups, setWorkflowGroups] = useState<WorkflowGroup[]>(initialWorkflowGroups);
   
   // Modal states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
