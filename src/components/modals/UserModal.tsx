@@ -7,12 +7,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface User {
-  id: string;
-  name: string;
+  user_id?: number;
+  firstname: string;
+  lastname: string;
+  uid: string;
   email: string;
-  division: string;
-  role: string;
-  status: string;
+  role_id: number;
+  role_name: string;
+  department_id: number;
+  team_name: string;
+  job_title: string;
+  superior_id?: number;
+  team_id?: number;
 }
 
 interface UserModalProps {
@@ -25,12 +31,15 @@ interface UserModalProps {
 
 const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
   const [formData, setFormData] = useState<User>({
-    id: '',
-    name: '',
+    firstname: '',
+    lastname: '',
+    uid: '',
     email: '',
-    division: '',
-    role: '',
-    status: 'Active'
+    role_id: 0,
+    role_name: '',
+    department_id: 0,
+    team_name: '',
+    job_title: ''
   });
 
   useEffect(() => {
@@ -38,12 +47,15 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
       setFormData(user);
     } else {
       setFormData({
-        id: Date.now().toString(),
-        name: '',
+        firstname: '',
+        lastname: '',
+        uid: '',
         email: '',
-        division: '',
-        role: '',
-        status: 'Active'
+        role_id: 0,
+        role_name: '',
+        department_id: 0,
+        team_name: '',
+        job_title: ''
       });
     }
   }, [user, mode, isOpen]);
@@ -54,26 +66,50 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
     onClose();
   };
 
-  const handleChange = (field: keyof User, value: string) => {
+  const handleChange = (field: keyof User, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {mode === 'add' ? 'Add New User' : 'Edit User'}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="firstname">First Name</Label>
+              <Input
+                id="firstname"
+                value={formData.firstname}
+                onChange={(e) => handleChange('firstname', e.target.value)}
+                placeholder="Enter first name"
+                required
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="lastname">Last Name</Label>
+              <Input
+                id="lastname"
+                value={formData.lastname}
+                onChange={(e) => handleChange('lastname', e.target.value)}
+                placeholder="Enter last name"
+                required
+              />
+            </div>
+          </div>
+
           <div className="grid gap-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="uid">User ID</Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              placeholder="Enter full name"
+              id="uid"
+              value={formData.uid}
+              onChange={(e) => handleChange('uid', e.target.value)}
+              placeholder="Enter user ID"
               required
             />
           </div>
@@ -86,29 +122,28 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
               placeholder="Enter email address"
-              required
             />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="division">Division</Label>
-            <Select value={formData.division} onValueChange={(value) => handleChange('division', value)}>
+            <Label htmlFor="team_name">Team</Label>
+            <Select value={formData.team_name} onValueChange={(value) => handleChange('team_name', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select division" />
+                <SelectValue placeholder="Select team" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="International Operation">International Operation</SelectItem>
-                <SelectItem value="Produksi">Produksi</SelectItem>
-                <SelectItem value="Marketing">Marketing</SelectItem>
+                <SelectItem value="HR">HR</SelectItem>
+                <SelectItem value="IT">IT</SelectItem>
                 <SelectItem value="Finance">Finance</SelectItem>
-                <SelectItem value="Gudang">Gudang</SelectItem>
+                <SelectItem value="Marketing">Marketing</SelectItem>
+                <SelectItem value="Operations">Operations</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="role">Role</Label>
-            <Select value={formData.role} onValueChange={(value) => handleChange('role', value)}>
+            <Label htmlFor="role_name">Role</Label>
+            <Select value={formData.role_name} onValueChange={(value) => handleChange('role_name', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -116,22 +151,20 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
                 <SelectItem value="Administrator">Administrator</SelectItem>
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="Supervisor">Supervisor</SelectItem>
+                <SelectItem value="Executor">Executor</SelectItem>
                 <SelectItem value="Staff">Staff</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="job_title">Job Title</Label>
+            <Input
+              id="job_title"
+              value={formData.job_title}
+              onChange={(e) => handleChange('job_title', e.target.value)}
+              placeholder="Enter job title"
+            />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

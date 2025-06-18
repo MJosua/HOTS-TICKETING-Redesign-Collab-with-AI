@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Search, Shield, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,14 +10,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { AppLayout } from "@/components/layout/AppLayout";
 import UserModal from "@/components/modals/UserModal";
 import RoleModal from "@/components/modals/RoleModal";
+import WorkflowGroupModal from "@/components/modals/WorkflowGroupModal";
+import axios from 'axios';
+import { API_URL } from '@/config/sourceConfig';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserType {
-  id: string;
-  name: string;
+  user_id: number;
+  firstname: string;
+  lastname: string;
+  uid: string;
   email: string;
-  division: string;
-  role: string;
-  status: string;
+  role_id: number;
+  role_name: string;
+  department_id: number;
+  team_name: string;
+  job_title: string;
+  superior_id?: number;
+  team_id?: number;
 }
 
 interface RoleType {
@@ -26,13 +37,20 @@ interface RoleType {
   description: string;
 }
 
-const initialUsers: UserType[] = [
-  { id: "1", name: "Yosua Gultom", email: "yosua.gultom@indofood.com", division: "International Operation", role: "Manager", status: "Active" },
-  { id: "2", name: "Ahmad Rahman", email: "ahmad.rahman@indofood.com", division: "Produksi", role: "Supervisor", status: "Active" },
-  { id: "3", name: "Siti Nurhaliza", email: "siti.nurhaliza@indofood.com", division: "Marketing", role: "Staff", status: "Active" },
-  { id: "4", name: "Budi Santoso", email: "budi.santoso@indofood.com", division: "Finance", role: "Staff", status: "Inactive" },
-  { id: "5", name: "John Doe", email: "john.doe@indofood.com", division: "Gudang", role: "Supervisor", status: "Active" },
-];
+interface WorkflowGroup {
+  id: string;
+  name: string;
+  description: string;
+  category_ids: number[];
+  approval_steps: ApprovalStep[];
+}
+
+interface ApprovalStep {
+  order: number;
+  type: 'role' | 'specific_user' | 'superior';
+  value: string | number;
+  description: string;
+}
 
 const initialRoles: RoleType[] = [
   { id: "1", name: "Administrator", permissions: 15, description: "Full system access" },
@@ -41,39 +59,79 @@ const initialRoles: RoleType[] = [
   { id: "4", name: "Staff", permissions: 5, description: "Basic operations" },
 ];
 
-const divisions = [
-  { id: 1, name: "International Operation", head: "Yosua Gultom", members: 15 },
-  { id: 2, name: "Produksi", head: "Ahmad Rahman", members: 25 },
-  { id: 3, name: "Marketing", head: "Siti Nurhaliza", members: 12 },
-  { id: 4, name: "Finance", head: "Budi Santoso", members: 8 },
-  { id: 5, name: "Gudang", head: "John Doe", members: 10 },
-];
-
 const UserManagement = () => {
   const [activeTab, setActiveTab] = useState("users");
   const [searchValue, setSearchValue] = useState("");
-  const [users, setUsers] = useState<UserType[]>(initialUsers);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [roles, setRoles] = useState<RoleType[]>(initialRoles);
+  const [workflowGroups, setWorkflowGroups] = useState<WorkflowGroup[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Modal states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
+  const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<WorkflowGroup | null>(null);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [deleteTarget, setDeleteTarget] = useState<{type: 'user' | 'role', item: UserType | RoleType} | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{type: 'user' | 'role' | 'workflow', item: any} | null>(null);
+
+  const { toast } = useToast();
+
+  // Fetch users from API
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/hots_settings/get/user`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        }
+      });
+
+      if (response.data.success) {
+        setUsers(response.data.data);
+        console.log('Users fetched:', response.data.data);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch users",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users from server",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    `${user.firstname} ${user.lastname}`.toLowerCase().includes(searchValue.toLowerCase()) ||
     user.email.toLowerCase().includes(searchValue.toLowerCase()) ||
-    user.division.toLowerCase().includes(searchValue.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchValue.toLowerCase())
+    user.team_name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    user.role_name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    user.uid.toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const filteredRoles = roles.filter(role =>
     role.name.toLowerCase().includes(searchValue.toLowerCase()) ||
     role.description.toLowerCase().includes(searchValue.toLowerCase())
+  );
+
+  const filteredWorkflowGroups = workflowGroups.filter(group =>
+    group.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    group.description.toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const highlightText = (text: string, highlight: string) => {
@@ -103,12 +161,13 @@ const UserManagement = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSaveUser = (user: UserType) => {
+  const handleSaveUser = (user: any) => {
     if (modalMode === 'add') {
       setUsers([...users, user]);
     } else {
-      setUsers(users.map(u => u.id === user.id ? user : u));
+      setUsers(users.map(u => u.user_id === user.user_id ? user : u));
     }
+    fetchUsers(); // Refresh data
   };
 
   // Role handlers
@@ -137,12 +196,40 @@ const UserManagement = () => {
     }
   };
 
+  // Workflow Group handlers
+  const handleAddWorkflowGroup = () => {
+    setSelectedWorkflowGroup(null);
+    setModalMode('add');
+    setIsWorkflowModalOpen(true);
+  };
+
+  const handleEditWorkflowGroup = (group: WorkflowGroup) => {
+    setSelectedWorkflowGroup(group);
+    setModalMode('edit');
+    setIsWorkflowModalOpen(true);
+  };
+
+  const handleDeleteWorkflowGroup = (group: WorkflowGroup) => {
+    setDeleteTarget({type: 'workflow', item: group});
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleSaveWorkflowGroup = (group: WorkflowGroup) => {
+    if (modalMode === 'add') {
+      setWorkflowGroups([...workflowGroups, group]);
+    } else {
+      setWorkflowGroups(workflowGroups.map(g => g.id === group.id ? group : g));
+    }
+  };
+
   const handleConfirmDelete = () => {
     if (deleteTarget) {
       if (deleteTarget.type === 'user') {
-        setUsers(users.filter(u => u.id !== deleteTarget.item.id));
-      } else {
+        setUsers(users.filter(u => u.user_id !== deleteTarget.item.user_id));
+      } else if (deleteTarget.type === 'role') {
         setRoles(roles.filter(r => r.id !== deleteTarget.item.id));
+      } else if (deleteTarget.type === 'workflow') {
+        setWorkflowGroups(workflowGroups.filter(g => g.id !== deleteTarget.item.id));
       }
       setIsDeleteModalOpen(false);
       setDeleteTarget(null);
@@ -160,25 +247,22 @@ const UserManagement = () => {
       case "Manager": return "bg-blue-100 text-blue-800";
       case "Supervisor": return "bg-green-100 text-green-800";
       case "Staff": return "bg-gray-100 text-gray-800";
+      case "Executor": return "bg-orange-100 text-orange-800";
       default: return "bg-gray-100 text-gray-800";
     }
-  };
-
-  const getStatusColor = (status: string) => {
-    return status === "Active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
   };
 
   return (
     <AppLayout 
       searchValue={searchValue} 
       onSearchChange={setSearchValue}
-      searchPlaceholder="Search users, roles..."
+      searchPlaceholder="Search users, roles, workflows..."
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600">Manage users, roles, and organizational structure</p>
+            <p className="text-gray-600">Manage users, roles, and workflow groups</p>
           </div>
           <Button onClick={handleAddUser}>
             <Plus className="w-4 h-4 mr-2" />
@@ -190,7 +274,7 @@ const UserManagement = () => {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
-            <TabsTrigger value="divisions">Divisions</TabsTrigger>
+            <TabsTrigger value="workflows">Workflow Groups</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="space-y-4">
@@ -202,54 +286,59 @@ const UserManagement = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Division</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                              <User className="w-4 h-4 text-gray-600" />
-                            </div>
-                            <span className="font-medium">{highlightText(user.name, searchValue)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-600">{highlightText(user.email, searchValue)}</TableCell>
-                        <TableCell>{highlightText(user.division, searchValue)}</TableCell>
-                        <TableCell>
-                          <Badge className={getRoleColor(user.role)}>
-                            {highlightText(user.role, searchValue)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(user.status)}>
-                            {user.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteUser(user)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                {isLoading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="text-lg">Loading users...</div>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Team</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Job Title</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((user) => (
+                        <TableRow key={user.user_id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                                <User className="w-4 h-4 text-gray-600" />
+                              </div>
+                              <div>
+                                <div className="font-medium">{highlightText(`${user.firstname} ${user.lastname}`, searchValue)}</div>
+                                <div className="text-sm text-gray-500">{user.uid}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-600">{highlightText(user.email || 'No email', searchValue)}</TableCell>
+                          <TableCell>{highlightText(user.team_name || 'No team', searchValue)}</TableCell>
+                          <TableCell>
+                            <Badge className={getRoleColor(user.role_name)}>
+                              {highlightText(user.role_name, searchValue)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-gray-600">{user.job_title || 'No title'}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteUser(user)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -304,14 +393,14 @@ const UserManagement = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="divisions" className="space-y-4">
+          <TabsContent value="workflows" className="space-y-4">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Division Management</CardTitle>
-                  <Button size="sm">
+                  <CardTitle>Workflow Groups</CardTitle>
+                  <Button size="sm" onClick={handleAddWorkflowGroup}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Create Division
+                    Create Workflow Group
                   </Button>
                 </div>
               </CardHeader>
@@ -319,26 +408,30 @@ const UserManagement = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Division Name</TableHead>
-                      <TableHead>Division Head</TableHead>
-                      <TableHead>Members</TableHead>
+                      <TableHead>Group Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Approval Steps</TableHead>
+                      <TableHead>Categories</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {divisions.map((division) => (
-                      <TableRow key={division.id}>
-                        <TableCell className="font-medium">{division.name}</TableCell>
-                        <TableCell>{division.head}</TableCell>
+                    {filteredWorkflowGroups.map((group) => (
+                      <TableRow key={group.id}>
+                        <TableCell className="font-medium">{highlightText(group.name, searchValue)}</TableCell>
+                        <TableCell className="text-gray-600">{highlightText(group.description, searchValue)}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{division.members} members</Badge>
+                          <Badge variant="outline">{group.approval_steps.length} steps</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{group.category_ids.length} categories</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleEditWorkflowGroup(group)}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteWorkflowGroup(group)}>
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -369,12 +462,21 @@ const UserManagement = () => {
           onSave={handleSaveRole}
         />
 
+        <WorkflowGroupModal
+          isOpen={isWorkflowModalOpen}
+          onClose={() => setIsWorkflowModalOpen(false)}
+          workflowGroup={selectedWorkflowGroup}
+          mode={modalMode}
+          onSave={handleSaveWorkflowGroup}
+          users={users}
+        />
+
         <AlertDialog open={isDeleteModalOpen} onOpenChange={handleDeleteCancel}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete {deleteTarget?.type === 'user' ? 'User' : 'Role'}</AlertDialogTitle>
+              <AlertDialogTitle>Delete {deleteTarget?.type === 'user' ? 'User' : deleteTarget?.type === 'role' ? 'Role' : 'Workflow Group'}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{deleteTarget?.item.name}"? This action cannot be undone.
+                Are you sure you want to delete "{deleteTarget?.item.name || deleteTarget?.item.firstname + ' ' + deleteTarget?.item.lastname}"? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

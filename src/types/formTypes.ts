@@ -34,9 +34,25 @@ export interface FormSection {
   };
 }
 
+export interface ApprovalStep {
+  order: number;
+  type: 'role' | 'specific_user' | 'superior';
+  value: string | number;
+  description: string;
+}
+
+export interface WorkflowGroup {
+  id: string;
+  name: string;
+  description: string;
+  category_ids: number[];
+  approval_steps: ApprovalStep[];
+}
+
 export interface ApprovalFlow {
   steps: string[];
   mode: 'sequential' | 'parallel';
+  workflow_group_id?: string; // Link to workflow group
 }
 
 export interface FormConfig {
@@ -50,6 +66,7 @@ export interface FormConfig {
   sections?: FormSection[];
   approval?: ApprovalFlow;
   apiEndpoint?: string;
+  workflow_group_id?: string; // New field to link forms to workflow groups
   submit?: {
     label: string;
     type: string;
