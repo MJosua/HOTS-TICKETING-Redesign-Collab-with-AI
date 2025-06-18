@@ -25,6 +25,7 @@ import {
   UserType,
   Team,
   WorkflowGroup,
+  Department,
   createTeam,
   updateTeam,
   deleteTeam,
@@ -181,24 +182,44 @@ const UserManagement = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSaveTeam = async (team: any) => {
+  const handleSaveTeam = async (teamData: any, selectedUsers?: number[]) => {
     try {
+      let savedTeam;
+      
       if (modalMode === 'add') {
-        await dispatch(createTeam(team));
+        const result = await dispatch(createTeam(teamData));
+        savedTeam = result.payload;
+        
+        if (savedTeam && selectedUsers && selectedUsers.length > 0) {
+          // Add team members
+          for (const userId of selectedUsers) {
+            const memberData = {
+              team_id: savedTeam.team_id,
+              user_id: userId,
+              member_desc: 'Team member',
+              team_leader: userId === teamData.team_leader_id
+            };
+            await dispatch(addTeamMember(memberData));
+          }
+        }
+        
         toast({
           title: "Success",
           description: "Team created successfully",
         });
       } else {
-        await dispatch(updateTeam({ id: selectedTeam?.team_id!, data: team }));
-        dispatch(fetchTeams());
-
+        const result = await dispatch(updateTeam({ id: selectedTeam?.team_id!, data: teamData }));
+        savedTeam = result.payload;
+        
         toast({
           title: "Success",
           description: "Team updated successfully",
         });
-
       }
+      
+      dispatch(fetchTeams());
+      dispatch(fetchUsers()); // Refresh users to update team assignments
+      
     } catch (error: any) {
       toast({
         title: "Error",
@@ -238,42 +259,45 @@ const UserManagement = () => {
           description: "Workflow group created successfully",
         });
       } else {
-        const result = await dispatch(updateWorkflowGroup({ id: selectedWorkflowGroup?.id!, data: group }));
-        savedGroup = result.payload;
-        console.log("result",result)
-        if (result.payload.success === true) {
+        const result = await dispatch(updateWorkflowGroup({ id: selectedWorkflowGroup?.workflow_group_id!, data: group }));
+        
+        if (result.meta.requestStatus === 'fulfilled') {
+          savedGroup = result.payload;
           toast({
             title: "Success",
             description: "Workflow group updated successfully",
           });
           dispatch(fetchWorkflowGroups());
-          
-        }else{
+        } else {
           toast({
             title: "Error",
-            description: `Failed to update workflow group ${result.error.message}`,
+            description: "Failed to update workflow group",
             variant: "destructive",
           });
+          return;
         }
-
       }
 
       // Save workflow steps if any
       if (steps.length > 0 && savedGroup) {
-        const stepsWithGroupId = steps.map(step => ({
-          ...step,
-          workflow_group_id: savedGroup.workflow_group_id
-        }));
+        const workflowGroupId = savedGroup.workflow_group_id || group.workflow_group_id;
+        
+        if (workflowGroupId) {
+          const stepsWithGroupId = steps.map(step => ({
+            ...step,
+            workflow_group_id: workflowGroupId
+          }));
 
-        // Create all steps
-        for (const step of stepsWithGroupId) {
-          await dispatch(createWorkflowStep(step));
+          // Create all steps
+          for (const step of stepsWithGroupId) {
+            await dispatch(createWorkflowStep(step));
+          }
+
+          toast({
+            title: "Success",
+            description: `Workflow group and ${steps.length} steps saved successfully`,
+          });
         }
-
-        toast({
-          title: "Success",
-          description: `Workflow group and ${steps.length} steps saved successfully`,
-        });
       }
     } catch (error: any) {
       toast({
@@ -296,14 +320,12 @@ const UserManagement = () => {
             description: "Team deleted successfully",
           });
         } else if (deleteTarget.type === 'workflow') {
-          await dispatch(deleteWorkflowGroup(deleteTarget.item.id));
-          console.log("deleteTarget", deleteTarget)
+          await dispatch(deleteWorkflowGroup(deleteTarget.item.workflow_group_id));
           toast({
             title: "Success",
             description: "Workflow group deleted successfully",
           });
           dispatch(fetchWorkflowGroups());
-
         }
         setIsDeleteModalOpen(false);
         setDeleteTarget(null);
@@ -339,8 +361,8 @@ const UserManagement = () => {
     }
   };
 
-  const getStatusBadge = (department: Department) => {
-    const isActive = !department.finished_date;
+  const getStatusBadge = (item: Department | Team | WorkflowGroup) => {
+    const isActive = !item.finished_date;
     return isActive ? (
       <Badge className="bg-green-100 text-green-800">Active</Badge>
     ) : (
@@ -537,8 +559,6 @@ const UserManagement = () => {
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(group)}
-
-
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
