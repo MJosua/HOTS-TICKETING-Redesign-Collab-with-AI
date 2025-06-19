@@ -50,18 +50,18 @@ const ServiceFormEditor = () => {
 
   useEffect(() => {
     if (isEdit && id && serviceCatalog.length > 0) {
-      console.log('Loading service data for edit mode, ID:', id);
-      
+      // console.log('Loading service data for edit mode, ID:', id);
+
       // Find the service by ID
       const serviceData = serviceCatalog.find(service => service.service_id.toString() === id);
-      
+
       if (serviceData) {
-        console.log('Found service data:', serviceData);
-        
+        // console.log('Found service data:', serviceData);
+
         // Get category name from category_id
         const category = categoryList.find(cat => cat.category_id === serviceData.category_id);
         const categoryName = category?.category_name || '';
-        
+
         // Parse form_json if it exists, otherwise create default structure
         let parsedConfig: FormConfig = {
           id: serviceData.service_id.toString(),
@@ -92,10 +92,10 @@ const ServiceFormEditor = () => {
         }
 
         setConfig(parsedConfig);
-          console.log("serviceData..workflow_group_id", serviceData.m_workflow_groups)
+        // console.log("serviceData..workflow_group_id", serviceData.m_workflow_groups)
         // Set workflow group from service data if available
         if (serviceData.m_workflow_groups) {
-          console.log("jalan")
+          // console.log("jalan")
           setSelectedWorkflowGroup(serviceData.m_workflow_groups);
         }
       } else {
@@ -110,18 +110,18 @@ const ServiceFormEditor = () => {
     }
   }, [isEdit, id, serviceCatalog, categoryList, workflowGroups]);
 
-  const {toast} = useToast()
+  const { toast } = useToast()
 
   const handleSave = async () => {
     setIsLoading(true);
-    
-    console.log('Current config before saving:', config);
-    console.log('Selected workflow group:', selectedWorkflowGroup);
+
+    // console.log('Current config before saving:', config);
+    // console.log('Selected workflow group:', selectedWorkflowGroup);
 
     try {
       // Find category_id from category name
       const selectedCategory = categoryList.find(c => c.category_name === config.category);
-      
+
       // Build full service catalog object
       const payload = {
         ...(isEdit && { service_id: parseInt(id!) }), // Include service_id for update
@@ -138,7 +138,7 @@ const ServiceFormEditor = () => {
         m_workflow_groups: selectedWorkflowGroup // Use selected workflow group
       };
 
-      console.log('Saving payload:', payload);
+      // console.log('Saving payload:', payload);
 
       const response = await axios.post(`${API_URL}/hots_settings/insertupdate/service_catalog`, payload, {
         headers: {
@@ -146,24 +146,24 @@ const ServiceFormEditor = () => {
         }
       });
 
-      console.log("SAVE SUCCESS:", response.data);
+      // console.log("SAVE SUCCESS:", response.data);
 
-      toast({ 
-        title: "Success", 
-        description: isEdit ? "Form updated successfully" : "Form created successfully", 
+      toast({
+        title: "Success",
+        description: isEdit ? "Form updated successfully" : "Form created successfully",
         variant: "default",
-        duration: 3000 
+        duration: 3000
       });
-      
+
       navigate('/admin/service-catalog');
 
     } catch (error: any) {
       console.error("SAVE ERROR:", error);
-      toast({ 
-        title: "Error", 
-        description: error.response?.data?.message || "Failed to save form", 
-        variant: "destructive", 
-        duration: 5000 
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to save form",
+        variant: "destructive",
+        duration: 5000
       });
     } finally {
       setIsLoading(false);
@@ -291,7 +291,15 @@ const ServiceFormEditor = () => {
               )}
             </div>
           </div>
-          <DynamicForm config={config} onSubmit={(data) => console.log('Preview submit:', data)} />
+          <DynamicForm
+            config={config}
+            onSubmit={(data) => {
+              toast({
+                title: "Form Submitted",
+                description: JSON.stringify(data, null, 2),
+              });
+            }}
+          />
         </div>
       </AppLayout>
     );
@@ -401,8 +409,8 @@ const ServiceFormEditor = () => {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="workflowGroup">Workflow Group</Label>
-                  <Select 
-                    value={selectedWorkflowGroup?.toString() || ''} 
+                  <Select
+                    value={selectedWorkflowGroup?.toString() || ''}
                     onValueChange={(value) => setSelectedWorkflowGroup(parseInt(value))}
                   >
                     <SelectTrigger>

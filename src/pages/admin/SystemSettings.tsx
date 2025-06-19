@@ -48,7 +48,7 @@ const SystemSettings = () => {
   });
 
   const handleSave = (section: string) => {
-    console.log(`Saving ${section} settings:`, settings);
+    // console.log(`Saving ${section} settings:`, settings);
     // Handle save logic here
   };
 

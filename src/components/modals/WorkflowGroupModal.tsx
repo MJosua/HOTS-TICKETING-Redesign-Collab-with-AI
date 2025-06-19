@@ -46,11 +46,11 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
       if (workflowGroup.id || workflowGroup.workflow_group_id) {
         setIsLoadingSteps(true);
         const groupId = workflowGroup.id || workflowGroup.workflow_group_id;
-        console.log(`Loading workflow steps for group ID: ${groupId}`);
+        // console.log(`Loading workflow steps for group ID: ${groupId}`);
         
         dispatch(fetchWorkflowSteps(groupId))
           .then((result) => {
-            console.log('Fetched workflow steps:', result.payload);
+            // console.log('Fetched workflow steps:', result.payload);
             if (result.payload && Array.isArray(result.payload)) {
               const formattedSteps: WorkflowStepData[] = result.payload.map((step: any) => ({
                 step_order: step.step_order,
@@ -90,7 +90,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
       ? { ...formData, workflow_group_id: workflowGroup.workflow_group_id, id: workflowGroup.id }
       : formData;
     
-    console.log('Saving workflow group with steps:', { workflowToSave, steps });
+    // console.log('Saving workflow group with steps:', { workflowToSave, steps });
     onSave(workflowToSave, steps);
     onClose();
   };

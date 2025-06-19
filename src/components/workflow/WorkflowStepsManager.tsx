@@ -47,7 +47,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
   const updateStep = (index: number, field: keyof WorkflowStepData, value: any) => {
     const updatedSteps = [...steps];
     updatedSteps[index] = { ...updatedSteps[index], [field]: value };
-    console.log(`Updated step ${index} ${field} to:`, value);
+    // console.log(`Updated step ${index} ${field} to:`, value);
     onStepsChange(updatedSteps);
   };
 
@@ -70,14 +70,14 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
   };
 
   const getAssignedValueOptions = (stepType: string) => {
-    console.log(`Getting options for step type: ${stepType}`);
+    // console.log(`Getting options for step type: ${stepType}`);
     
     switch (stepType) {
       case 'role':
         const roleOptions = uniqueRoles
           .filter(role => role && role.trim() !== "")
           .map(role => ({ value: role, label: role }));
-        console.log('Role options:', roleOptions);
+        // console.log('Role options:', roleOptions);
         return roleOptions;
         
       case 'specific_user':
@@ -87,7 +87,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
             value: user.user_id.toString(), 
             label: `${user.firstname} ${user.lastname}` 
           }));
-        console.log('User options:', userOptions);
+        // console.log('User options:', userOptions);
         return userOptions;
         
       case 'team':
@@ -97,7 +97,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
             value: team.team_id.toString(), 
             label: team.team_name 
           }));
-        console.log('Team options:', teamOptions);
+        // console.log('Team options:', teamOptions);
         return teamOptions;
         
       case 'superior':
@@ -109,15 +109,15 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
   };
 
   const handleStepTypeChange = (index: number, newStepType: 'role' | 'specific_user' | 'superior' | 'team') => {
-    console.log(`Changing step ${index} type from ${steps[index]?.step_type} to: ${newStepType}`);
+    // console.log(`Changing step ${index} type from ${steps[index]?.step_type} to: ${newStepType}`);
     
     // Get new options for the step type
     const newOptions = getAssignedValueOptions(newStepType);
-    console.log('New options for step type:', newOptions);
+    // console.log('New options for step type:', newOptions);
     
     // Set default assigned value based on new step type
     const defaultValue = newOptions.length > 0 ? newOptions[0].value : '';
-    console.log('Setting default value:', defaultValue);
+    // console.log('Setting default value:', defaultValue);
     
     // Update both step type and assigned value at once
     const updatedSteps = [...steps];
@@ -127,7 +127,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
       assigned_value: defaultValue
     };
     
-    console.log(`Updated step ${index}:`, updatedSteps[index]);
+    // console.log(`Updated step ${index}:`, updatedSteps[index]);
     onStepsChange(updatedSteps);
   };
 
@@ -149,7 +149,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
         const isValidValue = options.some(option => option.value === currentValue);
         const displayValue = isValidValue ? currentValue : (options.length > 0 ? options[0].value : '');
         
-        console.log(`Step ${index}: type=${step.step_type}, value=${currentValue}, isValid=${isValidValue}, display=${displayValue}, options:`, options);
+        // console.log(`Step ${index}: type=${step.step_type}, value=${currentValue}, isValid=${isValidValue}, display=${displayValue}, options:`, options);
         
         return (
           <Card key={index} className="border-l-4 border-l-blue-500">
@@ -194,7 +194,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
                   <Select
                     value={step.step_type}
                     onValueChange={(value: 'role' | 'specific_user' | 'superior' | 'team') => {
-                      console.log(`Step type select changed for step ${index}:`, value);
+                      // console.log(`Step type select changed for step ${index}:`, value);
                       handleStepTypeChange(index, value);
                     }}
                   >
@@ -216,7 +216,7 @@ const WorkflowStepsManager = ({ steps, onStepsChange }: WorkflowStepsManagerProp
                     key={`${step.step_type}-${index}`}
                     value={displayValue}
                     onValueChange={(value) => {
-                      console.log(`Updating step ${index} assigned_value to:`, value);
+                      // console.log(`Updating step ${index} assigned_value to:`, value);
                       updateStep(index, 'assigned_value', value);
                     }}
                   >

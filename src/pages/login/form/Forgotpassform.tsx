@@ -70,7 +70,7 @@ const Forgotpassform = ({
                         duration: 6000,
                         variant: "destructive",
                     });
-                    console.log(err)
+                    // console.log(err)
                 });
         }
     }

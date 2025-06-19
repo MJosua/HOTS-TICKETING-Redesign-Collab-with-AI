@@ -47,18 +47,18 @@ const TicketDetail = () => {
   ];
 
   const handleApprove = () => {
-    console.log('Approved ticket:', id);
+    // console.log('Approved ticket:', id);
     // Handle approval logic
   };
 
   const handleReject = (reason: string) => {
-    console.log('Rejected ticket:', id, 'Reason:', reason);
+    // console.log('Rejected ticket:', id, 'Reason:', reason);
     // Handle rejection logic
   };
 
   const handleSendMessage = () => {
     if (chatMessage.trim()) {
-      console.log('Sending message:', chatMessage);
+      // console.log('Sending message:', chatMessage);
       setChatMessage('');
       // Handle sending chat message
     }

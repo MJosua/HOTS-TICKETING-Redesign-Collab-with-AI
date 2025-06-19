@@ -91,7 +91,7 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
                       fieldKey={fieldKey}
                       onValueChange={(value) => {
                         // Handle value changes if needed for calculations
-                        console.log(`Field ${fieldKey} changed to:`, value);
+                        // console.log(`Field ${fieldKey} changed to:`, value);
                       }}
                     />
                   </div>

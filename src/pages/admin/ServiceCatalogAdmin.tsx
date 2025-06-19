@@ -112,7 +112,7 @@ const ServiceCatalogAdmin = () => {
     setIsDeleting(true);
     
     try {
-      console.log('Deleting service with ID:', deleteModal.serviceId);
+      // console.log('Deleting service with ID:', deleteModal.serviceId);
       
       const response = await axios.delete(`${API_URL}/hots_settings/delete/service/${deleteModal.serviceId}`, {
         headers: {
@@ -120,7 +120,7 @@ const ServiceCatalogAdmin = () => {
         }
       });
 
-      console.log('Delete response:', response.data);
+      // console.log('Delete response:', response.data);
 
       toast({
         title: "Success",

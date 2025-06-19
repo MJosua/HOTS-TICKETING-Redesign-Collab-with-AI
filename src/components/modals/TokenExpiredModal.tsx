@@ -63,7 +63,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
     // Use username prop as fallback if user data is cleared
     const loginUsername = user?.uid || user?.uid || username;
-    console.log("loginUsername",loginUsername)
+    // console.log("loginUsername",loginUsername)
 
     try {
       await dispatch(loginUser({
@@ -71,7 +71,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
         password: password,
       })).unwrap();
       // Re-fetch all data after successful authentication
-      console.log('Refreshing data after successful re-authentication...');
+      // console.log('Refreshing data after successful re-authentication...');
       
       // Fetch catalog data
       dispatch(fetchCatalogData());

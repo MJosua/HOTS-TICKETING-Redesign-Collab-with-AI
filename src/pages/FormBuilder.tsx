@@ -353,7 +353,7 @@ const FormBuilder = () => {
   ];
 
   const handleFormSubmit = (data: any) => {
-    console.log('Form submitted:', data);
+    // console.log('Form submitted:', data);
     alert('Form submitted successfully!');
   };
 

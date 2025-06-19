@@ -20,7 +20,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
   const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
 
   const handleSubmit = (data: any) => {
-    console.log('Form submitted:', data);
+    // console.log('Form submitted:', data);
     onSubmit(data);
   };
 

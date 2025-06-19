@@ -24,7 +24,7 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   });
 
   const handleSave = () => {
-    console.log('Saving profile:', profile);
+    // console.log('Saving profile:', profile);
     onClose();
   };
 

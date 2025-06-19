@@ -192,7 +192,7 @@ export const fetchUsers = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("users fetch", response.data.data);
+    // console.log("users fetch", response.data.data);
     return response.data.data;
   }
 );
@@ -206,7 +206,7 @@ export const createUser = createAsyncThunk(
         'Content-Type': 'application/json'
       }
     });
-    console.log("user created", response.data);
+    // console.log("user created", response.data);
     return response.data.data || response.data;
   }
 );
@@ -220,7 +220,7 @@ export const updateUser = createAsyncThunk(
         'Content-Type': 'application/json'
       }
     });
-    console.log("user updated", response.data);
+    // console.log("user updated", response.data);
     return response.data.data || response.data;
   }
 );
@@ -233,7 +233,7 @@ export const deleteUser = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("user deleted", response.data);
+    // console.log("user deleted", response.data);
     return id;
   }
 );
@@ -248,7 +248,7 @@ export const fetchTeams = createAsyncThunk(
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
         }
       });
-      console.log("teams fetch", response.data);
+      // console.log("teams fetch", response.data);
       return response.data.data || response.data;
     } catch (error: any) {
       console.error("Teams fetch error:", error);
@@ -266,7 +266,7 @@ export const createTeam = createAsyncThunk(
         'Content-Type': 'application/json'
       }
     });
-    console.log("team created", response.data);
+    // console.log("team created", response.data);
     return response.data.data || response.data;
   }
 );
@@ -280,7 +280,7 @@ export const updateTeam = createAsyncThunk(
         'Content-Type': 'application/json'
       }
     });
-    console.log("team updated", response.data);
+    // console.log("team updated", response.data);
     return response.data.data || response.data;
   }
 );
@@ -293,7 +293,7 @@ export const deleteTeam = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("team deleted", response.data);
+    // console.log("team deleted", response.data);
     return id;
   }
 );
@@ -367,7 +367,7 @@ export const fetchDepartments = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("departments fetch", response.data.data);
+    // console.log("departments fetch", response.data.data);
     return response.data.data;
   }
 );
@@ -429,7 +429,7 @@ export const fetchRoles = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("roles fetch", response.data);
+    // console.log("roles fetch", response.data);
     return response.data.data || response.data;
   }
 );
@@ -479,7 +479,7 @@ export const fetchJobTitles = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("job titles fetch", response.data);
+    // console.log("job titles fetch", response.data);
     return response.data.data || response.data;
   }
 );
@@ -578,7 +578,7 @@ export const fetchSuperiors = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("superiors fetch", response.data);
+    // console.log("superiors fetch", response.data);
     return response.data.data || response.data;
   }
 );
@@ -593,7 +593,7 @@ export const fetchWorkflowGroups = createAsyncThunk(
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
         }
       });
-      console.log("workflow groups fetch", response.data);
+      // console.log("workflow groups fetch", response.data);
       return response.data.data || response.data;
     } catch (error: any) {
       console.error("Workflow groups fetch error:", error);
@@ -612,7 +612,7 @@ export const createWorkflowGroup = createAsyncThunk(
           'Content-Type': 'application/json'
         }
       });
-      console.log("workflow group created", response.data);
+      // console.log("workflow group created", response.data);
       return response.data.data || response.data;
     } catch (error: any) {
       console.error("Workflow group creation error:", error);
@@ -631,7 +631,7 @@ export const updateWorkflowGroup = createAsyncThunk(
           'Content-Type': 'application/json'
         }
       });
-      console.log("workflow group updated", response.data);
+      // console.log("workflow group updated", response.data);
       return response.data.data || response.data;
     } catch (error: any) {
       console.error("Workflow group update error:", error);
@@ -649,7 +649,7 @@ export const deleteWorkflowGroup = createAsyncThunk(
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
         }
       });
-      console.log("workflow group deleted", response.data);
+      // console.log("workflow group deleted", response.data);
       return id;
     } catch (error: any) {
       console.error("Workflow group deletion error:", error);
@@ -666,7 +666,7 @@ export const fetchWorkflowSteps = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("workflow steps fetch", response.data);
+    // console.log("workflow steps fetch", response.data);
     return response.data.data || response.data;
   }
 );
@@ -680,7 +680,7 @@ export const createWorkflowStep = createAsyncThunk(
         'Content-Type': 'application/json'
       }
     });
-    console.log("workflow step created", response.data);
+    // console.log("workflow step created", response.data);
     return response.data.data || response.data;
   }
 );
@@ -694,7 +694,7 @@ export const updateWorkflowStep = createAsyncThunk(
         'Content-Type': 'application/json'
       }
     });
-    console.log("workflow step updated", response.data);
+    // console.log("workflow step updated", response.data);
     return response.data.data || response.data;
   }
 );
@@ -707,7 +707,7 @@ export const deleteWorkflowStep = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("workflow step deleted", response.data);
+    // console.log("workflow step deleted", response.data);
     return id;
   }
 );
@@ -822,7 +822,7 @@ const userManagementSlice = createSlice({
       .addCase(fetchTeams.fulfilled, (state, action) => {
         state.isLoading = false;
         state.teams = Array.isArray(action.payload) ? action.payload : [];
-        console.log("Teams updated in state:", state.teams);
+        // console.log("Teams updated in state:", state.teams);
       })
       .addCase(fetchTeams.rejected, (state, action) => {
         state.isLoading = false;
@@ -881,7 +881,7 @@ const userManagementSlice = createSlice({
       .addCase(fetchWorkflowGroups.fulfilled, (state, action) => {
         state.isLoading = false;
         state.workflowGroups = Array.isArray(action.payload) ? action.payload : [];
-        console.log("Workflow groups updated in state:", state.workflowGroups);
+        // console.log("Workflow groups updated in state:", state.workflowGroups);
       })
       .addCase(fetchWorkflowGroups.rejected, (state, action) => {
         state.isLoading = false;

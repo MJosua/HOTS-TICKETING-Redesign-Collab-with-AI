@@ -199,7 +199,7 @@ const UserManagement = () => {
               member_desc: 'Team member',
               team_leader: userId === teamLeaderId
             };
-            console.log('Adding team member:', memberData);
+            // console.log('Adding team member:', memberData);
             await dispatch(addTeamMember(memberData));
           }
         }
@@ -228,7 +228,7 @@ const UserManagement = () => {
               member_desc: 'Team member',
               team_leader: userId === teamLeaderId
             };
-            console.log('Updating team member:', memberData);
+            // console.log('Updating team member:', memberData);
             await dispatch(addTeamMember(memberData));
           }
         }

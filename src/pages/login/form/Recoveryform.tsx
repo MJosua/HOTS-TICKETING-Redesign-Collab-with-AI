@@ -31,13 +31,13 @@ const RecoveryForm = () => {
         )
             .then((res) => {
                 if (res.data.success) {
-                    console.log("true");
+                    // console.log("true");
                 } else {
-                    console.log("false");
+                    // console.log("false");
                 }
             })
             .catch((err) => {
-                console.log("Error", err);
+                // console.log("Error", err);
             });
     }
 
@@ -53,7 +53,7 @@ const RecoveryForm = () => {
         // Validate passwords
         if (credentials.password !== credentials.confirmpassword) {
             setFormError('Passwords do not match.');
-            console.log('Passwords do not match.');
+            // console.log('Passwords do not match.');
             return;
         }
 
@@ -87,7 +87,7 @@ const RecoveryForm = () => {
                 variant: "destructive",
                 duration: 6000,
             });
-            console.log(err);
+            // console.log(err);
         }
     };
 

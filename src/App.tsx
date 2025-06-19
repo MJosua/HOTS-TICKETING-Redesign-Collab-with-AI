@@ -39,7 +39,7 @@ const queryClient = new QueryClient({
 const AppContent = () => {
   // Use useCallback to prevent unnecessary re-renders of dynamic routes
   const handleFormSubmit = useCallback((data: any) => {
-    console.log('Form submitted:', data);
+    // console.log('Form submitted:', data);
     // Handle form submission logic here
   }, []);
 

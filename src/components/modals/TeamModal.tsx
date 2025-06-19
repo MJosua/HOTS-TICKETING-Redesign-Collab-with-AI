@@ -33,7 +33,7 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
 
   useEffect(() => {
     if (team && mode === 'edit') {
-      console.log('Editing team:', team);
+      // console.log('Editing team:', team);
       setFormData({
         team_name: team.team_name,
         department_id: team.department_id.toString(),
@@ -48,9 +48,9 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
               const memberUserIds = result.payload.map((member: any) => member.user_id);
               const leader = result.payload.find((member: any) => member.team_leader);
               
-              console.log('Loaded team members:', result.payload);
-              console.log('Member user IDs:', memberUserIds);
-              console.log('Team leader:', leader);
+              // console.log('Loaded team members:', result.payload);
+              // console.log('Member user IDs:', memberUserIds);
+              // console.log('Team leader:', leader);
               
               setSelectedUsers(memberUserIds);
               setTeamLeader(leader ? leader.user_id : null);
@@ -75,7 +75,7 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
   }, [team, mode, isOpen, dispatch]);
 
   const handleUserSelection = (userId: number, checked: boolean) => {
-    console.log('User selection changed:', userId, checked);
+    // console.log('User selection changed:', userId, checked);
     if (checked) {
       setSelectedUsers(prev => [...prev, userId]);
     } else {
@@ -88,9 +88,9 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
   };
 
   const handleSave = () => {
-    console.log("Submitting team data:", formData);
-    console.log("Selected users:", selectedUsers);
-    console.log("Team leader:", teamLeader);
+    // console.log("Submitting team data:", formData);
+    // console.log("Selected users:", selectedUsers);
+    // console.log("Team leader:", teamLeader);
 
     const teamToSave = {
       ...formData,

@@ -46,7 +46,7 @@ export const loginUser = createAsyncThunk(
         const { tokek, userData } = response.data;
         localStorage.setItem('tokek', tokek);
         localStorage.setItem('isAuthenticated', 'true');
-        console.log("LOGIN RESPONSE:", response.data);
+        // console.log("LOGIN RESPONSE:", response.data);
         return { token: tokek, userData };
       } else {
         return rejectWithValue(response.data.message);

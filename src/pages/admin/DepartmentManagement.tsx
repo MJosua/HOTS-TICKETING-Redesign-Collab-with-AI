@@ -71,7 +71,7 @@ const DepartmentManagement = () => {
           description: "Department created successfully",
         });
       } else {
-        console.log("department", department)
+        // console.log("department", department)
         await axios.put(`${API_URL}/hots_settings/update/department/${selectedDepartment?.department_id}`, department, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('tokek')}`,
