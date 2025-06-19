@@ -11,7 +11,7 @@ export interface Ticket {
   creation_date: string;
   service_id: number;
   service_name: string;
-  approval_level: number;
+  approval_level?: number;
   assigned_to: string | null;
   status: string;
   color: string;
@@ -22,13 +22,32 @@ export interface Ticket {
   approval_status: number;
   list_approval: Approver[] | null;
   team_leader_id: number | null;
+  created_by_name?: string;
 }
 
 export interface TicketsResponse {
   success: boolean;
+  message: string;
   totalData: number;
   totalPage: number;
   data: Ticket[];
+}
+
+export interface CreateTicketResponse {
+  success: boolean;
+  message: string;
+  ticket_id?: number;
+}
+
+export interface UploadFilesResponse {
+  success: boolean;
+  message: string;
+  files?: Array<{
+    upload_id: number;
+    filename: string;
+    path: string;
+    size: number;
+  }>;
 }
 
 export interface TicketsState {

@@ -41,7 +41,7 @@ const ticketController = {
                     t.service_id,
                     s.service_name,
                     t.status_id,
-                    ts.status_name,
+                    ts.status_name as status,
                     ts.color_hex as color,
                     t.assigned_to,
                     t.assigned_team,
@@ -135,7 +135,7 @@ const ticketController = {
                     t.service_id,
                     s.service_name,
                     t.status_id,
-                    ts.status_name,
+                    ts.status_name as status,
                     ts.color_hex as color,
                     t.assigned_to,
                     t.assigned_team,
@@ -237,7 +237,7 @@ const ticketController = {
                     t.service_id,
                     s.service_name,
                     t.status_id,
-                    ts.status_name,
+                    ts.status_name as status,
                     ts.color_hex as color,
                     t.assigned_to,
                     t.assigned_team,
@@ -304,13 +304,102 @@ const ticketController = {
         });
     },
 
-    // Create New Ticket
+    // Get Task Count
+    getTaskCount: (req, res) => {
+        let date = new Date();
+        let timestamp = yellowTerminal + date.toLocaleDateString('id') + ' ' + date.toLocaleTimeString('id') + ' : ';
+        
+        let user_id = req.dataToken.user_id;
+
+        let countQuery = `
+            SELECT COUNT(*) as total_tasks
+            FROM t_ticket t
+            WHERE (t.assigned_to = ? OR t.assigned_team IN (
+                SELECT tm.team_id FROM m_team_member tm WHERE tm.user_id = ?
+            )) AND t.status_id NOT IN (5, 6)
+        `;
+
+        dbHots.execute(countQuery, [user_id, user_id], (err, result) => {
+            if (err) {
+                console.log(timestamp, "GET TASK COUNT ERROR: ", err);
+                return res.status(502).send({
+                    success: false,
+                    message: err
+                });
+            }
+
+            console.log(timestamp, "GET TASK COUNT SUCCESS");
+            return res.status(200).send({
+                success: true,
+                message: "GET TASK COUNT SUCCESS",
+                count: result[0].total_tasks
+            });
+        });
+    },
+
+    // Upload Files
+    uploadFiles: (req, res) => {
+        let date = new Date();
+        let timestamp = yellowTerminal + date.toLocaleDateString('id') + ' ' + date.toLocaleTimeString('id') + ' : ';
+        
+        let user_id = req.dataToken.user_id;
+
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).send({
+                success: false,
+                message: "No files uploaded"
+            });
+        }
+
+        // Track uploaded files in temp table
+        let insertPromises = req.files.map(file => {
+            return new Promise((resolve, reject) => {
+                let insertQuery = `
+                    INSERT INTO t_temp_upload (uploaded_by, file_path, filename, upload_date, is_used)
+                    VALUES (?, ?, ?, NOW(), FALSE)
+                `;
+                
+                dbHots.execute(insertQuery, [user_id, file.path, file.originalname], (err, result) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve({
+                            upload_id: result.insertId,
+                            filename: file.originalname,
+                            path: file.path,
+                            size: file.size
+                        });
+                    }
+                });
+            });
+        });
+
+        Promise.all(insertPromises)
+            .then(uploadedFiles => {
+                console.log(timestamp, "FILES UPLOADED SUCCESSFULLY");
+                return res.status(200).send({
+                    success: true,
+                    message: "FILES UPLOADED SUCCESSFULLY",
+                    files: uploadedFiles
+                });
+            })
+            .catch(err => {
+                console.log(timestamp, "UPLOAD FILES ERROR: ", err);
+                return res.status(502).send({
+                    success: false,
+                    message: err
+                });
+            });
+    },
+
+    // Create New Ticket - Updated with full workflow integration
     createTicket: (req, res) => {
         let date = new Date();
         let timestamp = yellowTerminal + date.toLocaleDateString('id') + ' ' + date.toLocaleTimeString('id') + ' : ';
         
         let user_id = req.dataToken.user_id;
-        let { service_id, reason, ...formData } = req.body;
+        let service_id = req.params.service_id;
+        let { reason, upload_ids, ...formData } = req.body;
 
         if (!service_id || !reason) {
             return res.status(400).send({
@@ -338,7 +427,7 @@ const ticketController = {
 
             let service = serviceResult[0];
 
-            // Get workflow steps
+            // Get workflow steps if workflow exists
             let workflowQuery = `
                 SELECT ws.*, u.firstname, u.lastname, t.team_name
                 FROM m_workflow_step ws
@@ -382,7 +471,7 @@ const ticketController = {
 
                     let ticket_id = ticketResult.insertId;
 
-                    // Create ticket details from form data (cstm_col/lbl_col)
+                    // Create ticket details from form data
                     let detailColumns = [];
                     let detailValues = [ticket_id];
                     let detailPlaceholders = ['?'];
@@ -411,22 +500,128 @@ const ticketController = {
                             });
                         }
 
-                        // Initialize workflow approval events
+                        // Mark uploaded files as used
+                        if (upload_ids && upload_ids.length > 0) {
+                            let updateFilesQuery = `
+                                UPDATE t_temp_upload 
+                                SET is_used = TRUE, ticket_id = ?
+                                WHERE upload_id IN (${upload_ids.map(() => '?').join(',')})
+                            `;
+                            
+                            dbHots.execute(updateFilesQuery, [ticket_id, ...upload_ids], (err5) => {
+                                if (err5) {
+                                    console.log(timestamp, "UPDATE FILES ERROR: ", err5);
+                                }
+                            });
+                        }
+
+                        // Create approval events from workflow
                         if (workflowSteps.length > 0) {
                             let approvalPromises = workflowSteps.map(step => {
                                 return new Promise((resolve, reject) => {
-                                    let insertApprovalQuery = `
-                                        INSERT INTO t_approval_event (
-                                            approval_id, approver_id, approval_order, approval_status
-                                        ) VALUES (?, ?, ?, 0)
-                                    `;
-                                    
-                                    dbHots.execute(insertApprovalQuery, [
-                                        ticket_id, step.assigned_user_id, step.step_order
-                                    ], (err, result) => {
-                                        if (err) reject(err);
-                                        else resolve(result);
-                                    });
+                                    // Get approver based on step type
+                                    let getApproverQuery = '';
+                                    let approverParams = [];
+
+                                    if (step.assigned_user_id) {
+                                        // Direct user assignment
+                                        let insertApprovalQuery = `
+                                            INSERT INTO t_approval_event (
+                                                approval_id, approver_id, approval_order, approval_status, step_id
+                                            ) VALUES (?, ?, ?, 0, ?)
+                                        `;
+                                        
+                                        dbHots.execute(insertApprovalQuery, [
+                                            ticket_id, step.assigned_user_id, step.step_order, step.step_id
+                                        ], (err, result) => {
+                                            if (err) reject(err);
+                                            else resolve(result);
+                                        });
+                                    } else if (step.assigned_role_id) {
+                                        // Role-based assignment - get users with this role
+                                        getApproverQuery = `
+                                            SELECT user_id FROM user WHERE user_role = ?
+                                        `;
+                                        approverParams = [step.assigned_role_id];
+
+                                        dbHots.execute(getApproverQuery, approverParams, (err, users) => {
+                                            if (err) {
+                                                reject(err);
+                                                return;
+                                            }
+
+                                            if (users.length === 0) {
+                                                resolve(null);
+                                                return;
+                                            }
+
+                                            // Create approval for each user with this role
+                                            let roleApprovalPromises = users.map(user => {
+                                                return new Promise((roleResolve, roleReject) => {
+                                                    let insertApprovalQuery = `
+                                                        INSERT INTO t_approval_event (
+                                                            approval_id, approver_id, approval_order, approval_status, step_id
+                                                        ) VALUES (?, ?, ?, 0, ?)
+                                                    `;
+                                                    
+                                                    dbHots.execute(insertApprovalQuery, [
+                                                        ticket_id, user.user_id, step.step_order, step.step_id
+                                                    ], (err, result) => {
+                                                        if (err) roleReject(err);
+                                                        else roleResolve(result);
+                                                    });
+                                                });
+                                            });
+
+                                            Promise.all(roleApprovalPromises)
+                                                .then(() => resolve())
+                                                .catch(reject);
+                                        });
+                                    } else if (step.assigned_team_id) {
+                                        // Team-based assignment - get team members
+                                        getApproverQuery = `
+                                            SELECT tm.user_id 
+                                            FROM m_team_member tm 
+                                            WHERE tm.team_id = ? AND tm.is_active = 1
+                                        `;
+                                        approverParams = [step.assigned_team_id];
+
+                                        dbHots.execute(getApproverQuery, approverParams, (err, members) => {
+                                            if (err) {
+                                                reject(err);
+                                                return;
+                                            }
+
+                                            if (members.length === 0) {
+                                                resolve(null);
+                                                return;
+                                            }
+
+                                            // Create approval for each team member
+                                            let teamApprovalPromises = members.map(member => {
+                                                return new Promise((teamResolve, teamReject) => {
+                                                    let insertApprovalQuery = `
+                                                        INSERT INTO t_approval_event (
+                                                            approval_id, approver_id, approval_order, approval_status, step_id
+                                                        ) VALUES (?, ?, ?, 0, ?)
+                                                    `;
+                                                    
+                                                    dbHots.execute(insertApprovalQuery, [
+                                                        ticket_id, member.user_id, step.step_order, step.step_id
+                                                    ], (err, result) => {
+                                                        if (err) teamReject(err);
+                                                        else teamResolve(result);
+                                                    });
+                                                });
+                                            });
+
+                                            Promise.all(teamApprovalPromises)
+                                                .then(() => resolve())
+                                                .catch(reject);
+                                        });
+                                    } else {
+                                        resolve(null);
+                                    }
                                 });
                             });
 
@@ -481,7 +676,7 @@ const ticketController = {
                 t.service_id,
                 s.service_name,
                 t.status_id,
-                ts.status_name,
+                ts.status_name as status,
                 ts.color_hex as color,
                 t.assigned_to,
                 t.assigned_team,
@@ -509,13 +704,13 @@ const ticketController = {
                 (
                     SELECT JSON_ARRAYAGG(
                         JSON_OBJECT(
-                            'attachment_id', a.attachment_id,
-                            'url', a.url,
-                            'filename', a.filename
+                            'upload_id', tu.upload_id,
+                            'filename', tu.filename,
+                            'file_path', tu.file_path
                         )
                     )
-                    FROM t_attachment a 
-                    WHERE a.ticket_id = t.ticket_id AND a.comment_id IS NULL
+                    FROM t_temp_upload tu 
+                    WHERE tu.ticket_id = t.ticket_id AND tu.is_used = TRUE
                 ) as list_attachment,
                 (
                     SELECT JSON_ARRAYAGG(
@@ -573,13 +768,53 @@ const ticketController = {
         });
     },
 
+    // Get Ticket Attachments
+    getTicketAttachments: (req, res) => {
+        let date = new Date();
+        let timestamp = yellowTerminal + date.toLocaleDateString('id') + ' ' + date.toLocaleTimeString('id') + ' : ';
+        
+        let ticket_id = req.params.ticket_id;
+
+        if (!ticket_id) {
+            return res.status(400).send({
+                success: false,
+                message: "ticket_id must be provided"
+            });
+        }
+
+        let queryGetAttachments = `
+            SELECT upload_id, filename, file_path, upload_date
+            FROM t_temp_upload
+            WHERE ticket_id = ? AND is_used = TRUE
+            ORDER BY upload_date DESC
+        `;
+
+        dbHots.execute(queryGetAttachments, [ticket_id], (err, results) => {
+            if (err) {
+                console.log(timestamp, "GET TICKET ATTACHMENTS ERROR: ", err);
+                return res.status(502).send({
+                    success: false,
+                    message: err
+                });
+            }
+
+            console.log(timestamp, "GET TICKET ATTACHMENTS SUCCESS");
+            return res.status(200).send({
+                success: true,
+                message: "GET TICKET ATTACHMENTS SUCCESS",
+                data: results
+            });
+        });
+    },
+
     // Approve Ticket
     approveTicket: (req, res) => {
         let date = new Date();
         let timestamp = yellowTerminal + date.toLocaleDateString('id') + ' ' + date.toLocaleTimeString('id') + ' : ';
         
         let user_id = req.dataToken.user_id;
-        let { ticket_id, approval_order, comment } = req.body;
+        let ticket_id = req.params.ticket_id;
+        let { approval_order, comment } = req.body;
 
         if (!ticket_id || approval_order === undefined) {
             return res.status(400).send({
@@ -650,7 +885,8 @@ const ticketController = {
         let timestamp = yellowTerminal + date.toLocaleDateString('id') + ' ' + date.toLocaleTimeString('id') + ' : ';
         
         let user_id = req.dataToken.user_id;
-        let { ticket_id, approval_order, rejection_remark } = req.body;
+        let ticket_id = req.params.ticket_id;
+        let { approval_order, rejection_remark } = req.body;
 
         if (!ticket_id || approval_order === undefined || !rejection_remark) {
             return res.status(400).send({
