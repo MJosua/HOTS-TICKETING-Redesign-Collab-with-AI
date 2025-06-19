@@ -46,11 +46,10 @@ export interface Department {
   department_id: number;
   department_name: string;
   department_shortname: string;
-  department_head?: number;
-  description: string;
-  finished_date?: string | null;
-  created_date: string;
+  description?: string;
   head_name?: string;
+  is_deleted: number; // Added missing property
+  created_date: string;
   status: 'active' | 'inactive';
 }
 

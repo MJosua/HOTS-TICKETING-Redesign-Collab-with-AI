@@ -48,7 +48,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
     category_id: 1,
     service_name: "PC/Notebook Request",
     service_description: "Request a new or replacement computer",
-    workflow_group_id: 1, // Default workflow group
+    m_workflow_groups: 1, // Changed from workflow_group_id to m_workflow_groups
     image_url: "itassetrequest.png",
     nav_link: "asset-request",
     active: 1,
@@ -89,7 +89,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
     category_id: 3,
     service_name: "IT Technical Support",
     service_description: "Get help with IT issues from computer to software errors",
-    workflow_group_id: 1, // Default workflow group
+    m_workflow_groups: 1, // Changed from workflow_group_id to m_workflow_groups
     image_url: "ittechnicalsupport.png",
     nav_link: "it-support",
     active: 1,
@@ -131,7 +131,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
     category_id: 1,
     service_name: "Sample Request Form",
     service_description: "Submit sample requests with detailed item specifications",
-    workflow_group_id: 1, // Default workflow group
+    m_workflow_groups: 1, // Changed from workflow_group_id to m_workflow_groups
     image_url: "srf.png",
     nav_link: "sample-request-form",
     active: 1,
