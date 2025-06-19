@@ -9,14 +9,14 @@ export const useTokenExpiration = () => {
   const { token, user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   // Use the auth check hook
-  useAuthCheck({ 
-    userToken2: token || '', 
-    setIsTokenExpiredModalOpen 
+  useAuthCheck({
+    userToken2: token || '',
+    setIsTokenExpiredModalOpen
   });
 
   // Close modal if user becomes unauthenticated
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated || token.length < 20 ) {
       setIsTokenExpiredModalOpen(false);
     }
   }, [isAuthenticated, token]);
@@ -26,7 +26,7 @@ export const useTokenExpiration = () => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401 && token && isAuthenticated) {
+        if (error.response?.status === 401 && token.length > 20 && isAuthenticated) {
           // Token is expired, show modal
           setIsTokenExpiredModalOpen(true);
         }
