@@ -122,7 +122,7 @@ export function AppSidebar() {
     fetchUserProfile();
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = () => { 
     dispatch(logoutUser()).then(() => {
       toast({
         title: "Success",
@@ -134,8 +134,6 @@ export function AppSidebar() {
 
   // Check if user has admin role (role === 4)
   const isAdmin = user?.role_id?.toString() === '4';
-  console.log("isAdmin", isAdmin)
-  console.log("user?.role_id", user?.role_id)
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
@@ -235,7 +233,6 @@ export function AppSidebar() {
             </p>
             <p className="text-xs text-sidebar-foreground/70 truncate">
               {userProfile?.team_name || 'Loading...'}
-              {console.log("userProfile", userProfile)}
             </p>
             {userProfile?.superior_name && (
               <p className="text-xs text-sidebar-foreground/60 truncate">
