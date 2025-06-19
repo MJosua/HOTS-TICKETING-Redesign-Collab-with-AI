@@ -11,7 +11,7 @@ import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2 } 
 import ProgressionBar from "@/components/ui/ProgressionBar";
 import RejectModal from "@/components/modals/RejectModal";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchTicketDetail, approveTicket, clearTicketDetail } from '@/store/slices/ticketsSlice';
+import { fetchTicketDetail, approveTicket, rejectTicket, clearTicketDetail } from '@/store/slices/ticketsSlice';
 import { useToast } from '@/hooks/use-toast';
 
 const TicketDetail = () => {
