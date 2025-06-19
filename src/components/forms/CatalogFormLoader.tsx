@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { DynamicForm } from './DynamicForm';
 import { FormSkeleton } from '@/components/ui/FormSkeleton';
@@ -64,6 +65,7 @@ const getDefaultFormConfig = (serviceName: string, servicePath: string): FormCon
       type: "file",
       accept: ["image/*", "pdf", "docx"],
       maxSizeMB: 5,
+      required: false,
       columnSpan: 3
     }
   ],
@@ -210,7 +212,11 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
           </div>
         )}
       </div>
-      <DynamicForm config={formConfig} onSubmit={onSubmit} />
+      <DynamicForm 
+        config={formConfig} 
+        onSubmit={onSubmit} 
+        serviceId={serviceInfo?.service_id?.toString()}
+      />
     </div>
   );
 };

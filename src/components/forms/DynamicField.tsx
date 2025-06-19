@@ -38,15 +38,18 @@ interface DynamicFieldProps {
   form: UseFormReturn<any>;
   fieldKey: string;
   onValueChange?: (value: any) => void;
+  onFileUpload?: (files: FileList | null) => Promise<number[]>;
 }
 
 export const DynamicField: React.FC<DynamicFieldProps> = ({ 
   field, 
   form, 
   fieldKey, 
-  onValueChange 
+  onValueChange,
+  onFileUpload 
 }) => {
-  const isRequired = field.required === true;
+  // Check if field is required - either explicitly set or has asterisk in label
+  const isRequired = field.required === true || field.label.includes('*');
   const hasAsterisk = field.label.includes('*');
   const cleanLabel = field.label.replace(/\*+$/, '');
 
@@ -61,7 +64,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             readOnly={field.readonly}
             defaultValue={field.value}
             {...form.register(fieldKey, { 
-              required: isRequired || hasAsterisk ? `${cleanLabel} is required` : false 
+              required: isRequired ? `${cleanLabel} is required` : false 
             })}
             onChange={(e) => {
               form.setValue(fieldKey, e.target.value);
@@ -77,7 +80,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             readOnly={field.readonly}
             defaultValue={field.value}
             {...form.register(fieldKey, { 
-              required: isRequired || hasAsterisk ? `${cleanLabel} is required` : false 
+              required: isRequired ? `${cleanLabel} is required` : false 
             })}
             onChange={(e) => {
               form.setValue(fieldKey, e.target.value);
@@ -153,7 +156,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           <Input
             type="date"
             {...form.register(fieldKey, { 
-              required: isRequired || hasAsterisk ? `${cleanLabel} is required` : false 
+              required: isRequired ? `${cleanLabel} is required` : false 
             })}
             onChange={(e) => {
               form.setValue(fieldKey, e.target.value);
@@ -189,7 +192,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                   accept={field.accept?.join(',')}
                   multiple={field.multiple}
                   {...form.register(fieldKey, { 
-                    required: isRequired || hasAsterisk ? `${cleanLabel} is required` : false 
+                    required: isRequired ? `${cleanLabel} is required` : false 
                   })}
                   onChange={(e) => {
                     const files = e.target.files;
@@ -210,7 +213,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           <Input
             placeholder={field.placeholder}
             {...form.register(fieldKey, { 
-              required: isRequired || hasAsterisk ? `${cleanLabel} is required` : false 
+              required: isRequired ? `${cleanLabel} is required` : false 
             })}
           />
         );
@@ -223,7 +226,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       name={fieldKey}
       render={() => (
         <FormItem>
-          <FormLabel className={isRequired || hasAsterisk ? "after:content-['*'] after:text-red-500 after:ml-1" : ""}>
+          <FormLabel className={isRequired ? "after:content-['*'] after:text-red-500 after:ml-1" : ""}>
             {cleanLabel}
           </FormLabel>
           <FormControl>

@@ -9,24 +9,119 @@ import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
 import { mapFormDataToTicketColumns } from '@/utils/formFieldMapping';
+import { useAppDispatch } from '@/hooks/useAppSelector';
+import { createTicket, uploadFiles } from '@/store/slices/ticketsSlice';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface DynamicFormProps {
   config: FormConfig;
   onSubmit: (data: any) => void;
+  serviceId?: string;
 }
 
-export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) => {
+export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serviceId }) => {
+  const dispatch = useAppDispatch();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const form = useForm();
   const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
 
-  const handleSubmit = (data: any) => {
-    console.log('Raw form data:', data);
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return [];
+
+    const formData = new FormData();
+    Array.from(files).forEach((file, index) => {
+      formData.append(`files`, file);
+    });
+
+    try {
+      const result = await dispatch(uploadFiles(formData)).unwrap();
+      if (result.success && result.files) {
+        setUploadedFiles(prev => [...prev, ...result.files]);
+        return result.files.map((f: any) => f.upload_id);
+      }
+      return [];
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
+  const handleSubmit = async (data: any) => {
+    if (!serviceId) {
+      toast({
+        title: "Error",
+        description: "Service ID is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     
-    // Map form data to cstm_col and lbl_col structure
-    const mappedData = mapFormDataToTicketColumns(data, config.fields || []);
-    console.log('Mapped ticket data:', mappedData);
-    
-    onSubmit(mappedData);
+    try {
+      console.log('Raw form data:', data);
+      
+      // Handle file uploads first
+      let uploadIds: number[] = [];
+      for (const [key, value] of Object.entries(data)) {
+        if (value instanceof FileList && value.length > 0) {
+          const fileUploadIds = await handleFileUpload(value);
+          uploadIds.push(...fileUploadIds);
+          // Remove the FileList from form data
+          delete data[key];
+        }
+      }
+
+      // Map form data to cstm_col and lbl_col structure
+      const mappedData = mapFormDataToTicketColumns(data, config.fields || []);
+      console.log('Mapped ticket data:', mappedData);
+      
+      // Create the ticket data payload
+      const ticketData = {
+        reason: data.reason || data.subject || 'Service Request',
+        upload_ids: uploadIds,
+        ...mappedData
+      };
+
+      console.log('Creating ticket with data:', ticketData);
+
+      // Create the ticket
+      const result = await dispatch(createTicket({ 
+        serviceId, 
+        ticketData 
+      })).unwrap();
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Your request has been submitted successfully!",
+          variant: "default",
+        });
+        
+        // Navigate to tickets page or call the original onSubmit
+        navigate('/tickets');
+      } else {
+        throw new Error(result.message || 'Failed to create ticket');
+      }
+    } catch (error: any) {
+      console.error('Ticket creation error:', error);
+      toast({
+        title: "Submission Error",
+        description: error.message || "Failed to submit your request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const shouldShowField = (field: FormField, values: Record<string, any>) => {
@@ -96,6 +191,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
                 onValueChange={(value) => {
                   setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
                 }}
+                onFileUpload={handleFileUpload}
               />
             </div>
           );
@@ -158,21 +254,57 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {config.fields && (
               <div className="space-y-4">
-                {renderFields(config.fields)}
+                {renderFieldsInRows(config.fields)}
               </div>
             )}
             
             {config.rowGroups && (
               <div className="space-y-4">
-                {renderRowGroups(config.rowGroups)}
+                {config.rowGroups.map((rowGroup, index) => (
+                  <RowGroupField
+                    key={`rowgroup-${index}`}
+                    rowGroup={rowGroup.rowGroup}
+                    form={form}
+                    groupIndex={index}
+                    onValueChange={(fieldKey, value) => {
+                      setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                    }}
+                  />
+                ))}
               </div>
             )}
             
-            {renderSections()}
+            {config.sections && config.sections.map((section: FormSection, sectionIndex) => (
+              <div key={`section-${sectionIndex}`} className="mb-6">
+                <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
+                
+                {section.repeatable ? (
+                  <RepeatingSection
+                    section={section}
+                    form={form}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {section.fields && renderFieldsInRows(section.fields)}
+                    {section.rowGroups && section.rowGroups.map((rowGroup, index) => (
+                      <RowGroupField
+                        key={`rowgroup-${index}`}
+                        rowGroup={rowGroup.rowGroup}
+                        form={form}
+                        groupIndex={index}
+                        onValueChange={(fieldKey, value) => {
+                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
             
             <div className="flex justify-end pt-6">
-              <Button type="submit" className="min-w-32">
-                {config.submit?.label || 'Submit'}
+              <Button type="submit" disabled={isSubmitting} className="min-w-32">
+                {isSubmitting ? 'Submitting...' : (config.submit?.label || 'Submit')}
               </Button>
             </div>
           </form>
