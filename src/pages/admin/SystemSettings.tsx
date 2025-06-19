@@ -16,7 +16,7 @@ const SystemSettings = () => {
   const { user } = useAppSelector(state => state.auth);
   
   // Check if user has admin role (role === 4)
-  if (!user || user.role !== '4') {
+  if (!user || user.role_id !== '4') {
     return <Navigate to="/" replace />;
   }
   
