@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -125,6 +126,24 @@ const TicketDetail = () => {
     }));
   };
 
+  const getCustomFormData = () => {
+    if (!ticketDetail) return [];
+    
+    const formData = [];
+    for (let i = 1; i <= 16; i++) {
+      const label = ticketDetail[`lbl_col${i}` as keyof typeof ticketDetail] as string;
+      const value = ticketDetail[`cstm_col${i}` as keyof typeof ticketDetail] as string;
+      
+      if (label && label.trim() && value && value.trim() && value !== '{}') {
+        formData.push({
+          label: label,
+          value: value
+        });
+      }
+    }
+    return formData;
+  };
+
   const canUserApprove = () => {
     if (!ticketDetail || !user) return false;
     
@@ -169,6 +188,7 @@ const TicketDetail = () => {
   const approvalSteps = formatApprovalSteps();
   const approvedCount = approvalSteps.filter(step => step.status === 'approved').length;
   const progressPercentage = approvalSteps.length > 0 ? (approvedCount / approvalSteps.length) * 100 : 0;
+  const customFormData = getCustomFormData();
 
   return (
     <AppLayout>
@@ -240,7 +260,7 @@ const TicketDetail = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Department</p>
-                    <p className="font-medium">{ticketDetail.team_name || 'Unknown'}</p>
+                    <p className="font-medium">{ticketDetail.department_name || ticketDetail.team_name || 'Unknown'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
@@ -256,26 +276,11 @@ const TicketDetail = () => {
                     <p className="text-foreground bg-muted/50 p-3 rounded-md">{ticketDetail.reason}</p>
                   </div>
                 )}
-
-                {/* Custom Form Data */}
-                {ticketDetail.custom_columns && Object.keys(ticketDetail.custom_columns).length > 0 && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Form Data</p>
-                    <div className="bg-muted/50 p-3 rounded-md space-y-2">
-                      {Object.entries(ticketDetail.custom_columns).map(([key, value]) => (
-                        <div key={key} className="flex justify-between">
-                          <span className="font-medium">{key}:</span>
-                          <span>{String(value)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
             {/* Custom Form Data Table */}
-            {ticketDetail?.custom_columns && Object.keys(ticketDetail.custom_columns).length > 0 && (
+            {customFormData.length > 0 && (
               <Card className="bg-card shadow-sm border">
                 <CardHeader className="bg-muted/50 border-b">
                   <CardTitle className="text-lg">Form Data</CardTitle>
@@ -289,10 +294,10 @@ const TicketDetail = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {Object.entries(ticketDetail.custom_columns).map(([key, value]) => (
-                        <TableRow key={key}>
-                          <TableCell className="font-medium">{key}</TableCell>
-                          <TableCell>{String(value)}</TableCell>
+                      {customFormData.map((field, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{field.label}</TableCell>
+                          <TableCell>{field.value}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
