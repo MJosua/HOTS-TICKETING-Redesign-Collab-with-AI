@@ -6,12 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
+import { useAppSelector } from '@/hooks/useAppSelector';
+import { Navigate } from 'react-router-dom';
 
 const SystemSettings = () => {
   const { toast } = useToast();
+  const { user } = useAppSelector(state => state.auth);
+  
+  // Check if user has admin role (role === 4)
+  if (!user || user.role !== '4') {
+    return <Navigate to="/" replace />;
+  }
   
   // General Settings
   const [generalSettings, setGeneralSettings] = useState({
@@ -105,7 +112,7 @@ const SystemSettings = () => {
                       id="supportEmail"
                       type="email"
                       value={generalSettings.supportEmail}
-                      onChange={(e) => setGeneral Settings(prev => ({ ...prev, supportEmail: e.target.value }))}
+                      onChange={(e) => setGeneralSettings(prev => ({ ...prev, supportEmail: e.target.value }))}
                     />
                   </div>
 

@@ -70,6 +70,7 @@ interface AppLayoutProps {
 
 export function AppSidebar() {
   const { taskCount } = useAppSelector(state => state.tickets);
+  const { user } = useAppSelector(state => state.auth);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const menuItems = [
@@ -131,6 +132,9 @@ export function AppSidebar() {
     });
   };
 
+  // Check if user has admin role (role === 4)
+  const isAdmin = user?.role === '4';
+
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
@@ -184,31 +188,34 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider px-3 py-2">
-            Administration
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {adminItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <Link
-                      to={item.url}
-                      className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                        location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
-                      )}
-                    >
-                      <item.icon className="w-5 h-5 flex-shrink-0" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Only show Administration menu for users with role === 4 */}
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider px-3 py-2">
+              Administration
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild tooltip={item.title}>
+                      <Link
+                        to={item.url}
+                        className={cn(
+                          "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
+                        )}
+                      >
+                        <item.icon className="w-5 h-5 flex-shrink-0" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
