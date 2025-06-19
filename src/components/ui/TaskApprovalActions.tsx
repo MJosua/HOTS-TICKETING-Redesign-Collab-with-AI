@@ -13,14 +13,18 @@ interface TaskApprovalActionsProps {
   ticketId: string;
   approvalOrder: number;
   canApprove: boolean;
-  currentStatus: number; // 0 = pending, 1 = approved, 2 = rejected
+  currentStatus: number;
+  currentUserId?: number;
+  assignedToId?: number;
 }
 
 const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
   ticketId,
   approvalOrder,
   canApprove,
-  currentStatus
+  currentStatus,
+  currentUserId,
+  assignedToId
 }) => {
   const dispatch = useAppDispatch();
   const { isSubmitting } = useAppSelector(state => state.tickets);
@@ -29,8 +33,15 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
   const [rejectionRemark, setRejectionRemark] = useState('');
   const [showRejectBox, setShowRejectBox] = useState(false);
 
-  if (!canApprove || currentStatus !== 0) {
-    return null; // Don't show actions if user can't approve or already processed
+  // Check if current user can approve this ticket
+  const userCanApprove = canApprove && 
+                        currentStatus === 0 && 
+                        currentUserId && 
+                        assignedToId && 
+                        currentUserId === assignedToId;
+
+  if (!userCanApprove) {
+    return null;
   }
 
   const handleApprove = async () => {

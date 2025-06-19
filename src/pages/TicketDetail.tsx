@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -8,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2 } from 'lucide-react';
-import ProgressionBar from "@/components/ui/ProgressionBar";
+import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import RejectModal from "@/components/modals/RejectModal";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { fetchTicketDetail, approveTicket, rejectTicket, clearTicketDetail } from '@/store/slices/ticketsSlice';
@@ -23,6 +23,7 @@ const TicketDetail = () => {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
+  const { user } = useAppSelector(state => state.auth);
 
   useEffect(() => {
     if (id) {
@@ -118,8 +119,20 @@ const TicketDetail = () => {
               approver.approval_status === 2 ? 'rejected' as const : 
               approver.approval_order === ticketDetail.current_step ? 'pending' as const :
               'waiting' as const,
-      approver: approver.approver_name
+      approver: approver.approver_name,
+      date: approver.approval_date || null,
+      order: approver.approval_order
     }));
+  };
+
+  const canUserApprove = () => {
+    if (!ticketDetail || !user) return false;
+    
+    const currentApprover = ticketDetail.list_approval?.find(
+      approver => approver.approval_order === ticketDetail.current_step
+    );
+    
+    return currentApprover && currentApprover.approver_id === user.user_id;
   };
 
   if (isLoadingDetail) {
@@ -154,44 +167,50 @@ const TicketDetail = () => {
   }
 
   const approvalSteps = formatApprovalSteps();
+  const approvedCount = approvalSteps.filter(step => step.status === 'approved').length;
+  const progressPercentage = approvalSteps.length > 0 ? (approvedCount / approvalSteps.length) * 100 : 0;
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">#{ticketDetail.ticket_id}</h1>
-              <p className="text-muted-foreground">{ticketDetail.service_name}</p>
+      <div className="space-y-6 relative z-0">
+        {/* Header with higher z-index */}
+        <div className="sticky top-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">#{ticketDetail?.ticket_id}</h1>
+                <p className="text-muted-foreground">{ticketDetail?.service_name}</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button 
-              onClick={handleApprove} 
-              className="bg-primary hover:bg-primary/90"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <CheckSquare className="w-4 h-4 mr-2" />
-              )}
-              Approve
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsRejectModalOpen(true)}
-              className="text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50"
-              disabled={isSubmitting}
-            >
-              <X className="w-4 h-4 mr-2" />
-              Reject
-            </Button>
+            {canUserApprove() && (
+              <div className="flex items-center space-x-2">
+                <Button 
+                  onClick={handleApprove}
+                  className="bg-primary hover:bg-primary/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckSquare className="w-4 h-4 mr-2" />
+                  )}
+                  Approve
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsRejectModalOpen(true)}
+                  className="text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50"
+                  disabled={isSubmitting}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Reject
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -255,6 +274,33 @@ const TicketDetail = () => {
               </CardContent>
             </Card>
 
+            {/* Custom Form Data Table */}
+            {ticketDetail?.custom_columns && Object.keys(ticketDetail.custom_columns).length > 0 && (
+              <Card className="bg-card shadow-sm border">
+                <CardHeader className="bg-muted/50 border-b">
+                  <CardTitle className="text-lg">Form Data</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Field</TableHead>
+                        <TableHead>Value</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.entries(ticketDetail.custom_columns).map(([key, value]) => (
+                        <TableRow key={key}>
+                          <TableCell className="font-medium">{key}</TableCell>
+                          <TableCell>{String(value)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Files Attached */}
             {ticketDetail.files && ticketDetail.files.length > 0 && (
               <Card className="bg-card shadow-sm border">
@@ -284,12 +330,40 @@ const TicketDetail = () => {
               <CardHeader>
                 <CardTitle className="text-lg">Approval Progress</CardTitle>
               </CardHeader>
-              <CardContent>
-                {approvalSteps.length > 0 ? (
-                  <ProgressionBar steps={approvalSteps} showDetails={true} className="flex-col space-y-4 space-x-0" />
-                ) : (
-                  <p className="text-muted-foreground">No approval workflow</p>
-                )}
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Progress</span>
+                    <span>{approvedCount}/{approvalSteps.length} approved</span>
+                  </div>
+                  <Progress value={progressPercentage} className="h-2" />
+                </div>
+                
+                <div className="space-y-3">
+                  {approvalSteps.map((step, index) => (
+                    <div key={step.id} className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                        step.status === 'approved' ? 'bg-green-500 text-white' :
+                        step.status === 'rejected' ? 'bg-red-500 text-white' :
+                        step.status === 'pending' ? 'bg-yellow-500 text-white' :
+                        'bg-gray-300 text-gray-600'
+                      }`}>
+                        {step.order}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{step.name}</p>
+                        {step.date && (
+                          <p className="text-xs text-muted-foreground">
+                            {step.status === 'approved' ? 'Approved' : 'Rejected'} on {new Date(step.date).toLocaleDateString()}
+                          </p>
+                        )}
+                        {step.status === 'pending' && (
+                          <p className="text-xs text-yellow-600">Pending approval</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
 

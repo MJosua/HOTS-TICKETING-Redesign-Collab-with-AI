@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -24,17 +24,25 @@ import { useAppDispatch } from "@/hooks/useAppDispatch";
 import { logoutUser } from "@/store/slices/authSlice";
 import { useToast } from "@/hooks/use-toast";
 import { useAppSelector } from '@/hooks/useAppSelector';
+import axios from 'axios';
+import { API_URL } from '@/config/sourceConfig';
+
+interface UserProfile {
+  user_id: number;
+  firstname: string;
+  lastname: string;
+  email: string;
+  team_name: string;
+  superior_name?: string;
+  role_name: string;
+  department_name: string;
+}
 
 const adminItems = [
   {
     title: "Service Catalog Admin",
     url: "/admin/service-catalog",
     icon: List,
-  },
-  {
-    title: "System Settings",
-    url: "/admin/settings",
-    icon: Settings,
   },
   {
     title: "User Management",
@@ -46,6 +54,11 @@ const adminItems = [
     url: "/admin/divisions",
     icon: Monitor,
   },
+  {
+    title: "System Settings",
+    url: "/admin/settings",
+    icon: Settings,
+  },
 ];
 
 interface AppLayoutProps {
@@ -56,8 +69,8 @@ interface AppLayoutProps {
 }
 
 export function AppSidebar() {
-
   const { taskCount } = useAppSelector(state => state.tickets);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const menuItems = [
     {
@@ -82,13 +95,31 @@ export function AppSidebar() {
       badge: taskCount
     },
   ];
-  console.log("taskCount", taskCount)
 
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem('tokek');
+      const response = await axios.get(`${API_URL}/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        setUserProfile(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
 
   const handleLogout = () => {
     dispatch(logoutUser()).then(() => {
@@ -191,17 +222,26 @@ export function AppSidebar() {
             <User className="w-4 h-4" />
           </Button>
           <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">Yosua Gultom</p>
-            <p className="text-xs text-sidebar-foreground/70 truncate">International Operation</p>
+            <p className="text-sm font-medium text-sidebar-foreground truncate">
+              {userProfile ? `${userProfile.firstname} ${userProfile.lastname}` : 'Loading...'}
+            </p>
+            <p className="text-xs text-sidebar-foreground/70 truncate">
+              {userProfile?.team_name || 'Loading...'}
+            </p>
+            {userProfile?.superior_name && (
+              <p className="text-xs text-sidebar-foreground/60 truncate">
+                Reports to: {userProfile.superior_name}
+              </p>
+            )}
           </div>
         </div>
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-start group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:px-0 "
+          className="w-full justify-start group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:px-0"
           onClick={handleLogout}
         >
-          <LogOut className="w-4 h-4 group-data-[collapsible=icon]:mr-0 mr-2 " />
+          <LogOut className="w-4 h-4 group-data-[collapsible=icon]:mr-0 mr-2" />
           <span className="group-data-[collapsible=icon]:hidden">Log Out</span>
         </Button>
 
@@ -215,9 +255,8 @@ export function AppSidebar() {
 }
 
 export function AppLayout({ children, searchValue, onSearchChange, searchPlaceholder = "Search..." }: AppLayoutProps) {
-
   const location = useLocation();
-  const hiddenSearchRoutes = ['/', '/login', '/admin/settings', '/admin/service-catalog', '/admin/service-catalog/create', '/admin/service-catalog/create'];
+  const hiddenSearchRoutes = ['/', '/login', '/admin/settings', '/admin/service-catalog', '/admin/service-catalog/create'];
   const shouldHideSearch = hiddenSearchRoutes.includes(location.pathname);
 
   return (
@@ -225,7 +264,7 @@ export function AppLayout({ children, searchValue, onSearchChange, searchPlaceho
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset>
-          <header className="sticky backdrop-blur-md top-0 z-1 bg-muted/30 border-b border-border px-6 py-4">
+          <header className="sticky backdrop-blur-md top-0 z-50 bg-muted/30 border-b border-border px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <SidebarTrigger className="bg-secondary hover:bg-secondary/50" />
