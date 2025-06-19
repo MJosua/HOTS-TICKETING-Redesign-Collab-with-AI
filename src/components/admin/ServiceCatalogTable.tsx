@@ -36,14 +36,14 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
   isReloading
 }) => {
   const { workflowGroups } = useAppSelector(state => state.userManagement);
-
+  console.log("serviceCatalog",serviceCatalog)
   const getWorkflowGroupName = (serviceId: string) => {
     const service = serviceCatalog.find(s => s.service_id.toString() === serviceId);
-    if (!service?.workflow_group_id) {
+    if (!service?.m_workflow_groups ) {
       return 'No Workflow';
     }
     
-    const workflowGroup = workflowGroups.find(wg => wg.id === service.workflow_group_id);
+    const workflowGroup = workflowGroups.find(wg => wg.id === service.m_workflow_groups);
     return workflowGroup ? workflowGroup.name : 'Unknown Workflow';
   };
 

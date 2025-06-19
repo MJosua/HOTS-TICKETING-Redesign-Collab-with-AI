@@ -185,11 +185,11 @@ const UserManagement = () => {
   const handleSaveTeam = async (teamData: any, selectedUsers?: number[], teamLeaderId?: number) => {
     try {
       let savedTeam;
-      
+
       if (modalMode === 'add') {
         const result = await dispatch(createTeam(teamData));
         savedTeam = result.payload;
-        
+
         if (savedTeam && selectedUsers && selectedUsers.length > 0) {
           // Add team members
           for (const userId of selectedUsers) {
@@ -203,7 +203,7 @@ const UserManagement = () => {
             await dispatch(addTeamMember(memberData));
           }
         }
-        
+
         toast({
           title: "Success",
           description: "Team created successfully",
@@ -211,7 +211,7 @@ const UserManagement = () => {
       } else {
         const result = await dispatch(updateTeam({ id: selectedTeam?.team_id!, data: teamData }));
         savedTeam = result.payload;
-        
+
         // For edit mode, we should handle member updates here
         // This is a simplified approach - in production you might want more sophisticated member management
         if (savedTeam && selectedUsers && selectedUsers.length > 0) {
@@ -220,7 +220,7 @@ const UserManagement = () => {
           // 1. Compare existing vs new members
           // 2. Only add/remove changed members
           // 3. Update team leader status properly
-          
+
           for (const userId of selectedUsers) {
             const memberData = {
               team_id: selectedTeam?.team_id!,
@@ -232,16 +232,16 @@ const UserManagement = () => {
             await dispatch(addTeamMember(memberData));
           }
         }
-        
+
         toast({
           title: "Success",
           description: "Team updated successfully",
         });
       }
-      
+
       dispatch(fetchTeams());
       dispatch(fetchUsers()); // Refresh users to update team assignments
-      
+
     } catch (error: any) {
       console.error('Error saving team:', error);
       toast({
@@ -277,17 +277,17 @@ const UserManagement = () => {
       if (modalMode === 'add') {
         const result = await dispatch(createWorkflowGroup(group));
         savedGroup = result.payload;
-        
+
         if (savedGroup) {
           toast({
             title: "Success",
             description: "Workflow group created successfully",
           });
-          
+
           // Save workflow steps if any
           if (steps.length > 0) {
-            const workflowGroupId = savedGroup.id || savedGroup.workflow_group_id;
-            
+            const workflowGroupId = savedGroup.id;
+
             if (workflowGroupId) {
               const stepsWithGroupId = steps.map(step => ({
                 ...step,
@@ -308,7 +308,7 @@ const UserManagement = () => {
         }
       } else {
         const result = await dispatch(updateWorkflowGroup({ id: selectedWorkflowGroup?.id!, data: group }));
-        
+
         if (result.meta.requestStatus === 'fulfilled') {
           savedGroup = result.payload;
           toast({
@@ -318,8 +318,8 @@ const UserManagement = () => {
 
           // Handle workflow steps for edit mode
           if (steps.length > 0) {
-            const workflowGroupId = selectedWorkflowGroup?.id || selectedWorkflowGroup?.workflow_group_id;
-            
+            const workflowGroupId = selectedWorkflowGroup?.id;
+
             if (workflowGroupId) {
               // For simplicity in edit mode, we'll delete existing steps and recreate them
               // In production, you might want to implement a more sophisticated update strategy
@@ -339,7 +339,7 @@ const UserManagement = () => {
               });
             }
           }
-          
+
           dispatch(fetchWorkflowGroups());
         } else {
           toast({
@@ -605,7 +605,7 @@ const UserManagement = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredWorkflowGroups.map((group) => (
-                      <TableRow key={group.workflow_group_id}>
+                      <TableRow key={group.id}>
                         <TableCell className="font-medium">{highlightText(group.name, searchValue)}</TableCell>
                         <TableCell className="text-gray-600">{highlightText(group.description, searchValue)}</TableCell>
                         <TableCell>
@@ -660,14 +660,24 @@ const UserManagement = () => {
         />
 
         <AlertDialog open={isDeleteModalOpen} onOpenChange={handleDeleteCancel}>
-          <AlertDialogContent>
+          <AlertDialogContent
+
+            onOverlayClick={handleDeleteCancel} // custom prop passed to AlertDialogOverlay inside your AlertDialogContent
+            className="bg-white border border-gray-200 shadow-lg z-50"
+          >
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete {deleteTarget?.type === 'user' ? 'User' : deleteTarget?.type === 'team' ? 'Team' : 'Workflow Group'}</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle
+              className="text-red-600"
+              >Delete {deleteTarget?.type === 'user' ? 'User' : deleteTarget?.type === 'team' ? 'Team' : 'Workflow Group'}</AlertDialogTitle>
+              <AlertDialogDescription
+              className="text-gray-600"
+              >
                 Are you sure you want to delete "{deleteTarget?.item.team_name || deleteTarget?.item.name || deleteTarget?.item.firstname + ' ' + deleteTarget?.item.lastname}"? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter
+            className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 rounded-b-lg"
+            >
               <AlertDialogCancel onClick={handleDeleteCancel}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
                 Delete

@@ -9,7 +9,7 @@ export interface ServiceCatalogItem {
   service_name: string;
   service_description: string;
   approval_level?: number; // Made optional for backward compatibility
-  workflow_group_id?: number; // New field for workflow group assignment
+  m_workflow_groups?: number; // New field for workflow group assignment
   image_url: string;
   nav_link: string;
   active: number;

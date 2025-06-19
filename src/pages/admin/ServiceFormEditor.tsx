@@ -92,10 +92,11 @@ const ServiceFormEditor = () => {
         }
 
         setConfig(parsedConfig);
-        
+          console.log("serviceData..workflow_group_id", serviceData.m_workflow_groups)
         // Set workflow group from service data if available
-        if (serviceData.workflow_group_id) {
-          setSelectedWorkflowGroup(serviceData.workflow_group_id);
+        if (serviceData.m_workflow_groups) {
+          console.log("jalan")
+          setSelectedWorkflowGroup(serviceData.m_workflow_groups);
         }
       } else {
         console.warn('Service not found for ID:', id);

@@ -71,6 +71,7 @@ const DepartmentManagement = () => {
           description: "Department created successfully",
         });
       } else {
+        console.log("department", department)
         await axios.put(`${API_URL}/hots_settings/update/department/${selectedDepartment?.department_id}`, department, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('tokek')}`,
@@ -124,14 +125,14 @@ const DepartmentManagement = () => {
   const highlightText = (text: string, highlight: string) => {
     if (!highlight) return text;
     const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
-    return parts.map((part, index) => 
-      part.toLowerCase() === highlight.toLowerCase() ? 
+    return parts.map((part, index) =>
+      part.toLowerCase() === highlight.toLowerCase() ?
         <mark key={index} className="bg-yellow-200">{part}</mark> : part
     );
   };
 
   const getStatusBadge = (department: Department) => {
-    const isActive = !department.finished_date;
+    const isActive = department.is_deleted === 0;
     return isActive ? (
       <Badge className="bg-green-100 text-green-800">Active</Badge>
     ) : (
@@ -140,12 +141,12 @@ const DepartmentManagement = () => {
   };
 
   const totalEmployees = users.length;
-  const activeDepartments = departments.filter(d => !d.finished_date).length;
+  const activeDepartments = departments.filter(d => !d.is_deleted).length;
   const avgDepartmentSize = departments.length > 0 ? Math.round(totalEmployees / departments.length) : 0;
 
   return (
-    <AppLayout 
-      searchValue={searchValue} 
+    <AppLayout
+      searchValue={searchValue}
       onSearchChange={setSearchValue}
       searchPlaceholder="Search departments..."
     >
@@ -245,8 +246,8 @@ const DepartmentManagement = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDepartments.map((department) => (
-                    <TableRow key={department.department_id}>
+                  {filteredDepartments.sort((a, b) => a.is_deleted - b.is_deleted).map((department) => (
+                    <TableRow key={department.department_id} className={department.is_deleted ? 'opacity-40' : ''}>
                       <TableCell className="font-mono font-medium">
                         {highlightText(department.department_shortname, searchValue)}
                       </TableCell>
@@ -296,14 +297,24 @@ const DepartmentManagement = () => {
         />
 
         <AlertDialog open={isDeleteModalOpen} onOpenChange={handleDeleteCancel}>
-          <AlertDialogContent>
+          <AlertDialogContent
+
+            onOverlayClick={handleDeleteCancel} // custom prop passed to AlertDialogOverlay inside your AlertDialogContent
+            className="bg-white border border-gray-200 shadow-lg z-50"
+          >
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Department</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle
+                className="text-red-600"
+              >Delete Department</AlertDialogTitle>
+              <AlertDialogDescription
+                className="text-gray-600"
+              >
                 Are you sure you want to delete "{selectedDepartment?.department_name}"? This action cannot be undone and will affect all employees in this department.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter
+              className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 rounded-b-lg"
+            >
               <AlertDialogCancel onClick={handleDeleteCancel}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
                 Delete

@@ -63,7 +63,7 @@ export interface WorkflowGroup {
 export interface ApprovalFlow {
   steps: string[];
   mode: 'sequential' | 'parallel';
-  workflow_group_id?: string; // Link to workflow group
+  m_workflow_groups?: string; // Link to workflow group
 }
 
 export interface FormConfig {
@@ -77,7 +77,7 @@ export interface FormConfig {
   sections?: FormSection[];
   approval?: ApprovalFlow;
   apiEndpoint?: string;
-  workflow_group_id?: string; // New field to link forms to workflow groups
+  m_workflow_groups?: string; // New field to link forms to workflow groups
   submit?: {
     label: string;
     type: string;
