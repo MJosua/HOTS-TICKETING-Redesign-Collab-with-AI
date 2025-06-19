@@ -1,9 +1,9 @@
-
 export interface Approver {
   approver_id: number;
   approver_name: string;
   approval_order: number;
   approval_status: number;
+  approval_date?: string;
 }
 
 export interface Ticket {
