@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +8,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { useAppDispatch } from "@/hooks/useAppDispatch";
 import { useAppSelector } from "@/hooks/useAppSelector";
-import { loginUser } from "@/store/slices/authSlice";
+import { loginUser, getPersistentUserData, loadPersistentUser } from "@/store/slices/authSlice";
 import { fetchCatalogData } from "@/store/slices/catalogSlice";
 import { fetchMyTickets, fetchAllTickets, fetchTaskList } from "@/store/slices/ticketsSlice";
 
@@ -33,6 +32,18 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [effectiveUsername, setEffectiveUsername] = useState(username);
+
+  // Load persistent user data on mount
+  useEffect(() => {
+    if (isOpen && (!user?.uid || !effectiveUsername)) {
+      dispatch(loadPersistentUser());
+      const persistentData = getPersistentUserData();
+      if (persistentData?.uid) {
+        setEffectiveUsername(persistentData.uid);
+      }
+    }
+  }, [isOpen, user?.uid, effectiveUsername, dispatch]);
 
   const handleClose = () => {
     // Reset form state
@@ -54,6 +65,7 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
     const updated = trialCount - 1;
     setTrialCount(updated);
     localStorage.setItem('trialCount', updated.toString());
+    
     if (!password.trim()) {
       setValidationError('Password is required');
       return;
@@ -61,22 +73,22 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
 
     setValidationError('');
 
-    // Use username prop as fallback if user data is cleared
-    const loginUsername = user?.uid || user?.uid || username;
-    // console.log("loginUsername",loginUsername)
+    // Use multiple fallbacks for username
+    const loginUsername = user?.uid || user?.username || effectiveUsername || username;
+    
+    if (!loginUsername) {
+      setValidationError('Unable to retrieve username for re-authentication');
+      return;
+    }
 
     try {
       await dispatch(loginUser({
         username: loginUsername,
         password: password,
       })).unwrap();
+      
       // Re-fetch all data after successful authentication
-      // console.log('Refreshing data after successful re-authentication...');
-      
-      // Fetch catalog data
       dispatch(fetchCatalogData());
-      
-      // Fetch tickets data
       dispatch(fetchMyTickets(1));
       dispatch(fetchAllTickets(1));
       dispatch(fetchTaskList(1));
@@ -97,7 +109,6 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
         variant: "destructive",
       });
 
-      localStorage.setItem('tokek', updated.toString());
       setValidationError('Invalid password');
     }
   };
@@ -108,8 +119,6 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
       setValidationError('');
     }
   };
-
-
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -136,6 +145,11 @@ const TokenExpiredModal: React.FC<TokenExpiredModalProps> = ({
             <p className="text-gray-600 mt-2">
               Your session has expired. Please re-enter your password to continue.
             </p>
+            {effectiveUsername && (
+              <p className="text-sm text-gray-500 mt-1">
+                Re-authenticating as: <span className="font-medium">{effectiveUsername}</span>
+              </p>
+            )}
           </div>
         </DialogHeader>
 

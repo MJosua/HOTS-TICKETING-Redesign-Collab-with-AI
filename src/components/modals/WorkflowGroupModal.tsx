@@ -10,14 +10,14 @@ import { Separator } from "@/components/ui/separator";
 import { WorkflowGroup } from '@/store/slices/userManagementSlice';
 import WorkflowStepsManager, { WorkflowStepData } from '@/components/workflow/WorkflowStepsManager';
 import { useAppDispatch } from '@/hooks/useAppSelector';
-import { fetchWorkflowSteps } from '@/store/slices/userManagementSlice';
+import { fetchWorkflowSteps, deleteWorkflowStep } from '@/store/slices/userManagementSlice';
 
 interface WorkflowGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
   workflowGroup: WorkflowGroup | null;
   mode: 'add' | 'edit';
-  onSave: (workflowGroup: any, steps: WorkflowStepData[]) => void;
+  onSave: (workflowGroup: any, steps: WorkflowStepData[], isEdit: boolean, existingStepIds?: number[]) => void;
   users: any[];
 }
 
@@ -31,6 +31,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
   });
 
   const [steps, setSteps] = useState<WorkflowStepData[]>([]);
+  const [existingStepIds, setExistingStepIds] = useState<number[]>([]);
   const [isLoadingSteps, setIsLoadingSteps] = useState(false);
 
   useEffect(() => {
@@ -46,11 +47,9 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
       if (workflowGroup.id || workflowGroup.workflow_group_id) {
         setIsLoadingSteps(true);
         const groupId = workflowGroup.id || workflowGroup.workflow_group_id;
-        // console.log(`Loading workflow steps for group ID: ${groupId}`);
         
         dispatch(fetchWorkflowSteps(groupId))
           .then((result) => {
-            // console.log('Fetched workflow steps:', result.payload);
             if (result.payload && Array.isArray(result.payload)) {
               const formattedSteps: WorkflowStepData[] = result.payload.map((step: any) => ({
                 step_order: step.step_order,
@@ -59,6 +58,10 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
                 description: step.description,
                 is_active: step.is_active
               }));
+              
+              // Store existing step IDs for cleanup
+              const stepIds = result.payload.map((step: any) => step.step_id).filter(Boolean);
+              setExistingStepIds(stepIds);
               setSteps(formattedSteps);
             }
           })
@@ -77,6 +80,7 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
         is_active: true
       });
       setSteps([]);
+      setExistingStepIds([]);
     }
   }, [workflowGroup, mode, isOpen, dispatch]);
 
@@ -85,13 +89,24 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
     handleSave();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const workflowToSave = mode === 'edit' && workflowGroup 
       ? { ...formData, workflow_group_id: workflowGroup.workflow_group_id, id: workflowGroup.id }
       : formData;
     
-    // console.log('Saving workflow group with steps:', { workflowToSave, steps });
-    onSave(workflowToSave, steps);
+    // For edit mode, we need to clean up existing steps first
+    if (mode === 'edit' && existingStepIds.length > 0) {
+      try {
+        // Delete existing steps to prevent duplication
+        await Promise.all(
+          existingStepIds.map(stepId => dispatch(deleteWorkflowStep(stepId)))
+        );
+      } catch (error) {
+        console.error('Error cleaning up existing workflow steps:', error);
+      }
+    }
+    
+    onSave(workflowToSave, steps, mode === 'edit', existingStepIds);
     onClose();
   };
 
@@ -145,7 +160,15 @@ const WorkflowGroupModal = ({ isOpen, onClose, workflowGroup, mode, onSave }: Wo
               <div className="text-sm text-gray-500">Loading workflow steps...</div>
             </div>
           ) : (
-            <WorkflowStepsManager steps={steps} onStepsChange={setSteps} />
+            <div>
+              <div className="mb-4">
+                <h3 className="text-lg font-medium">Workflow Steps</h3>
+                <p className="text-sm text-gray-600">
+                  {mode === 'edit' ? 'Editing will replace all existing steps with the new configuration.' : 'Define the approval workflow steps.'}
+                </p>
+              </div>
+              <WorkflowStepsManager steps={steps} onStepsChange={setSteps} />
+            </div>
           )}
 
           <div className="flex justify-end space-x-2 pt-4">

@@ -22,6 +22,29 @@ interface AuthState {
   isLocked: boolean;
 }
 
+// Helper functions for persistent user storage
+const persistUserData = (userData: UserData) => {
+  localStorage.setItem('persistentUser', JSON.stringify({
+    id: userData.id,
+    username: userData.username,
+    uid: userData.uid,
+    email: userData.email
+  }));
+};
+
+const getPersistentUserData = (): Partial<UserData> | null => {
+  try {
+    const stored = localStorage.getItem('persistentUser');
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+};
+
+const clearPersistentUserData = () => {
+  localStorage.removeItem('persistentUser');
+};
+
 const initialState: AuthState = {
   user: null,
   token: localStorage.getItem('tokek'),
@@ -46,7 +69,10 @@ export const loginUser = createAsyncThunk(
         const { tokek, userData } = response.data;
         localStorage.setItem('tokek', tokek);
         localStorage.setItem('isAuthenticated', 'true');
-        // console.log("LOGIN RESPONSE:", response.data);
+        
+        // Persist user data for recovery scenarios
+        persistUserData(userData);
+        
         return { token: tokek, userData };
       } else {
         return rejectWithValue(response.data.message);
@@ -61,6 +87,7 @@ export const loginUser = createAsyncThunk(
 export const logoutUser = createAsyncThunk('auth/logoutUser', async () => {
   localStorage.removeItem('tokek');
   localStorage.removeItem('isAuthenticated');
+  clearPersistentUserData();
 });
 
 const authSlice = createSlice({
@@ -83,6 +110,13 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       // Don't clear user data immediately to allow re-authentication
     },
+    // New action to get persistent user data for recovery
+    loadPersistentUser: (state) => {
+      const persistentData = getPersistentUserData();
+      if (persistentData && !state.user?.uid) {
+        state.user = { ...state.user, ...persistentData } as UserData;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -99,6 +133,9 @@ const authSlice = createSlice({
         state.error = null;
         state.loginAttempts = 0;
         state.isLocked = false;
+        
+        // Persist user data
+        persistUserData(action.payload.userData);
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -124,5 +161,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, resetLoginAttempts, setLocked, clearToken } = authSlice.actions;
+export const { clearError, resetLoginAttempts, setLocked, clearToken, loadPersistentUser } = authSlice.actions;
+export { getPersistentUserData }; // Export for use in other components
 export default authSlice.reducer;
