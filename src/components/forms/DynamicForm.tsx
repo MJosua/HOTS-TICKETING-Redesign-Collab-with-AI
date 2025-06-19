@@ -87,7 +87,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       
       // Create the ticket data payload
       const ticketData = {
-        reason: data.reason || data.subject || 'Service Request',
+        subject: data.subject || 'Service Request',
         upload_ids: uploadIds,
         ...mappedData
       };

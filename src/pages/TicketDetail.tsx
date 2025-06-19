@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,60 +7,95 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign } from 'lucide-react';
+import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2 } from 'lucide-react';
 import ProgressionBar from "@/components/ui/ProgressionBar";
 import RejectModal from "@/components/modals/RejectModal";
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
+import { fetchTicketDetail, approveTicket, clearTicketDetail } from '@/store/slices/ticketsSlice';
+import { useToast } from '@/hooks/use-toast';
 
 const TicketDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const [chatMessage, setChatMessage] = useState('');
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
-  // Mock data - in real app would fetch based on ID
-  const ticket = {
-    id: "SPB-2024-001",
-    type: "Surat Permintaan Barang",
-    requester: "Ahmad Rahman",
-    department: "Produksi",
-    priority: "High",
-    created: "2024-06-10",
-    amount: "Rp 2,500,000",
-    status: "Pending Approval",
-    description: "Request for additional raw materials for production line 3. We need to increase capacity for upcoming orders.",
-    items: [
-      { name: "Raw Material A", quantity: 100, unit: "kg", price: "Rp 15,000" },
-      { name: "Raw Material B", quantity: 50, unit: "kg", price: "Rp 25,000" },
-      { name: "Packaging Material", quantity: 1000, unit: "pcs", price: "Rp 2,500" }
-    ],
-    approvalSteps: [
-      { id: '1', name: 'Supervisor', status: 'approved' as const, date: '2024-06-10', approver: 'Budi Santoso' },
-      { id: '2', name: 'Manager', status: 'pending' as const, approver: 'Sari Indah' },
-      { id: '3', name: 'Director', status: 'waiting' as const, approver: 'Dr. Ahmad Wijaya' },
-    ]
+  const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
+
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchTicketDetail(id));
+    }
+    
+    return () => {
+      dispatch(clearTicketDetail());
+    };
+  }, [dispatch, id]);
+
+  const handleApprove = async () => {
+    if (!ticketDetail || !id) return;
+
+    const currentStep = ticketDetail.current_step || 1;
+    
+    try {
+      await dispatch(approveTicket({ 
+        ticketId: id, 
+        approvalOrder: currentStep 
+      })).unwrap();
+      
+      toast({
+        title: "Success",
+        description: "Ticket approved successfully!",
+        variant: "default",
+      });
+      
+      // Refresh ticket data
+      dispatch(fetchTicketDetail(id));
+    } catch (error: any) {
+      toast({
+        title: "Approval Error",
+        description: error || "Failed to approve ticket. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const chatMessages = [
-    { id: 1, user: "Ahmad Rahman", message: "I need this urgently for production", time: "10:30", isRequester: true },
-    { id: 2, user: "Supervisor", message: "Approved from my end. The quantities look reasonable.", time: "11:45", isRequester: false },
-    { id: 3, user: "Ahmad Rahman", message: "Thank you! When can I expect the final approval?", time: "12:00", isRequester: true }
-  ];
+  const handleReject = async (reason: string) => {
+    if (!ticketDetail || !id) return;
 
-  const handleApprove = () => {
-    // console.log('Approved ticket:', id);
-    // Handle approval logic
-  };
-
-  const handleReject = (reason: string) => {
-    // console.log('Rejected ticket:', id, 'Reason:', reason);
-    // Handle rejection logic
+    const currentStep = ticketDetail.current_step || 1;
+    
+    try {
+      await dispatch(rejectTicket({ 
+        ticketId: id, 
+        approvalOrder: currentStep,
+        rejectionRemark: reason
+      })).unwrap();
+      
+      toast({
+        title: "Success",
+        description: "Ticket rejected successfully!",
+        variant: "default",
+      });
+      
+      // Refresh ticket data
+      dispatch(fetchTicketDetail(id));
+    } catch (error: any) {
+      toast({
+        title: "Rejection Error",
+        description: error || "Failed to reject ticket. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSendMessage = () => {
     if (chatMessage.trim()) {
-      // console.log('Sending message:', chatMessage);
+      // TODO: Implement chat message sending
+      console.log('Sending message:', chatMessage);
       setChatMessage('');
-      // Handle sending chat message
     }
   };
 
@@ -73,6 +108,53 @@ const TicketDetail = () => {
     }
   };
 
+  const formatApprovalSteps = () => {
+    if (!ticketDetail?.list_approval) return [];
+    
+    return ticketDetail.list_approval.map((approver, index) => ({
+      id: `${approver.approver_id}-${index}`,
+      name: approver.approver_name,
+      status: approver.approval_status === 1 ? 'approved' as const : 
+              approver.approval_status === 2 ? 'rejected' as const : 
+              approver.approval_order === ticketDetail.current_step ? 'pending' as const :
+              'waiting' as const,
+      approver: approver.approver_name
+    }));
+  };
+
+  if (isLoadingDetail) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground">Loading ticket details...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (detailError || !ticketDetail) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center space-y-4">
+            <X className="h-12 w-12 text-destructive mx-auto" />
+            <h2 className="text-xl font-semibold">Failed to Load Ticket</h2>
+            <p className="text-muted-foreground">{detailError || 'Ticket not found'}</p>
+            <Button onClick={() => navigate('/task-list')} variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Tasks
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const approvalSteps = formatApprovalSteps();
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -84,19 +166,28 @@ const TicketDetail = () => {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{ticket.id}</h1>
-              <p className="text-muted-foreground">{ticket.type}</p>
+              <h1 className="text-2xl font-bold text-foreground">#{ticketDetail.ticket_id}</h1>
+              <p className="text-muted-foreground">{ticketDetail.service_name}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button onClick={handleApprove} className="bg-primary hover:bg-primary/90">
-              <CheckSquare className="w-4 h-4 mr-2" />
+            <Button 
+              onClick={handleApprove} 
+              className="bg-primary hover:bg-primary/90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CheckSquare className="w-4 h-4 mr-2" />
+              )}
               Approve
             </Button>
             <Button 
               variant="outline" 
               onClick={() => setIsRejectModalOpen(true)}
               className="text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50"
+              disabled={isSubmitting}
             >
               <X className="w-4 h-4 mr-2" />
               Reject
@@ -118,81 +209,72 @@ const TicketDetail = () => {
                     <User className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">Requester</p>
-                      <p className="font-medium">{ticket.requester}</p>
+                      <p className="font-medium">{ticketDetail.created_by_name || 'Unknown'}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">Created Date</p>
-                      <p className="font-medium">{ticket.created}</p>
+                      <p className="font-medium">{new Date(ticketDetail.creation_date).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Department</p>
-                    <p className="font-medium">{ticket.department}</p>
+                    <p className="font-medium">{ticketDetail.team_name || 'Unknown'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Priority</p>
-                    <Badge className={getPriorityColor(ticket.priority)}>
-                      {ticket.priority}
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <Badge style={{ backgroundColor: ticketDetail.color, color: 'white' }}>
+                      {ticketDetail.status}
                     </Badge>
                   </div>
                 </div>
                 
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Description</p>
-                  <p className="text-foreground bg-muted/50 p-3 rounded-md">{ticket.description}</p>
-                </div>
+                {ticketDetail.reason && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Description</p>
+                    <p className="text-foreground bg-muted/50 p-3 rounded-md">{ticketDetail.reason}</p>
+                  </div>
+                )}
+
+                {/* Custom Form Data */}
+                {ticketDetail.custom_columns && Object.keys(ticketDetail.custom_columns).length > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Form Data</p>
+                    <div className="bg-muted/50 p-3 rounded-md space-y-2">
+                      {Object.entries(ticketDetail.custom_columns).map(([key, value]) => (
+                        <div key={key} className="flex justify-between">
+                          <span className="font-medium">{key}:</span>
+                          <span>{String(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Items Requested */}
-            <Card className="bg-card shadow-sm border">
-              <CardHeader className="bg-muted/50 border-b">
-                <CardTitle className="text-lg flex items-center space-x-2">
-                  <DollarSign className="w-5 h-5" />
-                  <span>Items Requested</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-muted/50 border-b">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Item Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Quantity</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Unit</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Unit Price</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {ticket.items.map((item, index) => (
-                        <tr key={index} className="hover:bg-muted/30">
-                          <td className="px-6 py-4 font-medium text-foreground">{item.name}</td>
-                          <td className="px-6 py-4 text-muted-foreground">{item.quantity}</td>
-                          <td className="px-6 py-4 text-muted-foreground">{item.unit}</td>
-                          <td className="px-6 py-4 text-muted-foreground">{item.price}</td>
-                          <td className="px-6 py-4 font-medium text-foreground">
-                            {new Intl.NumberFormat('id-ID', { 
-                              style: 'currency', 
-                              currency: 'IDR' 
-                            }).format(item.quantity * parseInt(item.price.replace(/[^\d]/g, '')))}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-muted/50">
-                      <tr>
-                        <td colSpan={4} className="px-6 py-4 font-bold text-right">Total Amount:</td>
-                        <td className="px-6 py-4 font-bold text-lg">{ticket.amount}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Files Attached */}
+            {ticketDetail.files && ticketDetail.files.length > 0 && (
+              <Card className="bg-card shadow-sm border">
+                <CardHeader className="bg-muted/50 border-b">
+                  <CardTitle className="text-lg">Attached Files</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-2">
+                    {ticketDetail.files.map((file) => (
+                      <div key={file.upload_id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                        <span className="font-medium">{file.filename}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -203,7 +285,11 @@ const TicketDetail = () => {
                 <CardTitle className="text-lg">Approval Progress</CardTitle>
               </CardHeader>
               <CardContent>
-                <ProgressionBar steps={ticket.approvalSteps} showDetails={true} className="flex-col space-y-4 space-x-0" />
+                {approvalSteps.length > 0 ? (
+                  <ProgressionBar steps={approvalSteps} showDetails={true} className="flex-col space-y-4 space-x-0" />
+                ) : (
+                  <p className="text-muted-foreground">No approval workflow</p>
+                )}
               </CardContent>
             </Card>
 
@@ -214,19 +300,23 @@ const TicketDetail = () => {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="h-64 overflow-y-auto p-4 space-y-3">
-                  {chatMessages.map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.isRequester ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
-                        msg.isRequester 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-muted text-foreground'
-                      }`}>
-                        <p className="text-xs font-medium mb-1">{msg.user}</p>
-                        <p className="text-sm">{msg.message}</p>
-                        <p className="text-xs opacity-75 mt-1">{msg.time}</p>
+                  {ticketDetail.chat_messages && ticketDetail.chat_messages.length > 0 ? (
+                    ticketDetail.chat_messages.map((msg) => (
+                      <div key={msg.id} className={`flex ${msg.isRequester ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
+                          msg.isRequester 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-muted text-foreground'
+                        }`}>
+                          <p className="text-xs font-medium mb-1">{msg.user}</p>
+                          <p className="text-sm">{msg.message}</p>
+                          <p className="text-xs opacity-75 mt-1">{msg.time}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-center">No messages yet</p>
+                  )}
                 </div>
                 <div className="border-t p-4">
                   <div className="flex space-x-2">
@@ -252,7 +342,7 @@ const TicketDetail = () => {
         isOpen={isRejectModalOpen}
         onClose={() => setIsRejectModalOpen(false)}
         onReject={handleReject}
-        taskId={ticket.id}
+        taskId={ticketDetail.ticket_id.toString()}
       />
     </AppLayout>
   );

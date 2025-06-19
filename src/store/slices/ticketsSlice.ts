@@ -30,6 +30,9 @@ const initialState: TicketsState = {
   },
   taskCount: 0,
   isSubmitting: false,
+  ticketDetail: null,
+  isLoadingDetail: false,
+  detailError: null,
 };
 
 // Async thunks for API calls
@@ -100,6 +103,30 @@ export const fetchTaskList = createAsyncThunk(
       return { ...response.data, currentPage: page };
     } catch (error: any) {
       console.error('Task List API Error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const fetchTicketDetail = createAsyncThunk(
+  'tickets/fetchTicketDetail',
+  async (ticketId: string, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}/hots_ticket/detail/${ticketId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        },
+      });
+      
+      console.log('Ticket Detail API Response:', response.data);
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to fetch ticket detail');
+      }
+      
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Ticket Detail API Error:', error);
       return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
     }
   }
@@ -243,9 +270,14 @@ const ticketsSlice = createSlice({
       state.myTickets.error = null;
       state.allTickets.error = null;
       state.taskList.error = null;
+      state.detailError = null;
     },
     setCurrentPage: (state, action: PayloadAction<{ type: 'myTickets' | 'allTickets' | 'taskList', page: number }>) => {
       state[action.payload.type].currentPage = action.payload.page;
+    },
+    clearTicketDetail: (state) => {
+      state.ticketDetail = null;
+      state.detailError = null;
     },
   },
   extraReducers: (builder) => {
@@ -301,6 +333,20 @@ const ticketsSlice = createSlice({
         state.taskList.error = action.payload as string || 'Failed to fetch task list';
         state.taskList.data = [];
       })
+      // Ticket Detail
+      .addCase(fetchTicketDetail.pending, (state) => {
+        state.isLoadingDetail = true;
+        state.detailError = null;
+      })
+      .addCase(fetchTicketDetail.fulfilled, (state, action) => {
+        state.isLoadingDetail = false;
+        state.ticketDetail = action.payload;
+      })
+      .addCase(fetchTicketDetail.rejected, (state, action) => {
+        state.isLoadingDetail = false;
+        state.detailError = action.payload as string || 'Failed to fetch ticket detail';
+        state.ticketDetail = null;
+      })
       // Task Count
       .addCase(fetchTaskCount.pending, (state) => {
         // Optional: could add loading state
@@ -317,12 +363,11 @@ const ticketsSlice = createSlice({
       })
       .addCase(approveTicket.fulfilled, (state, action) => {
         state.isSubmitting = false;
-        // Update the task list to reflect the approval
         const ticket = state.taskList.data.find(t => t.ticket_id.toString() === action.payload.ticketId);
         if (ticket && ticket.list_approval) {
           const approval = ticket.list_approval.find(a => a.approval_order === action.payload.approvalOrder);
           if (approval) {
-            approval.approval_status = 1; // Approved
+            approval.approval_status = 1;
           }
         }
       })
@@ -336,12 +381,11 @@ const ticketsSlice = createSlice({
       })
       .addCase(rejectTicket.fulfilled, (state, action) => {
         state.isSubmitting = false;
-        // Update the task list to reflect the rejection
         const ticket = state.taskList.data.find(t => t.ticket_id.toString() === action.payload.ticketId);
         if (ticket && ticket.list_approval) {
           const approval = ticket.list_approval.find(a => a.approval_order === action.payload.approvalOrder);
           if (approval) {
-            approval.approval_status = 2; // Rejected
+            approval.approval_status = 2;
           }
         }
       })
@@ -372,5 +416,5 @@ const ticketsSlice = createSlice({
   },
 });
 
-export const { clearErrors, setCurrentPage } = ticketsSlice.actions;
+export const { clearErrors, setCurrentPage, clearTicketDetail } = ticketsSlice.actions;
 export default ticketsSlice.reducer;

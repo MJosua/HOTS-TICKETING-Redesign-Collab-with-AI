@@ -23,6 +23,35 @@ export interface Ticket {
   list_approval: Approver[] | null;
   team_leader_id: number | null;
   created_by_name?: string;
+  current_step?: number;
+  custom_columns?: Record<string, any>;
+  files?: Array<{
+    upload_id: number;
+    filename: string;
+    path: string;
+    size: number;
+  }>;
+}
+
+export interface TicketDetail extends Ticket {
+  description?: string;
+  priority?: string;
+  department?: string;
+  requester?: string;
+  items?: Array<{
+    name: string;
+    quantity: number;
+    unit: string;
+    price: string;
+  }>;
+  amount?: string;
+  chat_messages?: Array<{
+    id: number;
+    user: string;
+    message: string;
+    time: string;
+    isRequester: boolean;
+  }>;
 }
 
 export interface TicketsResponse {
@@ -88,4 +117,7 @@ export interface TicketsState {
   };
   taskCount: number;
   isSubmitting: boolean;
+  ticketDetail: TicketDetail | null;
+  isLoadingDetail: boolean;
+  detailError: string | null;
 }
