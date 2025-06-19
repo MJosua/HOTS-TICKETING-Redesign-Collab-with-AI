@@ -50,6 +50,17 @@ export interface UploadFilesResponse {
   }>;
 }
 
+export interface TaskCountResponse {
+  success: boolean;
+  message: string;
+  count: number;
+}
+
+export interface ApprovalActionResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface TicketsState {
   myTickets: {
     data: Ticket[];
@@ -75,4 +86,6 @@ export interface TicketsState {
     isLoading: boolean;
     error: string | null;
   };
+  taskCount: number;
+  isSubmitting: boolean;
 }

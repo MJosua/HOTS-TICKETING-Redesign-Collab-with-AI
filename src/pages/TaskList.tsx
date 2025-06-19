@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import ProgressionBar from "@/components/ui/ProgressionBar";
+import TaskApprovalActions from "@/components/ui/TaskApprovalActions";
 import { highlightSearchTerm, searchInObject } from "@/utils/searchUtils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Grid, List, RefreshCw } from 'lucide-react';
+import { Grid, List, RefreshCw, Clock } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchTaskList } from '@/store/slices/ticketsSlice';
+import { fetchTaskList, fetchTaskCount } from '@/store/slices/ticketsSlice';
 import { convertTicketToDisplayFormat, getStatusColor, getPriorityColor } from '@/utils/ticketUtils';
 import { TicketPagination } from '@/components/ui/TicketPagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -20,14 +22,15 @@ const TaskList = () => {
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
 
   const dispatch = useAppDispatch();
-  const { taskList } = useAppSelector((state) => state.tickets);
+  const { taskList, taskCount } = useAppSelector((state) => state.tickets);
   const navigate = useNavigate();
 
   useEffect(() => {
     dispatch(fetchTaskList(1));
+    dispatch(fetchTaskCount());
   }, [dispatch]);
 
   const tasks = taskList.data.map(convertTicketToDisplayFormat);
@@ -50,6 +53,7 @@ const TaskList = () => {
 
   const handleRefresh = () => {
     dispatch(fetchTaskList(taskList.currentPage));
+    dispatch(fetchTaskCount());
   };
 
   const renderHighlightedText = (text: string) => {
@@ -60,6 +64,28 @@ const TaskList = () => {
         }}
       />
     );
+  };
+
+  // Helper function to check if current user can approve a specific step
+  const canUserApprove = (ticket: any, approvalOrder: number): boolean => {
+    if (!ticket.list_approval) return false;
+    
+    const currentUserApproval = ticket.list_approval.find((approval: any) => 
+      approval.approval_order === approvalOrder && approval.approval_status === 0
+    );
+    
+    return !!currentUserApproval;
+  };
+
+  // Get the current user's pending approval order for a ticket
+  const getUserApprovalOrder = (ticket: any): number | null => {
+    if (!ticket.list_approval) return null;
+    
+    const userApproval = ticket.list_approval.find((approval: any) => 
+      approval.approval_status === 0
+    );
+    
+    return userApproval ? userApproval.approval_order : null;
   };
 
   const TableView = () => (
@@ -75,7 +101,7 @@ const TaskList = () => {
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Department</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Priority</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Progress</TableHead>
-                <TableHead className="text-xs font-medium text-muted-foreground uppercase">Amount</TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground uppercase">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -105,8 +131,10 @@ const TaskList = () => {
                   <TableCell>
                     <ProgressionBar steps={task.approvalSteps} />
                   </TableCell>
-                  <TableCell className="font-medium text-foreground">
-                    {renderHighlightedText(task.amount)}
+                  <TableCell>
+                    <Badge className={`${getStatusColor(task.status)} border`}>
+                      {renderHighlightedText(task.status)}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))}
@@ -118,52 +146,76 @@ const TaskList = () => {
   );
 
   const CardView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {filteredTasks.map((task) => (
-        <Card 
-          key={task.id} 
-          className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => handleRowClick(task.id)}
-        >
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-medium text-primary">
-                {renderHighlightedText(task.id)}
-              </CardTitle>
-              <Badge className={`${getPriorityColor(task.priority)} border text-xs`}>
-                {renderHighlightedText(task.priority)}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                {renderHighlightedText(task.type)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Requester: {renderHighlightedText(task.requester)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Department: {renderHighlightedText(task.department)}
-              </p>
-            </div>
-            
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Progress</p>
-              <ProgressionBar steps={task.approvalSteps} />
-            </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {filteredTasks.map((task) => {
+        const originalTicket = taskList.data.find(t => t.ticket_id.toString() === task.id);
+        const userApprovalOrder = getUserApprovalOrder(originalTicket);
+        const canApprove = userApprovalOrder !== null;
+        
+        return (
+          <div key={task.id} className="space-y-4">
+            <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle 
+                    className="text-lg font-medium text-primary cursor-pointer hover:underline"
+                    onClick={() => handleRowClick(task.id)}
+                  >
+                    {renderHighlightedText(task.id)}
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    {canApprove && (
+                      <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Action Required
+                      </Badge>
+                    )}
+                    <Badge className={`${getPriorityColor(task.priority)} border text-xs`}>
+                      {renderHighlightedText(task.priority)}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {renderHighlightedText(task.type)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Requester: {renderHighlightedText(task.requester)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Department: {renderHighlightedText(task.department)}
+                  </p>
+                </div>
+                
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Approval Progress</p>
+                  <ProgressionBar steps={task.approvalSteps} showDetails={true} />
+                </div>
 
-            <div className="flex items-center justify-between">
-              <Badge className={`${getStatusColor(task.status)} border text-xs`}>
-                {renderHighlightedText(task.status)}
-              </Badge>
-              <span className="text-sm font-medium text-foreground">
-                {renderHighlightedText(task.amount)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+                <div className="flex items-center justify-between">
+                  <Badge className={`${getStatusColor(task.status)} border text-xs`}>
+                    {renderHighlightedText(task.status)}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(originalTicket?.creation_date || '').toLocaleDateString()}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {canApprove && userApprovalOrder && (
+              <TaskApprovalActions
+                ticketId={task.id}
+                approvalOrder={userApprovalOrder}
+                canApprove={canApprove}
+                currentStatus={0}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -196,6 +248,11 @@ const TaskList = () => {
             <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
               {taskList.totalData} Tasks
             </Badge>
+            {taskCount > 0 && (
+              <Badge variant="destructive" className="px-3 py-1">
+                {taskCount} Pending Actions
+              </Badge>
+            )}
           </div>
         </div>
 

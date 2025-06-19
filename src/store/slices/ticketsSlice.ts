@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
@@ -29,6 +28,8 @@ const initialState: TicketsState = {
     isLoading: false,
     error: null,
   },
+  taskCount: 0,
+  isSubmitting: false,
 };
 
 // Async thunks for API calls
@@ -154,6 +155,86 @@ export const uploadFiles = createAsyncThunk(
   }
 );
 
+export const fetchTaskCount = createAsyncThunk(
+  'tickets/fetchTaskCount',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}/hots_ticket/task_count`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+        },
+      });
+      
+      console.log('Task Count API Response:', response.data);
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to fetch task count');
+      }
+      
+      return response.data.count || 0;
+    } catch (error: any) {
+      console.error('Task Count API Error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const approveTicket = createAsyncThunk(
+  'tickets/approveTicket',
+  async ({ ticketId, approvalOrder, comment }: { ticketId: string, approvalOrder: number, comment?: string }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_URL}/hots_ticket/approve/${ticketId}`, {
+        approval_order: approvalOrder,
+        comment: comment || ''
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('Approve Ticket API Response:', response.data);
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to approve ticket');
+      }
+      
+      return { ticketId, approvalOrder };
+    } catch (error: any) {
+      console.error('Approve Ticket API Error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const rejectTicket = createAsyncThunk(
+  'tickets/rejectTicket',
+  async ({ ticketId, approvalOrder, rejectionRemark }: { ticketId: string, approvalOrder: number, rejectionRemark: string }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_URL}/hots_ticket/reject/${ticketId}`, {
+        approval_order: approvalOrder,
+        rejection_remark: rejectionRemark
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('Reject Ticket API Response:', response.data);
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to reject ticket');
+      }
+      
+      return { ticketId, approvalOrder };
+    } catch (error: any) {
+      console.error('Reject Ticket API Error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
 const ticketsSlice = createSlice({
   name: 'tickets',
   initialState,
@@ -219,6 +300,54 @@ const ticketsSlice = createSlice({
         state.taskList.isLoading = false;
         state.taskList.error = action.payload as string || 'Failed to fetch task list';
         state.taskList.data = [];
+      })
+      // Task Count
+      .addCase(fetchTaskCount.pending, (state) => {
+        // Optional: could add loading state
+      })
+      .addCase(fetchTaskCount.fulfilled, (state, action) => {
+        state.taskCount = action.payload;
+      })
+      .addCase(fetchTaskCount.rejected, (state, action) => {
+        console.error('Failed to fetch task count:', action.payload);
+      })
+      // Approve Ticket
+      .addCase(approveTicket.pending, (state) => {
+        state.isSubmitting = true;
+      })
+      .addCase(approveTicket.fulfilled, (state, action) => {
+        state.isSubmitting = false;
+        // Update the task list to reflect the approval
+        const ticket = state.taskList.data.find(t => t.ticket_id.toString() === action.payload.ticketId);
+        if (ticket && ticket.list_approval) {
+          const approval = ticket.list_approval.find(a => a.approval_order === action.payload.approvalOrder);
+          if (approval) {
+            approval.approval_status = 1; // Approved
+          }
+        }
+      })
+      .addCase(approveTicket.rejected, (state, action) => {
+        state.isSubmitting = false;
+        console.error('Failed to approve ticket:', action.payload);
+      })
+      // Reject Ticket
+      .addCase(rejectTicket.pending, (state) => {
+        state.isSubmitting = true;
+      })
+      .addCase(rejectTicket.fulfilled, (state, action) => {
+        state.isSubmitting = false;
+        // Update the task list to reflect the rejection
+        const ticket = state.taskList.data.find(t => t.ticket_id.toString() === action.payload.ticketId);
+        if (ticket && ticket.list_approval) {
+          const approval = ticket.list_approval.find(a => a.approval_order === action.payload.approvalOrder);
+          if (approval) {
+            approval.approval_status = 2; // Rejected
+          }
+        }
+      })
+      .addCase(rejectTicket.rejected, (state, action) => {
+        state.isSubmitting = false;
+        console.error('Failed to reject ticket:', action.payload);
       })
       // Create Ticket
       .addCase(createTicket.pending, (state) => {
