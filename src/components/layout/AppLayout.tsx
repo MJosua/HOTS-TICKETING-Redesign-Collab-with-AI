@@ -23,30 +23,7 @@ import ProfileModal from "@/components/modals/ProfileModal";
 import { useAppDispatch } from "@/hooks/useAppDispatch";
 import { logoutUser } from "@/store/slices/authSlice";
 import { useToast } from "@/hooks/use-toast";
-
-const menuItems = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: Home,
-  },
-  {
-    title: "Service Catalog",
-    url: "/service-catalog",
-    icon: List,
-  },
-  {
-    title: "My Tickets",
-    url: "/my-tickets",
-    icon: FileText,
-  },
-  {
-    title: "Task List",
-    url: "/task-list",
-    icon: CheckSquare,
-    badge: "3"
-  },
-];
+import { useAppSelector } from '@/hooks/useAppSelector';
 
 const adminItems = [
   {
@@ -79,6 +56,34 @@ interface AppLayoutProps {
 }
 
 export function AppSidebar() {
+
+  const { taskCount } = useAppSelector(state => state.tickets);
+
+  const menuItems = [
+    {
+      title: "Dashboard",
+      url: "/",
+      icon: Home,
+    },
+    {
+      title: "Service Catalog",
+      url: "/service-catalog",
+      icon: List,
+    },
+    {
+      title: "My Tickets",
+      url: "/my-tickets",
+      icon: FileText,
+    },
+    {
+      title: "Task List",
+      url: "/task-list",
+      icon: CheckSquare,
+      badge: taskCount
+    },
+  ];
+  console.log("taskCount", taskCount)
+
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -94,170 +99,6 @@ export function AppSidebar() {
       navigate('/login');
     });
   };
-
-// This is example data of menu list
-// [
-//   {
-//       "service_id": 1,
-//       "category_id": 1,
-//       "service_name": "PC/Notebook Request",
-//       "service_description": "Request a new or replacement computer",
-//       "approval_level": 2,
-//       "image_url": "itassetrequest.png",
-//       "nav_link": "asset-request",
-//       "active": 1,
-//       "team_id": 2
-//   },
-//   {
-//       "service_id": 2,
-//       "category_id": 5,
-//       "service_name": "Marketing Activities",
-//       "service_description": "Detail records of marketing activity by country",
-//       "approval_level": 0,
-//       "image_url": "marketingevent.png",
-//       "nav_link": "event-activity",
-//       "active": 0,
-//       "team_id": null
-//   },
-//   {
-//       "service_id": 3,
-//       "category_id": 4,
-//       "service_name": "Business Trip Form",
-//       "service_description": "Request approval for \na business trip",
-//       "approval_level": 3,
-//       "image_url": "bta.png",
-//       "nav_link": "bta",
-//       "active": 0,
-//       "team_id": null
-//   },
-//   {
-//       "service_id": 4,
-//       "category_id": 4,
-//       "service_name": "Travel Expense Settlement",
-//       "service_description": "Submit post-trip expenses for reimbursement.",
-//       "approval_level": 3,
-//       "image_url": "travelexpense.png",
-//       "nav_link": "image.jpg",
-//       "active": 0,
-//       "team_id": null
-//   },
-//   {
-//       "service_id": 5,
-//       "category_id": 4,
-//       "service_name": "New Employee Request",
-//       "service_description": "Request new employee \nresource",
-//       "approval_level": 0,
-//       "image_url": "newemployeerequest.png",
-//       "nav_link": "manpower-request",
-//       "active": 0,
-//       "team_id": null
-//   },
-//   {
-//       "service_id": 6,
-//       "category_id": 4,
-//       "service_name": "Sample Request Form",
-//       "service_description": "Request product samples \nfor marketing or testing",
-//       "approval_level": 3,
-//       "image_url": "srf.png",
-//       "nav_link": "sample-request-form",
-//       "active": 0,
-//       "team_id": 6
-//   },
-//   {
-//       "service_id": 7,
-//       "category_id": 3,
-//       "service_name": "IT Technical Support",
-//       "service_description": "Get help with IT issues from computer to software errors",
-//       "approval_level": 1,
-//       "image_url": "ittechnicalsupport.png",
-//       "nav_link": "it-support",
-//       "active": 1,
-//       "team_id": 1
-//   },
-//   {
-//       "service_id": 8,
-//       "category_id": 1,
-//       "service_name": "Idea Bank",
-//       "service_description": "Submit and share your  suggestions to enhance our company processes",
-//       "approval_level": 0,
-//       "image_url": "srf.png",
-//       "nav_link": "idea-bank",
-//       "active": 1,
-//       "team_id": 8
-//   },
-//   {
-//       "service_id": 9,
-//       "category_id": 3,
-//       "service_name": "Data Revision and Update Request",
-//       "service_description": "Request updates or revisions to system data for accuracy and reliability",
-//       "approval_level": 2,
-//       "image_url": "datarevision.png",
-//       "nav_link": "data-update",
-//       "active": 1,
-//       "team_id": 9
-//   },
-//   {
-//       "service_id": 10,
-//       "category_id": 4,
-//       "service_name": "Payment Advance Request",
-//       "service_description": "Create and submit requests for payment advances through ticketing system",
-//       "approval_level": 3,
-//       "image_url": "paymentadvancerequest.png",
-//       "nav_link": "par",
-//       "active": 1,
-//       "team_id": 10
-//   },
-//   {
-//       "service_id": 11,
-//       "category_id": 4,
-//       "service_name": "Pricing Structure",
-//       "service_description": "Pricing Structure",
-//       "approval_level": 3,
-//       "image_url": "paymentadvancerequest.png",
-//       "nav_link": "pricing-structure",
-//       "active": 1,
-//       "team_id": 11
-//   }
-// ]
-
-// This is example data of Category
-//   [
-//     {
-//         "category_id": 1,
-//         "category_name": "Hardware",
-//         "description": null,
-//         "creation_date": null,
-//         "finished_date": null
-//     },
-//     {
-//         "category_id": 2,
-//         "category_name": "Software",
-//         "description": null,
-//         "creation_date": null,
-//         "finished_date": null
-//     },
-//     {
-//         "category_id": 3,
-//         "category_name": "Support",
-//         "description": null,
-//         "creation_date": null,
-//         "finished_date": null
-//     },
-//     {
-//         "category_id": 4,
-//         "category_name": "HRGA",
-//         "description": null,
-//         "creation_date": null,
-//         "finished_date": null
-//     },
-//     {
-//         "category_id": 5,
-//         "category_name": "Marketing",
-//         "description": null,
-//         "creation_date": null,
-//         "finished_date": null
-//     }
-// ]
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -376,7 +217,7 @@ export function AppSidebar() {
 export function AppLayout({ children, searchValue, onSearchChange, searchPlaceholder = "Search..." }: AppLayoutProps) {
 
   const location = useLocation();
-  const hiddenSearchRoutes = ['/','/login', '/admin/settings', '/admin/service-catalog', '/admin/service-catalog/create', '/admin/service-catalog/create'] ;
+  const hiddenSearchRoutes = ['/', '/login', '/admin/settings', '/admin/service-catalog', '/admin/service-catalog/create', '/admin/service-catalog/create'];
   const shouldHideSearch = hiddenSearchRoutes.includes(location.pathname);
 
   return (
