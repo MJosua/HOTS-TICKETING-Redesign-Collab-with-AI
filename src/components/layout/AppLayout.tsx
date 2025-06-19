@@ -112,6 +112,7 @@ export function AppSidebar() {
 
       if (response.data.success) {
         setUserProfile(response.data.data);
+        console.log("userProfile", response.data.data);
       }
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
@@ -235,7 +236,6 @@ export function AppSidebar() {
             </p>
             <p className="text-xs text-sidebar-foreground/70 truncate">
               {userProfile?.team_name || 'Loading...'}
-              {console.log("userProfile", userProfile)}
             </p>
             {userProfile?.superior_name && (
               <p className="text-xs text-sidebar-foreground/60 truncate">
