@@ -1,108 +1,80 @@
 
 import { FormField } from '@/types/formTypes';
 
-// Constants for form field mapping
-export const MAX_FORM_FIELDS = 15;
-export const CUSTOM_COLUMN_PREFIX = 'cstm_col';
-export const LABEL_COLUMN_PREFIX = 'lbl_col';
-
-// Interface for mapped form data
-export interface MappedFormData {
-  customColumns: { [key: string]: any };
-  labelColumns: { [key: string]: string };
-  ticketMetadata: {
-    service_id: number;
-    status_id?: number;
-    priority?: string;
-    category?: string;
-  };
+export interface TicketColumnMapping {
+  [key: string]: any; // cstm_col1, cstm_col2, etc.
 }
 
-// Map form fields to database columns
-export const mapFormFieldsToColumns = (
-  formData: { [key: string]: any },
-  formFields: FormField[],
-  serviceId: number
-): MappedFormData => {
-  const customColumns: { [key: string]: any } = {};
-  const labelColumns: { [key: string]: string } = {};
-  
-  // Map form fields to cstm_col and lbl_col
-  formFields.slice(0, MAX_FORM_FIELDS).forEach((field, index) => {
+export interface TicketLabelMapping {
+  [key: string]: string; // lbl_col1, lbl_col2, etc.
+}
+
+export interface MappedTicketData extends TicketColumnMapping, TicketLabelMapping {}
+
+/**
+ * Maps form data to ticket database column structure
+ * @param formData - Raw form submission data
+ * @param fields - Form field definitions
+ * @returns Object with cstm_colX and lbl_colX properties
+ */
+export const mapFormDataToTicketColumns = (
+  formData: Record<string, any>,
+  fields: FormField[]
+): MappedTicketData => {
+  const mappedData: MappedTicketData = {};
+
+  fields.forEach((field, index) => {
     const columnIndex = index + 1;
-    const customColKey = `${CUSTOM_COLUMN_PREFIX}${columnIndex}`;
-    const labelColKey = `${LABEL_COLUMN_PREFIX}${columnIndex}`;
+    const cstmColKey = `cstm_col${columnIndex}`;
+    const lblColKey = `lbl_col${columnIndex}`;
     
-    // Map field value
-    if (formData[field.name] !== undefined) {
-      customColumns[customColKey] = formData[field.name];
-    }
+    // Get the field value from form data
+    const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const fieldValue = formData[fieldKey];
     
-    // Map field label
-    labelColumns[labelColKey] = field.label;
+    // Map the data
+    mappedData[cstmColKey] = fieldValue || '';
+    mappedData[lblColKey] = field.label;
+    
+    console.log(`Mapping field ${index}: ${field.label} -> ${cstmColKey}:`, fieldValue);
   });
-  
-  return {
-    customColumns,
-    labelColumns,
-    ticketMetadata: {
-      service_id: serviceId,
-      status_id: 1, // Default to pending/new status
-      priority: formData.priority || 'medium',
-      category: formData.category || 'general'
-    }
-  };
+
+  return mappedData;
 };
 
-// Reverse mapping: convert database columns back to form data
-export const mapColumnsToFormFields = (
-  ticketDetail: { [key: string]: any },
-  formFields: FormField[]
-): { [key: string]: any } => {
-  const formData: { [key: string]: any } = {};
-  
-  formFields.forEach((field, index) => {
+/**
+ * Converts ticket column data back to form data structure
+ * @param ticketData - Data with cstm_colX and lbl_colX structure
+ * @param fields - Form field definitions
+ * @returns Form data object
+ */
+export const mapTicketColumnsToFormData = (
+  ticketData: MappedTicketData,
+  fields: FormField[]
+): Record<string, any> => {
+  const formData: Record<string, any> = {};
+
+  fields.forEach((field, index) => {
     const columnIndex = index + 1;
-    const customColKey = `${CUSTOM_COLUMN_PREFIX}${columnIndex}`;
+    const cstmColKey = `cstm_col${columnIndex}`;
     
-    if (ticketDetail[customColKey] !== undefined && ticketDetail[customColKey] !== null) {
-      formData[field.name] = ticketDetail[customColKey];
-    }
+    const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    formData[fieldKey] = ticketData[cstmColKey] || '';
   });
-  
+
   return formData;
 };
 
-// Get field labels from database
-export const getFieldLabelsFromColumns = (
-  ticketDetail: { [key: string]: any },
-  maxFields: number = MAX_FORM_FIELDS
-): { [key: string]: string } => {
-  const labels: { [key: string]: string } = {};
-  
-  for (let i = 1; i <= maxFields; i++) {
-    const labelColKey = `${LABEL_COLUMN_PREFIX}${i}`;
-    if (ticketDetail[labelColKey]) {
-      labels[`field_${i}`] = ticketDetail[labelColKey];
-    }
-  }
-  
-  return labels;
+/**
+ * Gets the maximum number of supported form fields (based on database columns)
+ */
+export const getMaxFormFields = (): number => {
+  return 15; // t_ticket_detail supports cstm_col1 through cstm_col15
 };
 
-// Validate form field count
+/**
+ * Validates that form doesn't exceed maximum field limit
+ */
 export const validateFormFieldCount = (fields: FormField[]): boolean => {
-  return fields.length <= MAX_FORM_FIELDS;
-};
-
-// Generate column mapping for API requests
-export const generateColumnMapping = (formFields: FormField[]) => {
-  const mapping: { [fieldName: string]: string } = {};
-  
-  formFields.slice(0, MAX_FORM_FIELDS).forEach((field, index) => {
-    const columnIndex = index + 1;
-    mapping[field.name] = `${CUSTOM_COLUMN_PREFIX}${columnIndex}`;
-  });
-  
-  return mapping;
+  return fields.length <= getMaxFormFields();
 };

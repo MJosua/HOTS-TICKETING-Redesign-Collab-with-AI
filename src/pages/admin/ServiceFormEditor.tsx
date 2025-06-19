@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
+import { getMaxFormFields, validateFormFieldCount } from '@/utils/formFieldMapping';
 
 const ServiceFormEditor = () => {
   const { id } = useParams();
@@ -115,8 +115,20 @@ const ServiceFormEditor = () => {
   const handleSave = async () => {
     setIsLoading(true);
 
-    // console.log('Current config before saving:', config);
-    // console.log('Selected workflow group:', selectedWorkflowGroup);
+    // Validate field count before saving
+    if (!validateFormFieldCount(config.fields || [])) {
+      toast({
+        title: "Error",
+        description: `Form cannot have more than ${getMaxFormFields()} fields due to database limitations`,
+        variant: "destructive",
+        duration: 5000
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    console.log('Current config before saving:', config);
+    console.log('Selected workflow group:', selectedWorkflowGroup);
 
     try {
       // Find category_id from category name
@@ -138,7 +150,7 @@ const ServiceFormEditor = () => {
         m_workflow_groups: selectedWorkflowGroup // Use selected workflow group
       };
 
-      // console.log('Saving payload:', payload);
+      console.log('Saving payload:', payload);
 
       const response = await axios.post(`${API_URL}/hots_settings/insertupdate/service_catalog`, payload, {
         headers: {
@@ -146,7 +158,7 @@ const ServiceFormEditor = () => {
         }
       });
 
-      // console.log("SAVE SUCCESS:", response.data);
+      console.log("SAVE SUCCESS:", response.data);
 
       toast({
         title: "Success",
@@ -334,6 +346,29 @@ const ServiceFormEditor = () => {
             </Button>
           </div>
         </div>
+
+        {/* Field count warning */}
+        {config.fields && config.fields.length > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-800">
+                    <strong>Database Mapping:</strong> {config.fields.length} of {getMaxFormFields()} fields used
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Fields will be mapped to cstm_col1-{config.fields.length} and lbl_col1-{config.fields.length}
+                  </p>
+                </div>
+                {config.fields.length >= getMaxFormFields() && (
+                  <div className="text-red-600 text-sm font-medium">
+                    ⚠️ Maximum field limit reached
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Form Configuration */}

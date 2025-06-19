@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
+import { mapFormDataToTicketColumns } from '@/utils/formFieldMapping';
 
 interface DynamicFormProps {
   config: FormConfig;
@@ -20,8 +20,13 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit }) =>
   const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
 
   const handleSubmit = (data: any) => {
-    // console.log('Form submitted:', data);
-    onSubmit(data);
+    console.log('Raw form data:', data);
+    
+    // Map form data to cstm_col and lbl_col structure
+    const mappedData = mapFormDataToTicketColumns(data, config.fields || []);
+    console.log('Mapped ticket data:', mappedData);
+    
+    onSubmit(mappedData);
   };
 
   const shouldShowField = (field: FormField, values: Record<string, any>) => {

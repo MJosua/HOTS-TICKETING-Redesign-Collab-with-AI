@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { FormField } from '@/types/formTypes';
+import { getMaxFormFields } from '@/utils/formFieldMapping';
 
 interface DynamicFieldEditorProps {
   fields: FormField[];
@@ -24,6 +25,10 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
   };
 
   const addField = () => {
+    if (fields.length >= getMaxFormFields()) {
+      return; // Prevent adding more fields than supported
+    }
+    
     const newField: FormField = {
       label: 'New Field',
       name: 'new_field',
@@ -87,20 +92,32 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
 
     return (
       <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-        <h4 className="text-sm font-medium mb-3">Form Layout Preview</h4>
+        <h4 className="text-sm font-medium mb-3">Form Layout Preview & Database Mapping</h4>
         <div className="space-y-2">
           {rows.map((row, rowIndex) => (
             <div key={rowIndex} className="grid grid-cols-3 gap-2">
-              {row.map((field, fieldIndex) => (
-                <div
-                  key={fieldIndex}
-                  className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs font-medium text-center col-span-${field.columnSpan || 1}`}
-                >
-                  {field.label} ({field.columnSpan || 1} col)
-                </div>
-              ))}
+              {row.map((field, fieldIndex) => {
+                const globalFieldIndex = fields.indexOf(field);
+                const cstmCol = `cstm_col${globalFieldIndex + 1}`;
+                const lblCol = `lbl_col${globalFieldIndex + 1}`;
+                
+                return (
+                  <div
+                    key={fieldIndex}
+                    className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs col-span-${field.columnSpan || 1}`}
+                  >
+                    <div className="font-medium text-center">{field.label}</div>
+                    <div className="text-center text-blue-600 mt-1">
+                      {cstmCol} → {lblCol}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ))}
+        </div>
+        <div className="text-xs text-gray-600 mt-2">
+          Fields will be stored as cstm_colX (value) and lbl_colX (label) in the database
         </div>
       </div>
     );
@@ -115,9 +132,13 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button size="sm" onClick={addField}>
+          <Button 
+            size="sm" 
+            onClick={addField}
+            disabled={fields.length >= getMaxFormFields()}
+          >
             <Plus className="w-4 h-4 mr-2" />
-            Add Field
+            Add Field ({fields.length}/{getMaxFormFields()})
           </Button>
         </div>
       </div>
