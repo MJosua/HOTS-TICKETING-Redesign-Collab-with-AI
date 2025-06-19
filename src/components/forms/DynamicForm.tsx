@@ -108,7 +108,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         });
         
         // Navigate to tickets page or call the original onSubmit
-        navigate('/tickets');
+        navigate('/my-tickets');
       } else {
         throw new Error(result.message || 'Failed to create ticket');
       }

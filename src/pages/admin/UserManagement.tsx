@@ -598,7 +598,6 @@ const UserManagement = () => {
                     <TableRow>
                       <TableHead>Group Name</TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead>Categories</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -608,9 +607,7 @@ const UserManagement = () => {
                       <TableRow key={group.id}>
                         <TableCell className="font-medium">{highlightText(group.name, searchValue)}</TableCell>
                         <TableCell className="text-gray-600">{highlightText(group.description, searchValue)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{group.category_ids.length} categories</Badge>
-                        </TableCell>
+                        
                         <TableCell>
                           {getStatusBadge(group)}
                         </TableCell>
