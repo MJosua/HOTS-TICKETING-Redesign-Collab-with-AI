@@ -260,7 +260,8 @@ const TicketDetail = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Department</p>
-                    <p className="font-medium">{ticketDetail.department_name || ticketDetail.team_name || 'Unknown'}</p>
+
+                    <p className="font-medium">{ticketDetail.dept_name || ticketDetail.team_name || 'Unknown'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
