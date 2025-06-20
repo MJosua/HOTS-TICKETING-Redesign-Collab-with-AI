@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import RejectModal from "@/components/modals/RejectModal";
 import { FilePreview } from "@/components/ui/FilePreview";
+import TaskApprovalActions from "@/components/ui/TaskApprovalActions";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { fetchTicketDetail, approveTicket, rejectTicket, clearTicketDetail } from '@/store/slices/ticketsSlice';
 import { fetchGeneratedDocuments, fetchFunctionLogs } from '@/store/slices/customFunctionSlice';
