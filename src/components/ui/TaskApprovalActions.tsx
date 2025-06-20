@@ -40,7 +40,18 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
                         assignedToId && 
                         currentUserId === assignedToId;
 
+  console.log('=== TASK APPROVAL ACTIONS COMPONENT ===');
+  console.log('ticketId:', ticketId);
+  console.log('approvalOrder:', approvalOrder);
+  console.log('canApprove:', canApprove);
+  console.log('currentStatus:', currentStatus);
+  console.log('currentUserId:', currentUserId);
+  console.log('assignedToId:', assignedToId);
+  console.log('userCanApprove:', userCanApprove);
+  console.log('=== END TASK APPROVAL ACTIONS COMPONENT ===');
+
   if (!userCanApprove) {
+    console.log('TaskApprovalActions: Not rendering because userCanApprove is false');
     return null;
   }
 
@@ -186,7 +197,7 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
                   Confirm Rejection
                 </Button>
                 <Button
-                  onClick={() => setShowRejectBox(false)}
+                  onClick={() => setRejectionRemark('') || setShowRejectBox(false)}
                   disabled={isSubmitting}
                   variant="outline"
                   size="sm"
