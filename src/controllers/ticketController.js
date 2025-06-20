@@ -400,7 +400,7 @@ const ticketController = {
         }
     },
 
-    // Get Ticket Detail
+    // Get Ticket Detail - Enhanced with approval fields
     getTicketDetail: (req, res) => {
         let date = new Date();
         let timestamp = magenta + date.toLocaleDateString() + ' ' + date.toLocaleTimeString('id') + ' : ' + ' ';
@@ -416,27 +416,58 @@ const ticketController = {
 
         let queryGetTicketDetail = `
             SELECT 
-                t.ticket_id, t.creation_date, t.service_id, s.service_name, t.status_id,
-                ts.status_name as status, ts.color_hex as color, t.assigned_to, t.assigned_team,
-                tm.team_name, t.last_update, t.reason, t.fulfilment_comment,
+                t.ticket_id,
+                t.creation_date,
+                t.service_id,
+                s.service_name,
+                t.status_id,
+                ts.status_name as status,
+                ts.color_hex as color,
+                t.assigned_to,
+                t.assigned_team,
+                tm.team_name,
+                t.last_update,
+                t.reason,
+                t.fulfilment_comment,
+                t.current_step,
                 CONCAT(u.firstname, ' ', u.lastname) as created_by_name,
+                d.dept_name as department_name,
                 td.cstm_col1, td.lbl_col1, td.cstm_col2, td.lbl_col2, td.cstm_col3, td.lbl_col3,
                 td.cstm_col4, td.lbl_col4, td.cstm_col5, td.lbl_col5, td.cstm_col6, td.lbl_col6,
                 td.cstm_col7, td.lbl_col7, td.cstm_col8, td.lbl_col8, td.cstm_col9, td.lbl_col9,
                 td.cstm_col10, td.lbl_col10, td.cstm_col11, td.lbl_col11, td.cstm_col12, td.lbl_col12,
                 td.cstm_col13, td.lbl_col13, td.cstm_col14, td.lbl_col14, td.cstm_col15, td.lbl_col15,
                 td.cstm_col16, td.lbl_col16,
+                CASE 
+                    WHEN EXISTS(SELECT 1 FROM t_approval_event ae WHERE ae.approval_id = t.ticket_id AND ae.approval_status = 0) THEN 0
+                    WHEN EXISTS(SELECT 1 FROM t_approval_event ae WHERE ae.approval_id = t.ticket_id AND ae.approval_status = 2) THEN 2
+                    ELSE 1
+                END as approval_status,
+                (
+                    SELECT CONCAT(u3.firstname, ' ', u3.lastname)
+                    FROM t_approval_event ae3
+                    LEFT JOIN user u3 ON u3.user_id = ae3.approver_id
+                    WHERE ae3.approval_id = t.ticket_id AND ae3.approval_order = t.current_step
+                    LIMIT 1
+                ) as current_approver_name,
+                (
+                    SELECT ae4.approver_id
+                    FROM t_approval_event ae4
+                    WHERE ae4.approval_id = t.ticket_id AND ae4.approval_order = t.current_step
+                    LIMIT 1
+                ) as current_approver_id,
                 (
                     SELECT JSON_ARRAYAGG(
                         JSON_OBJECT(
                             'upload_id', tu.upload_id,
                             'filename', tu.filename,
-                            'file_path', tu.file_path
+                            'path', tu.file_path,
+                            'size', tu.file_size
                         )
                     )
                     FROM t_temp_upload tu 
                     WHERE tu.ticket_id = t.ticket_id AND tu.is_used = TRUE
-                ) as list_attachment,
+                ) as files,
                 (
                     SELECT JSON_ARRAYAGG(
                         JSON_OBJECT(
@@ -444,7 +475,7 @@ const ticketController = {
                             'approver_name', CONCAT(u2.firstname, ' ', u2.lastname),
                             'approval_order', ae.approval_order,
                             'approval_status', ae.approval_status,
-                            'approve_date', DATE_FORMAT(ae.approve_date, '%Y-%m-%d'),
+                            'approval_date', ae.approve_date,
                             'rejection_remark', ae.rejection_remark
                         )
                     )
@@ -464,6 +495,7 @@ const ticketController = {
             LEFT JOIN m_ticket_status ts ON ts.status_id = t.status_id
             LEFT JOIN m_team tm ON tm.team_id = t.assigned_team
             LEFT JOIN user u ON u.user_id = t.created_by
+            LEFT JOIN m_department d ON d.dept_id = u.dept_id
             LEFT JOIN t_ticket_detail td ON td.ticket_id = t.ticket_id
             WHERE t.ticket_id = ?
         `;
