@@ -224,6 +224,7 @@ export const assignFunctionToService = createAsyncThunk(
     trigger_event: string;
     execution_order: number;
     config: any;
+    is_active: boolean;
   }, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/hots_customfunction/assign_service`, assignmentData, {
@@ -235,6 +236,52 @@ export const assignFunctionToService = createAsyncThunk(
       }
       
       return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const updateServiceFunctionAssignment = createAsyncThunk(
+  'customFunction/updateServiceAssignment',
+  async (assignmentData: {
+    id: number;
+    service_id: number;
+    function_id: number;
+    trigger_event: string;
+    execution_order: number;
+    config: any;
+    is_active: boolean;
+  }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/hots_customfunction/assign_service/${assignmentData.id}`, assignmentData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
+      });
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to update service function assignment');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const deleteServiceFunctionAssignment = createAsyncThunk(
+  'customFunction/deleteServiceAssignment',
+  async (assignmentId: number, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${API_URL}/hots_customfunction/assign_service/${assignmentId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
+      });
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to delete service function assignment');
+      }
+      
+      return assignmentId;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
     }
@@ -394,6 +441,30 @@ const customFunctionSlice = createSlice({
         state.isLoading = false;
       })
       .addCase(assignFunctionToService.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Update Service Function Assignment
+      .addCase(updateServiceFunctionAssignment.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateServiceFunctionAssignment.fulfilled, (state, action) => {
+        state.isLoading = false;
+      })
+      .addCase(updateServiceFunctionAssignment.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Delete Service Function Assignment
+      .addCase(deleteServiceFunctionAssignment.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteServiceFunctionAssignment.fulfilled, (state, action) => {
+        state.isLoading = false;
+      })
+      .addCase(deleteServiceFunctionAssignment.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
