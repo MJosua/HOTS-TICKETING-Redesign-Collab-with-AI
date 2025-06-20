@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config/sourceConfig';
@@ -9,6 +8,7 @@ interface UserData {
   uid: string;
   email?: string;
   role?: string;
+  user_id?: number; // Add user_id field for approval logic
   [key: string]: any;
 }
 
@@ -117,6 +117,16 @@ const authSlice = createSlice({
         state.user = { ...state.user, ...persistentData } as UserData;
       }
     },
+    // New action to set user data after keepLogin verification
+    setUserData: (state, action: PayloadAction<{ token: string; userData: UserData }>) => {
+      state.token = action.payload.token;
+      state.user = action.payload.userData;
+      state.isAuthenticated = true;
+      state.error = null;
+      
+      // Persist user data
+      persistUserData(action.payload.userData);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -161,6 +171,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, resetLoginAttempts, setLocked, clearToken, loadPersistentUser } = authSlice.actions;
+export const { clearError, resetLoginAttempts, setLocked, clearToken, loadPersistentUser, setUserData } = authSlice.actions;
 export { getPersistentUserData }; // Export for use in other components
 export default authSlice.reducer;

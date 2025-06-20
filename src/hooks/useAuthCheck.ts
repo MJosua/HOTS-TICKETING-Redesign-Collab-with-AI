@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from './useAppDispatch';
+import { setUserData } from '../store/slices/authSlice';
 import axios from 'axios';
 import { API_URL } from '../config/sourceConfig';
 
@@ -29,11 +30,11 @@ export const useAuthCheck = ({ userToken2, setIsTokenExpiredModalOpen }: UseAuth
           const userData = res.data.userData;
 
           if (userData.uid) {
-            // Put user data to payload:
-            dispatch({
-              type: "LOGIN_SUCCESS",
-              payload: userData,
-            });
+            // Use proper Redux Toolkit action instead of generic dispatch
+            dispatch(setUserData({
+              token: res.data.tokek,
+              userData: userData
+            }));
           }
         } catch (err) {
           setIsTokenExpiredModalOpen(true);
