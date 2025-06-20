@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -11,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import RejectModal from "@/components/modals/RejectModal";
 import { FilePreview } from "@/components/ui/FilePreview";
+import TaskApprovalActions from "@/components/ui/TaskApprovalActions";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { fetchTicketDetail, approveTicket, rejectTicket, clearTicketDetail } from '@/store/slices/ticketsSlice';
 import { fetchGeneratedDocuments, fetchFunctionLogs } from '@/store/slices/customFunctionSlice';
@@ -156,6 +158,16 @@ const TicketDetail = () => {
       approver => approver.approval_order === ticketDetail.current_step
     );
     
+    console.log('=== APPROVAL DEBUG ===');
+    console.log('ticketDetail:', ticketDetail);
+    console.log('user:', user);
+    console.log('current_step:', ticketDetail.current_step);
+    console.log('currentApprover:', currentApprover);
+    console.log('currentApprover?.approver_id:', currentApprover?.approver_id);
+    console.log('user.user_id:', user.user_id);
+    console.log('canApprove result:', currentApprover && currentApprover.approver_id === user.user_id);
+    console.log('=== END APPROVAL DEBUG ===');
+    
     return currentApprover && currentApprover.approver_id === user.user_id;
   };
 
@@ -259,6 +271,20 @@ const TicketDetail = () => {
   const progressPercentage = approvalSteps.length > 0 ? (approvedCount / approvalSteps.length) * 100 : 0;
   const customFormData = getCustomFormData();
 
+  // Get current approver for TaskApprovalActions
+  const currentApprover = ticketDetail.list_approval?.find(
+    approver => approver.approval_order === ticketDetail.current_step
+  );
+
+  console.log('=== TASK APPROVAL ACTIONS PROPS ===');
+  console.log('ticketId:', ticketDetail.ticket_id.toString());
+  console.log('approvalOrder:', ticketDetail.current_step || 1);
+  console.log('canApprove:', canUserApprove());
+  console.log('currentStatus:', currentApprover?.approval_status || 0);
+  console.log('currentUserId:', user?.user_id);
+  console.log('assignedToId:', currentApprover?.approver_id);
+  console.log('=== END TASK APPROVAL ACTIONS PROPS ===');
+
   return (
     <AppLayout>
       <div className="space-y-6 relative z-0">
@@ -306,6 +332,18 @@ const TicketDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Form Content */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Add TaskApprovalActions card */}
+            {canUserApprove() && (
+              <TaskApprovalActions
+                ticketId={ticketDetail.ticket_id.toString()}
+                approvalOrder={ticketDetail.current_step || 1}
+                canApprove={canUserApprove()}
+                currentStatus={currentApprover?.approval_status || 0}
+                currentUserId={user?.user_id}
+                assignedToId={currentApprover?.approver_id}
+              />
+            )}
+
             {/* Request Information */}
             <Card className="bg-card shadow-sm border">
               <CardHeader className="bg-muted/50 border-b">
@@ -329,8 +367,7 @@ const TicketDetail = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Department</p>
-
-                    <p className="font-medium">{ticketDetail.dept_name || ticketDetail.team_name || 'Unknown'}</p>
+                    <p className="font-medium">{ticketDetail.department_name || ticketDetail.team_name || 'Unknown'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
@@ -399,7 +436,7 @@ const TicketDetail = () => {
             )}
 
             {/* Generated Documents */}
-            {generatedDocuments && generatedDocuments.length > 0 && (
+            {(isLoadingCustomFunction || (generatedDocuments && generatedDocuments.length > 0)) && (
               <Card className="bg-card shadow-sm border">
                 <CardHeader className="bg-muted/50 border-b">
                   <CardTitle className="text-lg">
@@ -410,17 +447,28 @@ const TicketDetail = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="space-y-3">
-                    {generatedDocuments.map((document) => (
-                      <FilePreview
-                        key={document.id}
-                        fileName={document.file_name}
-                        filePath={document.file_path}
-                        uploadDate={document.generated_date}
-                        onDownload={() => handleGeneratedDocumentDownload(document.file_path, document.file_name)}
-                      />
-                    ))}
-                  </div>
+                  {isLoadingCustomFunction ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="flex flex-col items-center space-y-2">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <p className="text-sm text-muted-foreground">Loading generated documents...</p>
+                      </div>
+                    </div>
+                  ) : generatedDocuments && generatedDocuments.length > 0 ? (
+                    <div className="space-y-3">
+                      {generatedDocuments.map((document) => (
+                        <FilePreview
+                          key={document.id}
+                          fileName={document.file_name}
+                          filePath={document.file_path}
+                          uploadDate={document.generated_date}
+                          onDownload={() => handleGeneratedDocumentDownload(document.file_path, document.file_name)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">No generated documents found</p>
+                  )}
                 </CardContent>
               </Card>
             )}

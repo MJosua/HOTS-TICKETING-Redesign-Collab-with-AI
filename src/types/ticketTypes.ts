@@ -1,3 +1,4 @@
+
 export interface Approver {
   approver_id: number;
   approver_name: string;
@@ -16,6 +17,7 @@ export interface Ticket {
   status: string;
   color: string;
   team_name: string | null;
+  department_name?: string;
   last_update: string | null;
   reason: string;
   fulfilment_comment: string | null;
