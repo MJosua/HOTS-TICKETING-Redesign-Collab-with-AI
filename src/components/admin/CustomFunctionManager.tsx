@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, Play, FileText, Upload, Mail, Settings } from 'lucide-react';
 import { useAppDispatch } from '@/hooks/useAppDispatch';
 import { useAppSelector } from '@/hooks/useAppSelector';
@@ -17,8 +17,10 @@ import {
   deleteCustomFunction,
   executeCustomFunction 
 } from '@/store/slices/customFunctionSlice';
+import { fetchCatalogData } from '@/store/slices/catalogSlice';
 import { useToast } from '@/hooks/use-toast';
 import { CustomFunction } from '@/types/customFunctionTypes';
+import ServiceFunctionTab from './ServiceFunctionTab';
 
 export default function CustomFunctionManager() {
   const dispatch = useAppDispatch();
@@ -38,6 +40,7 @@ export default function CustomFunctionManager() {
 
   useEffect(() => {
     dispatch(fetchCustomFunctions());
+    dispatch(fetchCatalogData());
   }, [dispatch]);
 
   const handleCreateFunction = async () => {
@@ -168,77 +171,90 @@ export default function CustomFunctionManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Custom Functions</h2>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Function
-        </Button>
-      </div>
-
       {error && (
         <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
           {error}
         </div>
       )}
 
-      <div className="grid gap-4">
-        {functions.map((func) => (
-          <Card key={func.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  {getFunctionIcon(func.type)}
-                  <div>
-                    <CardTitle className="text-lg">{func.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">Handler: {func.handler}</p>
+      <Tabs defaultValue="functions" className="w-full">
+        <TabsList>
+          <TabsTrigger value="functions">Custom Functions</TabsTrigger>
+          <TabsTrigger value="assignments">Service Assignments</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="functions" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Custom Functions</h2>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Function
+            </Button>
+          </div>
+
+          <div className="grid gap-4">
+            {functions.map((func) => (
+              <Card key={func.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      {getFunctionIcon(func.type)}
+                      <div>
+                        <CardTitle className="text-lg">{func.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">Handler: {func.handler}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={func.is_active ? "default" : "secondary"}>
+                        {func.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                      <Badge variant="outline">{func.type}</Badge>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={func.is_active ? "default" : "secondary"}>
-                    {func.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                  <Badge variant="outline">{func.type}</Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  Created: {new Date(func.created_date).toLocaleDateString()}
-                </p>
-                <div className="space-x-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleTestFunction(func.id)}
-                    disabled={isExecuting}
-                  >
-                    <Play className="w-4 h-4 mr-1" />
-                    Test
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleEditFunction(func)}
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="destructive"
-                    onClick={() => handleDeleteFunction(func.id)}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground">
+                      Created: {new Date(func.created_date).toLocaleDateString()}
+                    </p>
+                    <div className="space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleTestFunction(func.id)}
+                        disabled={isExecuting}
+                      >
+                        <Play className="w-4 h-4 mr-1" />
+                        Test
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleEditFunction(func)}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => handleDeleteFunction(func.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="assignments">
+          <ServiceFunctionTab />
+        </TabsContent>
+      </Tabs>
 
       {/* Create/Edit Modal */}
       {(isCreateModalOpen || isEditModalOpen) && (
