@@ -185,7 +185,7 @@ export const fetchGeneratedDocuments = createAsyncThunk(
       const response = await axios.get(`${API_URL}/hots_customfunction/documents/${ticketId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
-      
+      console.log("response",response)
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch generated documents');
       }

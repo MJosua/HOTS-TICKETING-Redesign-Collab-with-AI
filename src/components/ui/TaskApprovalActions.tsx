@@ -39,7 +39,8 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
                         currentUserId && 
                         assignedToId && 
                         currentUserId === assignedToId;
-
+  console.log("currentUserId",currentUserId)
+  console.log("assignedToId",assignedToId)
   if (!userCanApprove) {
     return null;
   }

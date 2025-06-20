@@ -66,10 +66,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     }
 
     setIsSubmitting(true);
-    
+
     try {
       console.log('Raw form data:', data);
-      
+
       // Handle file uploads first
       let uploadIds: number[] = [];
       for (const [key, value] of Object.entries(data)) {
@@ -84,7 +84,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       // Map form data to cstm_col and lbl_col structure
       const mappedData = mapFormDataToTicketColumns(data, config.fields || []);
       console.log('Mapped ticket data:', mappedData);
-      
+
       // Create the ticket data payload
       const ticketData = {
         subject: data.subject || 'Service Request',
@@ -95,18 +95,18 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       console.log('Creating ticket with data:', ticketData);
 
       // Create the ticket
-      const result = await dispatch(createTicket({ 
-        serviceId, 
-        ticketData 
+      const result = await dispatch(createTicket({
+        serviceId,
+        ticketData
       })).unwrap();
-
+      console.log("serviceId",serviceId)
       if (result.success) {
         toast({
           title: "Success",
           description: "Your request has been submitted successfully!",
           variant: "default",
         });
-        
+
         // Navigate to tickets page or call the original onSubmit
         navigate('/my-tickets');
       } else {
@@ -126,15 +126,15 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   const shouldShowField = (field: FormField, values: Record<string, any>) => {
     if (!field.uiCondition) return true;
-    
+
     // Simple condition parsing for "show if toggle is on"
     if (field.uiCondition.includes('toggle is on')) {
-      const toggleFields = Object.keys(values).filter(key => 
+      const toggleFields = Object.keys(values).filter(key =>
         form.watch(key) === true || form.watch(key) === 'on'
       );
       return toggleFields.length > 0;
     }
-    
+
     return true;
   };
 
@@ -150,8 +150,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
     return (
       <div className="mb-6">
-        <ApprovalFlowCard 
-          steps={approvalSteps} 
+        <ApprovalFlowCard
+          steps={approvalSteps}
           mode={config.approval.mode}
           className="mb-4"
         />
@@ -177,7 +177,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {fields.map((field, fieldIndex) => {
           const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
-          
+
           if (!shouldShowField(field, watchedValues)) {
             return null;
           }
@@ -224,7 +224,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     return config.sections.map((section: FormSection, sectionIndex) => (
       <div key={`section-${sectionIndex}`} className="mb-6">
         <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
-        
+
         {section.repeatable ? (
           <RepeatingSection
             section={section}
@@ -257,7 +257,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 {renderFieldsInRows(config.fields)}
               </div>
             )}
-            
+
             {config.rowGroups && (
               <div className="space-y-4">
                 {config.rowGroups.map((rowGroup, index) => (
@@ -273,11 +273,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 ))}
               </div>
             )}
-            
+
             {config.sections && config.sections.map((section: FormSection, sectionIndex) => (
               <div key={`section-${sectionIndex}`} className="mb-6">
                 <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
-                
+
                 {section.repeatable ? (
                   <RepeatingSection
                     section={section}
@@ -301,7 +301,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 )}
               </div>
             ))}
-            
+
             <div className="flex justify-end pt-6">
               <Button type="submit" disabled={isSubmitting} className="min-w-32">
                 {isSubmitting ? 'Submitting...' : (config.submit?.label || 'Submit')}
