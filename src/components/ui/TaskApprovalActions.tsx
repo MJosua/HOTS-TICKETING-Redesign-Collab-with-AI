@@ -47,7 +47,13 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
   console.log('currentStatus:', currentStatus);
   console.log('currentUserId:', currentUserId);
   console.log('assignedToId:', assignedToId);
-  console.log('userCanApprove:', userCanApprove);
+  console.log('userCanApprove calculation:');
+  console.log('  canApprove:', canApprove);
+  console.log('  currentStatus === 0:', currentStatus === 0);
+  console.log('  currentUserId truthy:', !!currentUserId);
+  console.log('  assignedToId truthy:', !!assignedToId);
+  console.log('  IDs match:', currentUserId === assignedToId);
+  console.log('userCanApprove result:', userCanApprove);
   console.log('=== END TASK APPROVAL ACTIONS COMPONENT ===');
 
   if (!userCanApprove) {
@@ -114,6 +120,11 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
         variant: "destructive",
       });
     }
+  };
+
+  const handleRejectCancel = () => {
+    setRejectionRemark('');
+    setShowRejectBox(false);
   };
 
   return (
@@ -197,7 +208,7 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
                   Confirm Rejection
                 </Button>
                 <Button
-                  onClick={() => setRejectionRemark('') || setShowRejectBox(false)}
+                  onClick={handleRejectCancel}
                   disabled={isSubmitting}
                   variant="outline"
                   size="sm"
