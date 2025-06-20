@@ -1,5 +1,5 @@
-
 const dbHots = require('../config/database'); // Adjust path as needed
+const customFunctionMapper = require('../utils/customFunctionMapper');
 const yellowTerminal = '\x1b[33m'; // Yellow color for terminal
 const magenta = '\x1b[35m'; // Magenta color for terminal
 
@@ -392,7 +392,7 @@ const ticketController = {
             });
     },
 
-    // Create New Ticket - Updated with full workflow integration
+    // Create New Ticket - Updated with custom function execution
     createTicket: (req, res) => {
         let date = new Date();
         let timestamp = yellowTerminal + date.toLocaleDateString('id') + ' ' + date.toLocaleTimeString('id') + ' : ';
@@ -514,6 +514,68 @@ const ticketController = {
                                 }
                             });
                         }
+
+                        // Execute custom functions with 'on_created' trigger
+                        let customFunctionQuery = `
+                            SELECT cf.*, csa.trigger_event, csa.trigger_status, csa.execution_order
+                            FROM m_custom_function cf
+                            INNER JOIN m_custom_function_service_assignment csa ON cf.function_id = csa.function_id
+                            WHERE csa.service_id = ? AND csa.trigger_event = 'on_created' AND csa.is_active = 1
+                            ORDER BY csa.execution_order
+                        `;
+
+                        dbHots.execute(customFunctionQuery, [service_id], (err6, customFunctions) => {
+                            if (err6) {
+                                console.log(timestamp, "GET CUSTOM FUNCTIONS ERROR: ", err6);
+                            } else if (customFunctions && customFunctions.length > 0) {
+                                // Get complete ticket data for function execution
+                                let getTicketDataQuery = `
+                                    SELECT 
+                                        t.ticket_id, t.service_id, s.service_name, t.created_by,
+                                        CONCAT(u.firstname, ' ', u.lastname) as created_by_name,
+                                        tm.team_name, d.dept_name,
+                                        td.*
+                                    FROM t_ticket t
+                                    LEFT JOIN m_service s ON s.service_id = t.service_id
+                                    LEFT JOIN user u ON u.user_id = t.created_by
+                                    LEFT JOIN m_team tm ON tm.team_id = t.assigned_team
+                                    LEFT JOIN m_department d ON d.dept_id = u.dept_id
+                                    LEFT JOIN t_ticket_detail td ON td.ticket_id = t.ticket_id
+                                    WHERE t.ticket_id = ?
+                                `;
+
+                                dbHots.execute(getTicketDataQuery, [ticket_id], (err7, ticketData) => {
+                                    if (err7) {
+                                        console.log(timestamp, "GET TICKET DATA ERROR: ", err7);
+                                    } else if (ticketData && ticketData.length > 0) {
+                                        const ticket = ticketData[0];
+                                        
+                                        // Execute each custom function
+                                        customFunctions.forEach(async (customFunction) => {
+                                            try {
+                                                const functionData = JSON.parse(customFunction.function_data);
+                                                functionData.function_id = customFunction.function_id;
+                                                
+                                                // Map ticket data to template variables
+                                                const variables = customFunctionMapper.mapTicketDataToVariables(ticket, ticket);
+                                                
+                                                // Execute the custom function
+                                                await customFunctionMapper.executeCustomFunction(
+                                                    dbHots, 
+                                                    ticket_id, 
+                                                    functionData, 
+                                                    variables
+                                                );
+                                                
+                                                console.log(timestamp, `Custom function ${customFunction.function_id} executed for ticket ${ticket_id}`);
+                                            } catch (funcError) {
+                                                console.log(timestamp, `Custom function execution error for function ${customFunction.function_id}:`, funcError);
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
 
                         // Create approval events from workflow
                         if (workflowSteps.length > 0) {
