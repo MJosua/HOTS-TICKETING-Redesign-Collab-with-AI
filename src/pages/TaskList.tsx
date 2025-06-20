@@ -23,6 +23,7 @@ const TaskList = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
+  const { user } = useAppSelector(state => state.auth);
 
   const dispatch = useAppDispatch();
   const { taskList, taskCount } = useAppSelector((state) => state.tickets);
@@ -58,9 +59,9 @@ const TaskList = () => {
 
   const renderHighlightedText = (text: string) => {
     return (
-      <span 
-        dangerouslySetInnerHTML={{ 
-          __html: highlightSearchTerm(text, searchValue) 
+      <span
+        dangerouslySetInnerHTML={{
+          __html: highlightSearchTerm(text, searchValue)
         }}
       />
     );
@@ -69,22 +70,22 @@ const TaskList = () => {
   // Helper function to check if current user can approve a specific step
   const canUserApprove = (ticket: any, approvalOrder: number): boolean => {
     if (!ticket.list_approval) return false;
-    
-    const currentUserApproval = ticket.list_approval.find((approval: any) => 
+
+    const currentUserApproval = ticket.list_approval.find((approval: any) =>
       approval.approval_order === approvalOrder && approval.approval_status === 0
     );
-    
+
     return !!currentUserApproval;
   };
 
   // Get the current user's pending approval order for a ticket
   const getUserApprovalOrder = (ticket: any): number | null => {
     if (!ticket.list_approval) return null;
-    
-    const userApproval = ticket.list_approval.find((approval: any) => 
+
+    const userApproval = ticket.list_approval.find((approval: any) =>
       approval.approval_status === 0
     );
-    
+
     return userApproval ? userApproval.approval_order : null;
   };
 
@@ -106,7 +107,7 @@ const TaskList = () => {
             </TableHeader>
             <TableBody>
               {filteredTasks.map((task) => (
-                <TableRow 
+                <TableRow
                   key={task.id}
                   className="hover:bg-muted/30 cursor-pointer transition-colors"
                   onClick={() => handleRowClick(task.id)}
@@ -147,17 +148,27 @@ const TaskList = () => {
 
   const CardView = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {filteredTasks.map((task) => {
-        const originalTicket = taskList.data.find(t => t.ticket_id.toString() === task.id);
+      {filteredTasks.slice(0, 1).map((task) => {
+        const originalTicket = taskList.data.find(t => t.ticket_id === task.id);
         const userApprovalOrder = getUserApprovalOrder(originalTicket);
         const canApprove = userApprovalOrder !== null;
-        
+
+      
+        const currentApprover = task.approvalSteps?.find(
+          approver => approver.approval_order === task.current_step
+        );
+
+        console.log("taskList.list_approval",task)
+        console.log("taskList.current_step",task.current_step)
+        console.log("currentApprover",currentApprover)
+
+        // You can now use `canApprove` and `canUserApprove()` in your render logic
         return (
           <div key={task.id} className="space-y-4">
             <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle 
+                  <CardTitle
                     className="text-lg font-medium text-primary cursor-pointer hover:underline"
                     onClick={() => handleRowClick(task.id)}
                   >
@@ -188,7 +199,7 @@ const TaskList = () => {
                     Department: {renderHighlightedText(task.department)}
                   </p>
                 </div>
-                
+
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Approval Progress</p>
                   <ProgressionBar steps={task.approvalSteps} showDetails={true} />
@@ -208,10 +219,14 @@ const TaskList = () => {
             {canApprove && userApprovalOrder && (
               <TaskApprovalActions
                 ticketId={task.id}
-                approvalOrder={userApprovalOrder}
+                approvalOrder={task.current_step || 1}
                 canApprove={canApprove}
-                currentStatus={0}
+                currentStatus={currentApprover?.approval_status || 0}
+                currentUserId={user?.user_id}
+                assignedToId={currentApprover?.id}
+
               />
+           
             )}
           </div>
         );

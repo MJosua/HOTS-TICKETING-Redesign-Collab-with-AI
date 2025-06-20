@@ -4,8 +4,9 @@ import { Ticket, Approver } from '@/types/ticketTypes';
 export const convertTicketToDisplayFormat = (ticket: Ticket) => {
   // Convert approval list to steps format
   const approvalSteps = ticket.list_approval?.map((approver: Approver, index: number) => ({
-    id: `${approver.approver_id}-${approver.approval_order}-${index}`,
+    id: approver.approver_id,
     name: approver.approver_name,
+    approval_order : approver.approval_order,
     status: approver.approval_status === 1 ? 'approved' as const : 
             approver.approval_status === 2 ? 'rejected' as const : 
             'pending' as const
@@ -19,7 +20,7 @@ export const convertTicketToDisplayFormat = (ticket: Ticket) => {
   };
 
   return {
-    id: ticket.ticket_id.toString(),
+    id: ticket.ticket_id,
     type: ticket.service_name,
     requester: "Current User", // This would come from user context
     department: ticket.team_name || "Unknown Department",
@@ -27,7 +28,9 @@ export const convertTicketToDisplayFormat = (ticket: Ticket) => {
     created: ticket.creation_date,
     amount: "-", // Not provided in API
     status: ticket.status,
-    approvalSteps: approvalSteps
+    approvalSteps: approvalSteps,
+    current_step : ticket.current_step,
+
   };
 };
 
