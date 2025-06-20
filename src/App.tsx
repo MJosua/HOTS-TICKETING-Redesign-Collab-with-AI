@@ -20,6 +20,8 @@ import UserManagement from "./pages/admin/UserManagement";
 import DepartmentManagement from "./pages/admin/DepartmentManagement";
 import ServiceCatalogAdmin from "./pages/admin/ServiceCatalogAdmin";
 import ServiceFormEditor from "./pages/admin/ServiceFormEditor";
+import CustomFunctionManagement from "./pages/admin/CustomFunctionManagement";
+import FunctionLogsManagement from "./pages/admin/FunctionLogsManagement";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/login/Loginpage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -124,6 +126,16 @@ const AppContent = () => {
           <Route path="/admin/service-catalog/edit/:id" element={
             <ProtectedRoute>
               <ServiceFormEditor />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/custom-functions" element={
+            <ProtectedRoute>
+              <CustomFunctionManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/function-logs" element={
+            <ProtectedRoute>
+              <FunctionLogsManagement />
             </ProtectedRoute>
           } />
           <Route path="*" element={

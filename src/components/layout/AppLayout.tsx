@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Sidebar,
@@ -14,7 +15,7 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, Search, User } from 'lucide-react';
+import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, Search, User, Code, FileCode } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -53,6 +54,16 @@ const adminItems = [
     title: "Division Management",
     url: "/admin/divisions",
     icon: Monitor,
+  },
+  {
+    title: "Custom Functions",
+    url: "/admin/custom-functions",
+    icon: Code,
+  },
+  {
+    title: "Function Logs",
+    url: "/admin/function-logs",
+    icon: FileCode,
   },
   {
     title: "System Settings",
@@ -265,7 +276,7 @@ export function AppSidebar() {
 
 export function AppLayout({ children, searchValue, onSearchChange, searchPlaceholder = "Search..." }: AppLayoutProps) {
   const location = useLocation();
-  const hiddenSearchRoutes = ['/', '/login', '/admin/settings', '/admin/service-catalog', '/admin/service-catalog/create'];
+  const hiddenSearchRoutes = ['/', '/login', '/admin/settings', '/admin/service-catalog', '/admin/service-catalog/create', '/admin/custom-functions', '/admin/function-logs'];
   const shouldHideSearch = hiddenSearchRoutes.includes(location.pathname);
 
   return (
