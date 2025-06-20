@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -7,13 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2, Download } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import RejectModal from "@/components/modals/RejectModal";
+import { FilePreview } from "@/components/ui/FilePreview";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { fetchTicketDetail, approveTicket, rejectTicket, clearTicketDetail } from '@/store/slices/ticketsSlice';
+import { fetchGeneratedDocuments, fetchFunctionLogs } from '@/store/slices/customFunctionSlice';
 import { useToast } from '@/hooks/use-toast';
+import { API_URL } from '@/config/sourceConfig';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -24,11 +26,14 @@ const TicketDetail = () => {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
+  const { generatedDocuments, functionLogs, isLoading: isLoadingCustomFunction } = useAppSelector(state => state.customFunction);
   const { user } = useAppSelector(state => state.auth);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchTicketDetail(id));
+      dispatch(fetchGeneratedDocuments(parseInt(id)));
+      dispatch(fetchFunctionLogs(parseInt(id)));
     }
     
     return () => {
@@ -152,6 +157,70 @@ const TicketDetail = () => {
     );
     
     return currentApprover && currentApprover.approver_id === user.user_id;
+  };
+
+  const handleFileDownload = (filePath: string, fileName: string) => {
+    const downloadUrl = `${API_URL}/hots_ticket/download/file/${filePath}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    link.target = '_blank';
+    
+    // Add authorization header by creating a fetch request
+    fetch(downloadUrl, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`
+      }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+      console.error('Download failed:', error);
+      toast({
+        title: "Download Error",
+        description: "Failed to download file. Please try again.",
+        variant: "destructive",
+      });
+    });
+  };
+
+  const handleGeneratedDocumentDownload = (documentPath: string, fileName: string) => {
+    const downloadUrl = `${API_URL}/hots_customfunction/download/document/${documentPath}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    link.target = '_blank';
+    
+    // Add authorization header by creating a fetch request
+    fetch(downloadUrl, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`
+      }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+      console.error('Download failed:', error);
+      toast({
+        title: "Download Error",
+        description: "Failed to download generated document. Please try again.",
+        variant: "destructive",
+      });
+    });
   };
 
   if (isLoadingDetail) {
@@ -313,14 +382,42 @@ const TicketDetail = () => {
                   <CardTitle className="text-lg">Attached Files</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {ticketDetail.files.map((file) => (
-                      <div key={file.upload_id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                        <span className="font-medium">{file.filename}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB
-                        </span>
-                      </div>
+                      <FilePreview
+                        key={file.upload_id}
+                        fileName={file.filename}
+                        filePath={file.path}
+                        fileSize={file.size}
+                        onDownload={() => handleFileDownload(file.path, file.filename)}
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Generated Documents */}
+            {generatedDocuments && generatedDocuments.length > 0 && (
+              <Card className="bg-card shadow-sm border">
+                <CardHeader className="bg-muted/50 border-b">
+                  <CardTitle className="text-lg">
+                    Generated Documents
+                    {isLoadingCustomFunction && (
+                      <Loader2 className="w-4 h-4 ml-2 animate-spin inline" />
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    {generatedDocuments.map((document) => (
+                      <FilePreview
+                        key={document.id}
+                        fileName={document.file_name}
+                        filePath={document.file_path}
+                        uploadDate={document.generated_date}
+                        onDownload={() => handleGeneratedDocumentDownload(document.file_path, document.file_name)}
+                      />
                     ))}
                   </div>
                 </CardContent>
