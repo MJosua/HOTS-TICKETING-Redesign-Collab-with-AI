@@ -254,7 +254,7 @@ export const updateServiceFunctionAssignment = createAsyncThunk(
     is_active: boolean;
   }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${API_URL}/hots_customfunction/assign_service/${assignmentData.id}`, assignmentData, {
+      const response = await axios.put(`${API_URL}/hots_customfunction/update_service_assignment/${assignmentData.id}`, assignmentData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
       
@@ -273,7 +273,7 @@ export const deleteServiceFunctionAssignment = createAsyncThunk(
   'customFunction/deleteServiceAssignment',
   async (assignmentId: number, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${API_URL}/hots_customfunction/assign_service/${assignmentId}`, {
+      const response = await axios.delete(`${API_URL}/hots_customfunction/remove_service_assignment/${assignmentId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
       
