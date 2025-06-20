@@ -48,7 +48,7 @@ const hotscustomfunctionController = {
         ORDER BY cf.created_date DESC
       `;
       
-      const [functions] = await dbHots.execute(query);
+      const [functions] = await dbHots.promise().query(query);
       
       yellowTerminal(`Retrieved ${functions.length} custom functions`);
       
@@ -81,7 +81,7 @@ const hotscustomfunctionController = {
         ORDER BY scf.execution_order ASC
       `;
       
-      const [serviceFunctions] = await dbHots.execute(query, [serviceId]);
+      const [serviceFunctions] = await dbHots.promise().query(query, [serviceId]);
       
       yellowTerminal(`Retrieved ${serviceFunctions.length} service functions`);
       
@@ -104,7 +104,7 @@ const hotscustomfunctionController = {
   createCustomFunction: async (req, res) => {
     try {
       const { name, type, handler, config, is_active = 1 } = req.body;
-      const userId = req.user.user_id;
+      const userId = req.dataToken.user_id;
       
       yellowTerminal(`Creating custom function: ${name}`);
       
@@ -113,7 +113,7 @@ const hotscustomfunctionController = {
         VALUES (?, ?, ?, ?, ?, ?, NOW())
       `;
       
-      const [result] = await dbHots.execute(query, [
+      const [result] = await dbHots.promise().query(query, [
         name, 
         type, 
         handler, 
@@ -123,7 +123,7 @@ const hotscustomfunctionController = {
       ]);
       
       // Fetch the created function
-      const [newFunction] = await dbHots.execute(
+      const [newFunction] = await dbHots.promise().query(
         'SELECT * FROM m_custom_functions WHERE id = ?',
         [result.insertId]
       );
@@ -159,7 +159,7 @@ const hotscustomfunctionController = {
         WHERE id = ?
       `;
       
-      await dbHots.execute(query, [
+      await dbHots.promise().query(query, [
         name, 
         type, 
         handler, 
@@ -197,7 +197,7 @@ const hotscustomfunctionController = {
         WHERE id = ?
       `;
       
-      await dbHots.execute(query, [id]);
+      await dbHots.promise().query(query, [id]);
       
       yellowTerminal(`Custom function deleted: ${id}`);
       
@@ -219,7 +219,7 @@ const hotscustomfunctionController = {
   assignFunctionToService: async (req, res) => {
     try {
       const { service_id, function_id, trigger_event, execution_order, config } = req.body;
-      const userId = req.user.user_id;
+      const userId = req.dataToken.user_id;
       
       yellowTerminal(`Assigning function ${function_id} to service ${service_id}`);
       
@@ -229,7 +229,7 @@ const hotscustomfunctionController = {
         VALUES (?, ?, ?, ?, ?, 1, ?, NOW())
       `;
       
-      await dbHots.execute(query, [
+      await dbHots.promise().query(query, [
         service_id,
         function_id,
         trigger_event,
@@ -254,17 +254,86 @@ const hotscustomfunctionController = {
     }
   },
 
+  // Update service function assignment
+  updateServiceFunctionAssignment: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { trigger_event, execution_order, config, is_active } = req.body;
+      
+      yellowTerminal(`Updating service function assignment: ${id}`);
+      
+      const query = `
+        UPDATE t_service_custom_functions 
+        SET trigger_event = ?, execution_order = ?, config = ?, is_active = ?, updated_date = NOW()
+        WHERE id = ?
+      `;
+      
+      await dbHots.promise().query(query, [
+        trigger_event,
+        execution_order,
+        JSON.stringify(config),
+        is_active,
+        id
+      ]);
+      
+      yellowTerminal(`Service function assignment updated: ${id}`);
+      
+      res.json({
+        success: true,
+        message: 'Service function assignment updated successfully'
+      });
+    } catch (error) {
+      yellowTerminal('Error updating service function assignment: ' + error.message);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update service function assignment',
+        error: error.message
+      });
+    }
+  },
+
+  // Remove service function assignment
+  removeServiceFunctionAssignment: async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      yellowTerminal(`Removing service function assignment: ${id}`);
+      
+      const query = `
+        UPDATE t_service_custom_functions 
+        SET is_active = 0, finished_date = NOW()
+        WHERE id = ?
+      `;
+      
+      await dbHots.promise().query(query, [id]);
+      
+      yellowTerminal(`Service function assignment removed: ${id}`);
+      
+      res.json({
+        success: true,
+        message: 'Service function assignment removed successfully'
+      });
+    } catch (error) {
+      yellowTerminal('Error removing service function assignment: ' + error.message);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to remove service function assignment',
+        error: error.message
+      });
+    }
+  },
+
   // Execute a custom function
   executeCustomFunction: async (req, res) => {
     try {
       const { functionId } = req.params;
       const { ticket_id, params = {} } = req.body;
-      const userId = req.user.user_id;
+      const userId = req.dataToken.user_id;
       
       yellowTerminal(`Executing custom function: ${functionId} for ticket: ${ticket_id}`);
       
       // Get function details
-      const [functionDetails] = await dbHots.execute(
+      const [functionDetails] = await dbHots.promise().query(
         'SELECT * FROM m_custom_functions WHERE id = ? AND is_active = 1',
         [functionId]
       );
@@ -307,7 +376,7 @@ const hotscustomfunctionController = {
       }
       
       // Log execution
-      await dbHots.execute(`
+      await dbHots.promise().query(`
         INSERT INTO t_custom_function_logs 
         (ticket_id, service_id, function_name, trigger_event, status, result_data, error_message, execution_time, created_by)
         VALUES (?, ?, ?, 'manual', ?, ?, ?, NOW(), ?)
@@ -344,7 +413,7 @@ const hotscustomfunctionController = {
     async (req, res) => {
       try {
         const { ticket_id } = req.body;
-        const userId = req.user.user_id;
+        const userId = req.dataToken.user_id;
         
         yellowTerminal(`Processing Excel upload for ticket: ${ticket_id}`);
         
@@ -381,7 +450,7 @@ const hotscustomfunctionController = {
         };
         
         // Save processed data to database
-        await dbHots.execute(`
+        await dbHots.promise().query(`
           INSERT INTO t_excel_processed_data 
           (ticket_id, file_name, file_path, processed_data, summary, uploaded_by, upload_date)
           VALUES (?, ?, ?, ?, ?, ?, NOW())
@@ -415,6 +484,38 @@ const hotscustomfunctionController = {
     }
   ],
 
+  // Get Excel data for a ticket
+  getExcelData: async (req, res) => {
+    try {
+      const { ticketId } = req.params;
+      
+      yellowTerminal(`Getting Excel data for ticket: ${ticketId}`);
+      
+      const query = `
+        SELECT * FROM t_excel_processed_data 
+        WHERE ticket_id = ? 
+        ORDER BY upload_date DESC
+      `;
+      
+      const [excelData] = await dbHots.promise().query(query, [ticketId]);
+      
+      yellowTerminal(`Retrieved ${excelData.length} Excel files for ticket: ${ticketId}`);
+      
+      res.json({
+        success: true,
+        message: 'Excel data retrieved successfully',
+        data: excelData
+      });
+    } catch (error) {
+      yellowTerminal('Error getting Excel data: ' + error.message);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve Excel data',
+        error: error.message
+      });
+    }
+  },
+
   // Get function execution logs for a ticket
   getFunctionLogs: async (req, res) => {
     try {
@@ -428,7 +529,7 @@ const hotscustomfunctionController = {
         ORDER BY execution_time DESC
       `;
       
-      const [logs] = await dbHots.execute(query, [ticketId]);
+      const [logs] = await dbHots.promise().query(query, [ticketId]);
       
       res.json({
         success: true,
@@ -458,7 +559,7 @@ const hotscustomfunctionController = {
         ORDER BY generated_date DESC
       `;
       
-      const [documents] = await dbHots.execute(query, [ticketId]);
+      const [documents] = await dbHots.promise().query(query, [ticketId]);
       
       res.json({
         success: true,
@@ -482,7 +583,7 @@ const hotscustomfunctionController = {
       
       yellowTerminal(`Downloading document: ${documentId}`);
       
-      const [documents] = await dbHots.execute(
+      const [documents] = await dbHots.promise().query(
         'SELECT * FROM t_generated_documents WHERE id = ?',
         [documentId]
       );
@@ -504,6 +605,7 @@ const hotscustomfunctionController = {
         });
       }
       
+      yellowTerminal(`Document downloaded successfully: ${document.file_name}`);
       res.download(filePath, document.file_name);
     } catch (error) {
       yellowTerminal('Error downloading document: ' + error.message);
@@ -526,7 +628,9 @@ const hotscustomfunctionController = {
         ORDER BY template_name ASC
       `;
       
-      const [templates] = await dbHots.execute(query);
+      const [templates] = await dbHots.promise().query(query);
+      
+      yellowTerminal(`Retrieved ${templates.length} function templates`);
       
       res.json({
         success: true,
@@ -547,7 +651,7 @@ const hotscustomfunctionController = {
   createFunctionTemplate: async (req, res) => {
     try {
       const { template_name, template_type, template_content, variables } = req.body;
-      const userId = req.user.user_id;
+      const userId = req.dataToken.user_id;
       
       yellowTerminal(`Creating function template: ${template_name}`);
       
@@ -556,13 +660,15 @@ const hotscustomfunctionController = {
         VALUES (?, ?, ?, ?, 1, ?, NOW())
       `;
       
-      const [result] = await dbHots.execute(query, [
+      const [result] = await dbHots.promise().query(query, [
         template_name,
         template_type,
         template_content,
         JSON.stringify(variables),
         userId
       ]);
+      
+      yellowTerminal(`Function template created with ID: ${result.insertId}`);
       
       res.json({
         success: true,
@@ -593,7 +699,7 @@ const hotscustomfunctionController = {
         WHERE id = ?
       `;
       
-      await dbHots.execute(query, [
+      await dbHots.promise().query(query, [
         template_name,
         template_type,
         template_content,
@@ -601,6 +707,8 @@ const hotscustomfunctionController = {
         is_active,
         id
       ]);
+      
+      yellowTerminal(`Function template updated: ${id}`);
       
       res.json({
         success: true,
@@ -629,7 +737,9 @@ const hotscustomfunctionController = {
         WHERE id = ?
       `;
       
-      await dbHots.execute(query, [id]);
+      await dbHots.promise().query(query, [id]);
+      
+      yellowTerminal(`Function template deleted: ${id}`);
       
       res.json({
         success: true,
@@ -665,7 +775,9 @@ const hotscustomfunctionController = {
         ORDER BY total_executions DESC
       `;
       
-      const [stats] = await dbHots.execute(query);
+      const [stats] = await dbHots.promise().query(query);
+      
+      yellowTerminal(`Retrieved statistics for ${stats.length} functions`);
       
       res.json({
         success: true,
@@ -691,7 +803,7 @@ const hotscustomfunctionController = {
       yellowTerminal(`Testing function: ${functionId}`);
       
       // Get function details
-      const [functionDetails] = await dbHots.execute(
+      const [functionDetails] = await dbHots.promise().query(
         'SELECT * FROM m_custom_functions WHERE id = ? AND is_active = 1',
         [functionId]
       );
@@ -707,6 +819,8 @@ const hotscustomfunctionController = {
       
       // Validate configuration
       const configValidation = hotscustomfunctionController.validateFunctionConfig(func);
+      
+      yellowTerminal(`Function test completed for: ${func.name}`);
       
       res.json({
         success: true,
@@ -735,7 +849,7 @@ const hotscustomfunctionController = {
     const config = JSON.parse(func.config);
     
     // Get ticket data
-    const [ticketData] = await dbHots.execute(
+    const [ticketData] = await dbHots.promise().query(
       'SELECT * FROM t_ticket WHERE ticket_id = ?',
       [ticketId]
     );
@@ -748,7 +862,7 @@ const hotscustomfunctionController = {
     const documentPath = await hotscustomfunctionController.generateDocument(config.template, ticketData[0], params);
     
     // Save document record
-    await dbHots.execute(`
+    await dbHots.promise().query(`
       INSERT INTO t_generated_documents 
       (ticket_id, document_type, file_path, file_name, generated_date, template_used)
       VALUES (?, ?, ?, ?, NOW(), ?)
@@ -772,7 +886,7 @@ const hotscustomfunctionController = {
     const config = JSON.parse(func.config);
     
     // Get Excel data from database
-    const [excelData] = await dbHots.execute(
+    const [excelData] = await dbHots.promise().query(
       'SELECT * FROM t_excel_processed_data WHERE ticket_id = ? ORDER BY upload_date DESC LIMIT 1',
       [ticketId]
     );
@@ -798,7 +912,7 @@ const hotscustomfunctionController = {
     const config = JSON.parse(func.config);
     
     // Get ticket and user data
-    const [ticketData] = await dbHots.execute(`
+    const [ticketData] = await dbHots.promise().query(`
       SELECT t.*, u.email, u.firstname, u.lastname 
       FROM t_ticket t 
       JOIN users u ON t.created_by = u.user_id 
@@ -874,7 +988,7 @@ const hotscustomfunctionController = {
     return { status: 'success', response: 'API call completed' };
   },
 
-  validateFunction Config: (func) => {
+  validateFunctionConfig: (func) => {
     const errors = [];
     let isValid = true;
     
