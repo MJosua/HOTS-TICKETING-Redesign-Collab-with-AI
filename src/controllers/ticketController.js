@@ -1,4 +1,3 @@
-
 const dbHots = require('../config/database');
 const ticketService = require('../services/ticketService');
 const approvalService = require('../services/approvalService');
@@ -146,7 +145,7 @@ const ticketController = {
         }
     },
 
-    // Get Task List (tickets assigned to user)
+    // Get Task List (tickets assigned to user) - Updated with approval logic
     getTaskList: async (req, res) => {
         let date = new Date();
         let timestamp = yellowTerminal + date.toLocaleDateString('id') + ' ' + date.toLocaleTimeString('id') + ' : ';
@@ -156,20 +155,40 @@ const ticketController = {
         let limit = 10;
         let offset = (page - 1) * limit;
 
+        // Count total tasks including approval events
         const countQuery = `
-            SELECT COUNT(*) as total 
+            SELECT COUNT(DISTINCT t.ticket_id) as total 
             FROM t_ticket t
-            WHERE t.assigned_to = ? OR t.assigned_team IN (
-                SELECT tm.team_id FROM m_team_member tm WHERE tm.user_id = ?
+            LEFT JOIN t_approval_event ae ON ae.approval_id = t.ticket_id
+            WHERE (
+                t.assigned_to = ? OR 
+                t.assigned_team IN (
+                    SELECT tm.team_id FROM m_team_member tm WHERE tm.user_id = ?
+                ) OR
+                (ae.approver_id = ? AND ae.approval_status = 0 AND ae.approval_order = t.current_step)
             )
+            AND t.status_id IN (1, 2)
         `;
 
         const baseQuery = `
-            SELECT 
-                t.ticket_id, t.creation_date, t.service_id, s.service_name, t.status_id,
-                ts.status_name as status, ts.color_hex as color, t.assigned_to, t.assigned_team,
-                tm.team_name, t.last_update, t.reason, t.fulfilment_comment,
+            SELECT DISTINCT
+                t.ticket_id,
+                t.creation_date,
+                t.service_id,
+                s.service_name,
+                t.status_id,
+                ts.status_name as status,
+                ts.color_hex as color,
+                t.assigned_to,
+                t.assigned_team,
+                tm.team_name,
+                t.last_update,
+                t.reason,
+                t.fulfilment_comment,
                 CONCAT(u.firstname, ' ', u.lastname) as created_by_name,
+                d.dept_name as department_name,
+                t.current_step,
+                t.current_step as approval_level,
                 CASE 
                     WHEN EXISTS(SELECT 1 FROM t_approval_event ae WHERE ae.approval_id = t.ticket_id AND ae.approval_status = 0) THEN 0
                     WHEN EXISTS(SELECT 1 FROM t_approval_event ae WHERE ae.approval_id = t.ticket_id AND ae.approval_status = 2) THEN 2
@@ -181,7 +200,8 @@ const ticketController = {
                             'approver_id', ae.approver_id,
                             'approver_name', CONCAT(u2.firstname, ' ', u2.lastname),
                             'approval_order', ae.approval_order,
-                            'approval_status', ae.approval_status
+                            'approval_status', ae.approval_status,
+                            'approval_date', ae.approve_date
                         )
                     )
                     FROM t_approval_event ae
@@ -200,16 +220,23 @@ const ticketController = {
             LEFT JOIN m_ticket_status ts ON ts.status_id = t.status_id
             LEFT JOIN m_team tm ON tm.team_id = t.assigned_team
             LEFT JOIN user u ON u.user_id = t.created_by
-            WHERE t.assigned_to = ? OR t.assigned_team IN (
-                SELECT tm3.team_id FROM m_team_member tm3 WHERE tm3.user_id = ?
+            LEFT JOIN m_department d ON d.dept_id = u.dept_id
+            LEFT JOIN t_approval_event ae ON ae.approval_id = t.ticket_id
+            WHERE (
+                t.assigned_to = ? OR 
+                t.assigned_team IN (
+                    SELECT tm3.team_id FROM m_team_member tm3 WHERE tm3.user_id = ?
+                ) OR
+                (ae.approver_id = ? AND ae.approval_status = 0 AND ae.approval_order = t.current_step)
             )
+            AND t.status_id IN (1, 2)
             ORDER BY t.creation_date DESC
             LIMIT ? OFFSET ?
         `;
 
         try {
             const result = await ticketService.getTicketsWithPagination(
-                baseQuery, countQuery, [user_id, user_id, user_id, user_id, limit, offset], limit, offset
+                baseQuery, countQuery, [user_id, user_id, user_id, user_id, user_id, user_id, limit, offset], limit, offset
             );
 
             console.log(timestamp, "GET TASK LIST SUCCESS");
