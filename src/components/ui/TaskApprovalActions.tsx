@@ -39,10 +39,8 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
                         currentUserId && 
                         assignedToId && 
                         currentUserId === assignedToId;
-<<<<<<< HEAD
   console.log("currentUserId",currentUserId)
   console.log("assignedToId",assignedToId)
-=======
 
   console.log('=== TASK APPROVAL ACTIONS COMPONENT ===');
   console.log('ticketId:', ticketId);
@@ -60,7 +58,6 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
   console.log('userCanApprove result:', userCanApprove);
   console.log('=== END TASK APPROVAL ACTIONS COMPONENT ===');
 
->>>>>>> a0d7ca96daf72900c1031794f12e324529852dbe
   if (!userCanApprove) {
     console.log('TaskApprovalActions: Not rendering because userCanApprove is false');
     return null;
