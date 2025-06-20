@@ -20,7 +20,7 @@ export const fetchCustomFunctions = createAsyncThunk(
   'customFunction/fetchFunctions',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/hots_settings/custom_functions/list`, {
+      const response = await axios.get(`${API_URL}/hots_customfunction/list`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
       
@@ -39,7 +39,7 @@ export const fetchServiceFunctions = createAsyncThunk(
   'customFunction/fetchServiceFunctions',
   async (serviceId: number, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/hots_settings/custom_functions/service/${serviceId}`, {
+      const response = await axios.get(`${API_URL}/hots_customfunction/service/${serviceId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
       
@@ -58,7 +58,7 @@ export const createCustomFunction = createAsyncThunk(
   'customFunction/createFunction',
   async (functionData: Partial<CustomFunction>, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/hots_settings/custom_functions/create`, functionData, {
+      const response = await axios.post(`${API_URL}/hots_customfunction/create`, functionData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
       
@@ -73,11 +73,49 @@ export const createCustomFunction = createAsyncThunk(
   }
 );
 
+export const updateCustomFunction = createAsyncThunk(
+  'customFunction/updateFunction',
+  async ({ id, functionData }: { id: number, functionData: Partial<CustomFunction> }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/hots_customfunction/update/${id}`, functionData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
+      });
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to update custom function');
+      }
+      
+      return { id, functionData };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const deleteCustomFunction = createAsyncThunk(
+  'customFunction/deleteFunction',
+  async (id: number, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${API_URL}/hots_customfunction/delete/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
+      });
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to delete custom function');
+      }
+      
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
 export const executeCustomFunction = createAsyncThunk(
   'customFunction/executeFunction',
   async ({ ticketId, functionId, params }: { ticketId: number, functionId: number, params?: any }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/hots_settings/custom_functions/execute/${functionId}`, {
+      const response = await axios.post(`${API_URL}/hots_customfunction/execute/${functionId}`, {
         ticket_id: ticketId,
         params
       }, {
@@ -103,7 +141,7 @@ export const uploadExcelFile = createAsyncThunk(
       formData.append('file', file);
       formData.append('ticket_id', ticketId.toString());
       
-      const response = await axios.post(`${API_URL}/hots_settings/custom_functions/upload_excel`, formData, {
+      const response = await axios.post(`${API_URL}/hots_customfunction/upload_excel`, formData, {
         headers: { 
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
           'Content-Type': 'multipart/form-data'
@@ -112,6 +150,88 @@ export const uploadExcelFile = createAsyncThunk(
       
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to upload Excel file');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const fetchFunctionLogs = createAsyncThunk(
+  'customFunction/fetchLogs',
+  async (ticketId: number, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}/hots_customfunction/logs/${ticketId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
+      });
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to fetch function logs');
+      }
+      
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const fetchGeneratedDocuments = createAsyncThunk(
+  'customFunction/fetchDocuments',
+  async (ticketId: number, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}/hots_customfunction/documents/${ticketId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
+      });
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to fetch generated documents');
+      }
+      
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const fetchFunctionTemplates = createAsyncThunk(
+  'customFunction/fetchTemplates',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_URL}/hots_customfunction/templates`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
+      });
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to fetch function templates');
+      }
+      
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
+    }
+  }
+);
+
+export const assignFunctionToService = createAsyncThunk(
+  'customFunction/assignToService',
+  async (assignmentData: {
+    service_id: number;
+    function_id: number;
+    trigger_event: string;
+    execution_order: number;
+    config: any;
+  }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_URL}/hots_customfunction/assign_service`, assignmentData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
+      });
+      
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message || 'Failed to assign function to service');
       }
       
       return response.data;
@@ -173,6 +293,35 @@ const customFunctionSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
+      // Update Custom Function
+      .addCase(updateCustomFunction.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateCustomFunction.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.functions.findIndex(func => func.id === action.payload.id);
+        if (index !== -1) {
+          state.functions[index] = { ...state.functions[index], ...action.payload.functionData };
+        }
+      })
+      .addCase(updateCustomFunction.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Delete Custom Function
+      .addCase(deleteCustomFunction.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteCustomFunction.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.functions = state.functions.filter(func => func.id !== action.payload);
+      })
+      .addCase(deleteCustomFunction.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
       // Execute Custom Function
       .addCase(executeCustomFunction.pending, (state) => {
         state.isExecuting = true;
@@ -194,6 +343,57 @@ const customFunctionSlice = createSlice({
         state.isLoading = false;
       })
       .addCase(uploadExcelFile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Fetch Function Logs
+      .addCase(fetchFunctionLogs.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchFunctionLogs.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.functionLogs = action.payload;
+      })
+      .addCase(fetchFunctionLogs.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Fetch Generated Documents
+      .addCase(fetchGeneratedDocuments.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchGeneratedDocuments.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.generatedDocuments = action.payload;
+      })
+      .addCase(fetchGeneratedDocuments.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Fetch Function Templates
+      .addCase(fetchFunctionTemplates.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchFunctionTemplates.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.templates = action.payload;
+      })
+      .addCase(fetchFunctionTemplates.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Assign Function to Service
+      .addCase(assignFunctionToService.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(assignFunctionToService.fulfilled, (state, action) => {
+        state.isLoading = false;
+      })
+      .addCase(assignFunctionToService.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Play, FileText, Upload, Mail, Settings } from 'lucide-react';
 import { useAppDispatch } from '@/hooks/useAppDispatch';
 import { useAppSelector } from '@/hooks/useAppSelector';
-import { fetchCustomFunctions, createCustomFunction, executeCustomFunction } from '@/store/slices/customFunctionSlice';
+import { 
+  fetchCustomFunctions, 
+  createCustomFunction, 
+  updateCustomFunction,
+  deleteCustomFunction,
+  executeCustomFunction 
+} from '@/store/slices/customFunctionSlice';
 import { useToast } from '@/hooks/use-toast';
 import { CustomFunction } from '@/types/customFunctionTypes';
 
@@ -19,6 +26,8 @@ export default function CustomFunctionManager() {
   const { functions, isLoading, isExecuting, error } = useAppSelector(state => state.customFunction);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingFunction, setEditingFunction] = useState<CustomFunction | null>(null);
   const [newFunction, setNewFunction] = useState<Partial<CustomFunction>>({
     name: '',
     type: 'document_generation',
@@ -55,6 +64,66 @@ export default function CustomFunctionManager() {
     }
   };
 
+  const handleEditFunction = (func: CustomFunction) => {
+    setEditingFunction(func);
+    setNewFunction({
+      name: func.name,
+      type: func.type,
+      handler: func.handler,
+      config: func.config,
+      is_active: func.is_active
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateFunction = async () => {
+    if (!editingFunction) return;
+    
+    try {
+      await dispatch(updateCustomFunction({
+        id: editingFunction.id,
+        functionData: newFunction
+      })).unwrap();
+      toast({
+        title: "Success",
+        description: "Custom function updated successfully",
+      });
+      setIsEditModalOpen(false);
+      setEditingFunction(null);
+      setNewFunction({
+        name: '',
+        type: 'document_generation',
+        handler: '',
+        config: {},
+        is_active: true
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to update custom function",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteFunction = async (functionId: number) => {
+    if (!confirm('Are you sure you want to delete this function?')) return;
+    
+    try {
+      await dispatch(deleteCustomFunction(functionId)).unwrap();
+      toast({
+        title: "Success",
+        description: "Custom function deleted successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to delete custom function",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleTestFunction = async (functionId: number) => {
     try {
       await dispatch(executeCustomFunction({ 
@@ -82,6 +151,19 @@ export default function CustomFunctionManager() {
       case 'email_notification': return <Mail className="w-4 h-4" />;
       default: return <Settings className="w-4 h-4" />;
     }
+  };
+
+  const closeModal = () => {
+    setIsCreateModalOpen(false);
+    setIsEditModalOpen(false);
+    setEditingFunction(null);
+    setNewFunction({
+      name: '',
+      type: 'document_generation',
+      handler: '',
+      config: {},
+      is_active: true
+    });
   };
 
   return (
@@ -135,11 +217,19 @@ export default function CustomFunctionManager() {
                     <Play className="w-4 h-4 mr-1" />
                     Test
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleEditFunction(func)}
+                  >
                     <Edit className="w-4 h-4 mr-1" />
                     Edit
                   </Button>
-                  <Button size="sm" variant="destructive">
+                  <Button 
+                    size="sm" 
+                    variant="destructive"
+                    onClick={() => handleDeleteFunction(func.id)}
+                  >
                     <Trash2 className="w-4 h-4 mr-1" />
                     Delete
                   </Button>
@@ -150,11 +240,14 @@ export default function CustomFunctionManager() {
         ))}
       </div>
 
-      {isCreateModalOpen && (
+      {/* Create/Edit Modal */}
+      {(isCreateModalOpen || isEditModalOpen) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-md max-h-[80vh] overflow-y-auto">
             <CardHeader>
-              <CardTitle>Create Custom Function</CardTitle>
+              <CardTitle>
+                {isEditModalOpen ? 'Edit Custom Function' : 'Create Custom Function'}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -215,11 +308,14 @@ export default function CustomFunctionManager() {
               </div>
               
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                <Button variant="outline" onClick={closeModal}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateFunction} disabled={isLoading}>
-                  Create Function
+                <Button 
+                  onClick={isEditModalOpen ? handleUpdateFunction : handleCreateFunction} 
+                  disabled={isLoading}
+                >
+                  {isEditModalOpen ? 'Update Function' : 'Create Function'}
                 </Button>
               </div>
             </CardContent>
