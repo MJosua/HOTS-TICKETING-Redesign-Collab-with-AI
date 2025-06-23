@@ -84,7 +84,7 @@ const hotscustomfunctionController = {
       const [serviceFunctions] = await dbHots.promise().query(query, [serviceId]);
       
       yellowTerminal(`Retrieved ${serviceFunctions.length} service functions`);
-      
+        
       res.json({
         success: true,
         message: 'Service custom functions retrieved successfully',
@@ -406,6 +406,108 @@ const hotscustomfunctionController = {
       });
     }
   },
+
+  executeCustomFunction: async (reqOrTicketId, functionDataOrFunctionId, variablesOrParams, mode = 'auto') => {
+    try {
+      const isManual = mode === 'manual';
+  
+      const ticket_id = isManual ? reqOrTicketId.body.ticket_id : reqOrTicketId;
+      const functionId = isManual ? reqOrTicketId.params.functionId : functionDataOrFunctionId;
+      const params = isManual ? reqOrTicketId.body.params || {} : variablesOrParams;
+      const userId = isManual ? reqOrTicketId.dataToken.user_id : (variablesOrParams.created_by || 0);
+  
+      yellowTerminal(`Executing custom function: ${functionId} for ticket: ${ticket_id}`);
+  
+      // Get function details
+      const [functionDetails] = await dbHots.promise().query(
+        'SELECT * FROM m_custom_functions WHERE id = ? AND is_active = 1',
+        [functionId]
+      );
+  
+      if (functionDetails.length === 0) {
+        if (isManual) {
+          return reqOrTicketId.res.status(404).json({
+            success: false,
+            message: 'Custom function not found'
+          });
+        } else {
+          throw new Error('Custom function not found');
+        }
+      }
+  
+      const func = functionDetails[0];
+  
+      let result = {};
+      let status = 'success';
+      let errorMessage = null;
+  
+      try {
+        // Execute function based on type
+        switch (func.type) {
+          case 'document_generation':
+            result = await hotscustomfunctionController.executeDocumentGeneration(func, ticket_id, params);
+            break;
+          case 'excel_processing':
+            result = await hotscustomfunctionController.executeExcelProcessing(func, ticket_id, params);
+            break;
+          case 'email_notification':
+            result = await hotscustomfunctionController.executeEmailNotification(func, ticket_id, params);
+            break;
+          case 'api_integration':
+            result = await hotscustomfunctionController.executeApiIntegration(func, ticket_id, params);
+            break;
+          default:
+            result = await hotscustomfunctionController.executeCustomHandler(func, ticket_id, params);
+        }
+      } catch (execError) {
+        status = 'failed';
+        errorMessage = execError.message;
+        result = { error: execError.message };
+        yellowTerminal('Function execution error: ' + execError.message);
+      }
+  
+      // Log function execution
+      await dbHots.promise().query(`
+        INSERT INTO t_custom_function_logs 
+        (ticket_id, service_id, function_name, trigger_event, status, result_data, error_message, execution_time, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)
+      `, [
+        ticket_id,
+        func.service_id || 0,
+        func.name,
+        isManual ? 'manual' : 'on_created',
+        status,
+        JSON.stringify(result),
+        errorMessage,
+        userId
+      ]);
+  
+      yellowTerminal(`Function execution completed with status: ${status}`);
+  
+      if (isManual) {
+        return reqOrTicketId.res.json({
+          success: status === 'success',
+          message: status === 'success' ? 'Function executed successfully' : 'Function execution failed',
+          data: result
+        });
+      } else {
+        return { success: status === 'success', result };
+      }
+    } catch (error) {
+      yellowTerminal('Error executing custom function: ' + error.message);
+  
+      if (mode === 'manual') {
+        return reqOrTicketId.res.status(500).json({
+          success: false,
+          message: 'Failed to execute custom function',
+          error: error.message
+        });
+      } else {
+        throw error;
+      }
+    }
+  }
+,  
 
   // Upload and process Excel file
   uploadExcelFile: [

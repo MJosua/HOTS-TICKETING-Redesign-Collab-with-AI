@@ -158,15 +158,7 @@ const TicketDetail = () => {
       approver => approver.approval_order === ticketDetail.current_step
     );
     
-    console.log('=== APPROVAL DEBUG ===');
-    console.log('ticketDetail:', ticketDetail);
-    console.log('user:', user);
-    console.log('current_step:', ticketDetail.current_step);
-    console.log('currentApprover:', currentApprover);
-    console.log('currentApprover?.approver_id:', currentApprover?.approver_id);
-    console.log('user.user_id:', user.user_id);
-    console.log('canApprove result:', currentApprover && currentApprover.approver_id === user.user_id);
-    console.log('=== END APPROVAL DEBUG ===');
+  
     
     return currentApprover && currentApprover.approver_id === user.user_id;
   };
@@ -204,7 +196,8 @@ const TicketDetail = () => {
   };
 
   const handleGeneratedDocumentDownload = (documentPath: string, fileName: string) => {
-    const downloadUrl = `${API_URL}/hots_customfunction/download/document/${documentPath}`;
+    const downloadUrl = `${API_URL}/${documentPath}`;
+    console.log("downloadUrl",downloadUrl)
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = fileName;
@@ -456,8 +449,10 @@ const TicketDetail = () => {
                     </div>
                   ) : generatedDocuments && generatedDocuments.length > 0 ? (
                     <div className="space-y-3">
+                      {console.log("generatedDocuments",generatedDocuments)}
                       {generatedDocuments.map((document) => (
                         <FilePreview
+                          generated={true}
                           key={document.id}
                           fileName={document.file_name}
                           filePath={document.file_path}

@@ -247,7 +247,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         {config.description && (
           <p className="text-sm text-muted-foreground">{config.description}</p>
         )}
-        {renderApprovalFlow()}
+        {/* {renderApprovalFlow()} */}
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -274,7 +274,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
               </div>
             )}
 
-            {config.sections && config.sections.map((section: FormSection, sectionIndex) => (
+            {/* {config.sections && config.sections.map((section: FormSection, sectionIndex) => (
               <div key={`section-${sectionIndex}`} className="mb-6">
                 <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
 
@@ -300,7 +300,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                   </div>
                 )}
               </div>
-            ))}
+            ))} */}
 
             <div className="flex justify-end pt-6">
               <Button type="submit" disabled={isSubmitting} className="min-w-32">

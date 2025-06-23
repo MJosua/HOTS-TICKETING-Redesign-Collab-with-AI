@@ -46,7 +46,6 @@ export const fetchMyTickets = createAsyncThunk(
         },
       });
       
-      console.log('My Tickets API Response:', response.data);
       
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch my tickets');

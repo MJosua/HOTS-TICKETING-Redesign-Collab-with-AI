@@ -529,7 +529,8 @@ export const fetchServices = createAsyncThunk(
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
-    });
+    })
+    console.log("response.data.data",response.data.data)
     return response.data.data;
   }
 );
@@ -542,6 +543,7 @@ export const fetchActiveServices = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
+    console.log("response.data.data",response.data.data)
     return response.data.data;
   }
 );

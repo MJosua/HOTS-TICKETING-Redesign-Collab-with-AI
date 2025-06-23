@@ -173,11 +173,18 @@ const FormBuilder = () => {
             name: "item_name",
             type: "text",
             required: true,
-            columnSpan: 2
+            columnSpan: 1
           },
           {
             label: "Quantity",
             name: "quantity",
+            type: "number",
+            required: true,
+            columnSpan: 1
+          },
+          {
+            label: "UOM",
+            name: "UOM",
             type: "number",
             required: true,
             columnSpan: 1

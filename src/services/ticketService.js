@@ -152,7 +152,7 @@ const ticketService = {
     executeCustomFunctions: async (serviceId, ticketId) => {
         return new Promise((resolve, reject) => {
             const customFunctionQuery = `
-                SELECT cf.*, csa.trigger_event, csa.trigger_status, csa.execution_order
+                SELECT cf.*, csa.trigger_event, csa.execution_order
                 FROM m_custom_function cf
                 INNER JOIN m_custom_function_service_assignment csa ON cf.function_id = csa.function_id
                 WHERE csa.service_id = ? AND csa.trigger_event = 'on_created' AND csa.is_active = 1

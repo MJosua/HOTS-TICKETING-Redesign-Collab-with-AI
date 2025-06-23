@@ -24,11 +24,12 @@ const ServiceCatalogAdmin = () => {
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; serviceId: string; serviceName: string }>({
     isOpen: false,
     serviceId: '',
-    serviceName: ''
+    serviceName: '',
+    value: null
   });
   const [isDeleting, setIsDeleting] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
-  
+
   const {
     serviceCatalog,
     categoryList,
@@ -48,6 +49,7 @@ const ServiceCatalogAdmin = () => {
   }, [dispatch]);
 
   // Convert service catalog data to FormConfig format for display
+  console.log("serviceCatalog",serviceCatalog)
   const forms: FormConfig[] = serviceCatalog.map(service => {
     // Try to parse form_json if it exists
     if (service.form_json) {
@@ -62,25 +64,26 @@ const ServiceCatalogAdmin = () => {
         console.error(`Failed to parse form_json for service ${service.service_id}:`, error);
       }
     }
-    
+
     // Fallback to default form structure if form_json is not available or invalid
     return {
       id: service.service_id.toString(),
       title: service.service_name,
       url: `/${service.nav_link}`,
+      active: service.active,
       category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown',
       description: service.service_description,
       apiEndpoint: `/api/${service.nav_link}`,
-      approval: { 
-        steps: service.approval_level > 0 ? ['Manager', 'Supervisor'] : [], 
-        mode: 'sequential' as const 
+      approval: {
+        steps: service.approval_level > 0 ? ['Manager', 'Supervisor'] : [],
+        mode: 'sequential' as const
       },
       fields: [
-        { 
-          label: 'Description', 
+        {
+          label: 'Description',
           name: 'description',
-          type: 'textarea', 
-          required: true 
+          type: 'textarea',
+          required: true
         }
       ]
     };
@@ -101,24 +104,29 @@ const ServiceCatalogAdmin = () => {
       setDeleteModal({
         isOpen: true,
         serviceId: formId,
-        serviceName: service.service_name
+        serviceName: service.service_name,
+        value: service.active
       });
     }
   };
 
   const handleDeleteConfirm = async () => {
     if (!deleteModal.serviceId) return;
-    
+
     setIsDeleting(true);
-    
+
     try {
       // console.log('Deleting service with ID:', deleteModal.serviceId);
-      
-      const response = await axios.delete(`${API_URL}/hots_settings/delete/service/${deleteModal.serviceId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+      const response = await axios.post(
+        `${API_URL}/hots_settings/toggle/service/${deleteModal.serviceId}/${deleteModal.value}`,
+        {}, // no body needed if route uses only params
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          }
         }
-      });
+      );
+
 
       // console.log('Delete response:', response.data);
 
@@ -131,7 +139,7 @@ const ServiceCatalogAdmin = () => {
 
       // Refresh the catalog data
       fetchData();
-      
+
     } catch (error: any) {
       console.error('Delete error:', error);
       toast({

@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Download, Eye, FileText } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-
+import { API_URL } from '@/config/sourceConfig';
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 interface FilePreviewProps {
   fileName: string;
   filePath?: string;
@@ -20,7 +23,8 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
   fileUrl,
   fileSize,
   uploadDate,
-  onDownload
+  onDownload,
+  generated = false
 }) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
@@ -72,10 +76,9 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
   const renderPreview = () => {
     const ext = getFileExtension(fileName);
     const previewUrl = fileUrl || filePath;
-
     if (!previewUrl) return <p>Preview not available</p>;
 
-    if (ext === 'pdf') {
+    if (ext === 'pdf' && generated === false) {
       return (
         <iframe
           src={previewUrl}
@@ -83,6 +86,18 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
           title={fileName}
         />
       );
+    } else if (ext === 'pdf' && generated === true) {
+      console.log(`${API_URL}/${filePath.replace(/\\/g, '/')}`)
+      return (
+        <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
+
+          <Viewer
+            fileUrl={`${API_URL}/${filePath.replace(/\\/g, '/')}`}
+          />
+        </Worker>
+
+      );
+
     }
 
     if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
@@ -121,7 +136,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
           </div>
         </div>
       </div>
-      
+
       <div className="flex items-center space-x-2">
         {canPreview(fileName) && (
           <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
@@ -140,7 +155,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
             </DialogContent>
           </Dialog>
         )}
-        
+
         <Button variant="outline" size="sm" onClick={onDownload}>
           <Download className="w-4 h-4" />
         </Button>

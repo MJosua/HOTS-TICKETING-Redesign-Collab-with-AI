@@ -28,7 +28,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
     if (fields.length >= getMaxFormFields()) {
       return; // Prevent adding more fields than supported
     }
-    
+
     const newField: FormField = {
       label: 'New Field',
       name: 'new_field',
@@ -47,7 +47,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
   const moveField = (index: number, direction: 'up' | 'down') => {
     const newFields = [...fields];
     const newIndex = direction === 'up' ? index - 1 : index + 1;
-    
+
     if (newIndex >= 0 && newIndex < newFields.length) {
       [newFields[index], newFields[newIndex]] = [newFields[newIndex], newFields[index]];
       onUpdate(newFields);
@@ -61,7 +61,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
   };
 
   const validateFieldName = (name: string, currentIndex: number) => {
-    return !fields.some((field, index) => 
+    return !fields.some((field, index) =>
       index !== currentIndex && field.name === name
     );
   };
@@ -73,7 +73,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
 
     fields.forEach(field => {
       const span = field.columnSpan || 1;
-      
+
       if (currentRowSpan + span > 3) {
         if (currentRow.length > 0) {
           rows.push([...currentRow]);
@@ -100,7 +100,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
                 const globalFieldIndex = fields.indexOf(field);
                 const cstmCol = `cstm_col${globalFieldIndex + 1}`;
                 const lblCol = `lbl_col${globalFieldIndex + 1}`;
-                
+
                 return (
                   <div
                     key={fieldIndex}
@@ -132,8 +132,8 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             onClick={addField}
             disabled={fields.length >= getMaxFormFields()}
           >
@@ -207,8 +207,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
   const handleLabelChange = (label: string) => {
     const suggestedName = generateFieldName(label);
-    updateField({ 
-      label, 
+    updateField({
+      label,
       name: suggestedName // Auto-generate name from label
     });
   };
@@ -223,7 +223,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   };
 
   const getColumnSpanColor = (span: number) => {
-    switch(span) {
+    switch (span) {
       case 1: return 'border-blue-500';
       case 2: return 'border-green-500';
       case 3: return 'border-purple-500';
@@ -264,18 +264,18 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               placeholder="Field Label"
             />
           </div>
-          
+
           <div>
-            <Label htmlFor={`name-${index}`}>Field Name (API)</Label>
+            <Label htmlFor={`name-${index}`}>Default Value</Label>
             <Input
               id={`name-${index}`}
-              value={field.name}
-              onChange={(e) => handleNameChange(e.target.value)}
+              value={field.value}
+              onChange={(e) => updateField({ value: e.target.value })}
               placeholder="field_name"
               className={nameError ? 'border-red-500' : ''}
             />
             {nameError && <p className="text-xs text-red-500 mt-1">{nameError}</p>}
-            <p className="text-xs text-gray-500 mt-1">Auto-generated from label, can be edited</p>
+            {/* <p className="text-xs text-gray-500 mt-1">Auto-generated from label, can be edited</p> */}
           </div>
         </div>
 
@@ -302,8 +302,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
           <div>
             <Label>Column Span</Label>
-            <Select 
-              value={String(field.columnSpan || 1)} 
+            <Select
+              value={String(field.columnSpan || 1)}
               onValueChange={(value) => updateField({ columnSpan: Number(value) as 1 | 2 | 3 })}
             >
               <SelectTrigger>
@@ -325,6 +325,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             />
             <Label>Required</Label>
           </div>
+
         </div>
 
         <div>
@@ -347,6 +348,14 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             />
           </div>
         )}
+        <div className="flex items-center gap-2 pt-6">
+          <input
+            type="checkbox"
+            checked={field.readonly}
+            onChange={(e) => updateField({ readonly: e.target.checked })}
+          />
+          <Label>readonly</Label>
+        </div>
       </div>
     </Card>
   );
