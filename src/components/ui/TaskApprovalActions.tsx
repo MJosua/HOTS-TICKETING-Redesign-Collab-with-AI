@@ -15,7 +15,7 @@ interface TaskApprovalActionsProps {
   canApprove: boolean;
   currentStatus: number;
   currentUserId?: number;
-  assignedToId?: number;
+  assignedToId?: string | number;
 }
 
 const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
@@ -34,13 +34,16 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
   const [showRejectBox, setShowRejectBox] = useState(false);
 
   // Check if current user can approve this ticket
+  const assignedToIdNumber = typeof assignedToId === 'string' ? parseInt(assignedToId) : assignedToId;
   const userCanApprove = canApprove && 
                         currentStatus === 0 && 
                         currentUserId && 
-                        assignedToId && 
-                        currentUserId === assignedToId;
-  console.log("currentUserId",currentUserId)
-  console.log("assignedToId",assignedToId)
+                        assignedToIdNumber && 
+                        currentUserId === assignedToIdNumber;
+
+  console.log("currentUserId", currentUserId);
+  console.log("assignedToId", assignedToId);
+  console.log("assignedToIdNumber", assignedToIdNumber);
 
   console.log('=== TASK APPROVAL ACTIONS COMPONENT ===');
   console.log('ticketId:', ticketId);
@@ -53,8 +56,8 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
   console.log('  canApprove:', canApprove);
   console.log('  currentStatus === 0:', currentStatus === 0);
   console.log('  currentUserId truthy:', !!currentUserId);
-  console.log('  assignedToId truthy:', !!assignedToId);
-  console.log('  IDs match:', currentUserId === assignedToId);
+  console.log('  assignedToIdNumber truthy:', !!assignedToIdNumber);
+  console.log('  IDs match:', currentUserId === assignedToIdNumber);
   console.log('userCanApprove result:', userCanApprove);
   console.log('=== END TASK APPROVAL ACTIONS COMPONENT ===');
 

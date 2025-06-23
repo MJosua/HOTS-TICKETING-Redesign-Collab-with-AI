@@ -9,6 +9,8 @@ interface ApprovalStep {
   status: 'approved' | 'rejected' | 'pending' | 'waiting';
   date?: string;
   approver?: string;
+  approval_order?: number;
+  approval_status?: number;
 }
 
 interface ProgressionBarProps {

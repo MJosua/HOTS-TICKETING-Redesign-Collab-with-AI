@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -149,20 +148,18 @@ const TaskList = () => {
   const CardView = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {filteredTasks.slice(0, 1).map((task) => {
-        const originalTicket = taskList.data.find(t => t.ticket_id === task.id);
+        const originalTicket = taskList.data.find(t => t.ticket_id.toString() === task.id);
         const userApprovalOrder = getUserApprovalOrder(originalTicket);
         const canApprove = userApprovalOrder !== null;
 
-      
         const currentApprover = task.approvalSteps?.find(
           approver => approver.approval_order === task.current_step
         );
 
-        console.log("taskList.list_approval",task)
-        console.log("taskList.current_step",task.current_step)
-        console.log("currentApprover",currentApprover)
+        console.log("taskList.list_approval", task);
+        console.log("taskList.current_step", task.current_step);
+        console.log("currentApprover", currentApprover);
 
-        // You can now use `canApprove` and `canUserApprove()` in your render logic
         return (
           <div key={task.id} className="space-y-4">
             <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
@@ -224,9 +221,7 @@ const TaskList = () => {
                 currentStatus={currentApprover?.approval_status || 0}
                 currentUserId={user?.user_id}
                 assignedToId={currentApprover?.id}
-
               />
-           
             )}
           </div>
         );
