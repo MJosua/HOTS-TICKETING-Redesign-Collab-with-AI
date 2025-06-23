@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
@@ -167,12 +166,15 @@ export const fetchFunctionLogs = createAsyncThunk(
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
       
+      console.log('Function logs response:', response.data);
+      
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch function logs');
       }
       
-      return response.data.data;
+      return response.data.data || [];
     } catch (error: any) {
+      console.error('Error fetching function logs:', error);
       return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
     }
   }
@@ -185,13 +187,16 @@ export const fetchGeneratedDocuments = createAsyncThunk(
       const response = await axios.get(`${API_URL}/hots_customfunction/documents/${ticketId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
-      console.log("response",response)
+      
+      console.log('Generated documents response:', response.data);
+      
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch generated documents');
       }
       
-      return response.data.data;
+      return response.data.data || [];
     } catch (error: any) {
+      console.error('Error fetching generated documents:', error);
       return rejectWithValue(error.response?.data?.message || error.message || 'Network error');
     }
   }
@@ -400,11 +405,12 @@ const customFunctionSlice = createSlice({
       })
       .addCase(fetchFunctionLogs.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.functionLogs = action.payload;
+        state.functionLogs = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchFunctionLogs.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+        state.functionLogs = [];
       })
       // Fetch Generated Documents
       .addCase(fetchGeneratedDocuments.pending, (state) => {
@@ -413,11 +419,12 @@ const customFunctionSlice = createSlice({
       })
       .addCase(fetchGeneratedDocuments.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.generatedDocuments = action.payload;
+        state.generatedDocuments = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchGeneratedDocuments.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+        state.generatedDocuments = [];
       })
       // Fetch Function Templates
       .addCase(fetchFunctionTemplates.pending, (state) => {

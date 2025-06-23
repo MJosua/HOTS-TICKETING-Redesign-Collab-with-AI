@@ -4,12 +4,15 @@ import { Ticket, Approver } from '@/types/ticketTypes';
 export const convertTicketToDisplayFormat = (ticket: Ticket) => {
   // Convert approval list to steps format
   const approvalSteps = ticket.list_approval?.map((approver: Approver, index: number) => ({
-    id: approver.approver_id,
+    id: approver.approver_id.toString(),
     name: approver.approver_name,
-    approval_order : approver.approval_order,
+    approval_order: approver.approval_order,
     status: approver.approval_status === 1 ? 'approved' as const : 
             approver.approval_status === 2 ? 'rejected' as const : 
-            'pending' as const
+            'pending' as const,
+    date: approver.approval_date,
+    approver: approver.approver_name,
+    approval_status: approver.approval_status
   })) || [];
 
   // Determine priority based on approval level
@@ -20,17 +23,16 @@ export const convertTicketToDisplayFormat = (ticket: Ticket) => {
   };
 
   return {
-    id: ticket.ticket_id,
+    id: ticket.ticket_id.toString(),
     type: ticket.service_name,
-    requester: "Current User", // This would come from user context
+    requester: ticket.created_by_name || "Current User",
     department: ticket.team_name || "Unknown Department",
-    priority: getPriority(ticket.approval_level),
+    priority: getPriority(ticket.approval_level || 1),
     created: ticket.creation_date,
     amount: "-", // Not provided in API
     status: ticket.status,
     approvalSteps: approvalSteps,
-    current_step : ticket.current_step,
-
+    current_step: ticket.current_step,
   };
 };
 

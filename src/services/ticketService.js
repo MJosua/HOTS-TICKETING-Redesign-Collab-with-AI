@@ -148,27 +148,42 @@ const ticketService = {
         });
     },
 
-    // Execute custom functions for ticket
+    // Execute custom functions for ticket - Updated to use correct field structure
     executeCustomFunctions: async (serviceId, ticketId) => {
         return new Promise((resolve, reject) => {
             const customFunctionQuery = `
-                SELECT cf.*, csa.trigger_event, csa.execution_order
+                SELECT 
+                    cf.id as function_id,
+                    cf.name,
+                    cf.type, 
+                    cf.handler,
+                    cf.config,
+                    cf.is_active,
+                    cf.created_by,
+                    csa.trigger_event, 
+                    csa.trigger_status, 
+                    csa.execution_order,
+                    csa.service_id
                 FROM m_custom_function cf
-                INNER JOIN m_custom_function_service_assignment csa ON cf.function_id = csa.function_id
+                INNER JOIN m_custom_function_service_assignment csa ON cf.id = csa.function_id
                 WHERE csa.service_id = ? AND csa.trigger_event = 'on_created' AND csa.is_active = 1
                 ORDER BY csa.execution_order
             `;
 
             dbHots.execute(customFunctionQuery, [serviceId], (err, customFunctions) => {
                 if (err) {
+                    console.error('Error fetching custom functions:', err);
                     reject(err);
                     return;
                 }
 
                 if (!customFunctions || customFunctions.length === 0) {
+                    console.log('No custom functions found for service:', serviceId);
                     resolve();
                     return;
                 }
+
+                console.log('Found custom functions:', customFunctions.length);
 
                 // Get complete ticket data for function execution
                 const getTicketDataQuery = `
@@ -188,25 +203,42 @@ const ticketService = {
 
                 dbHots.execute(getTicketDataQuery, [ticketId], async (err2, ticketData) => {
                     if (err2) {
+                        console.error('Error fetching ticket data:', err2);
                         reject(err2);
                         return;
                     }
 
                     if (!ticketData || ticketData.length === 0) {
+                        console.log('No ticket data found for:', ticketId);
                         resolve();
                         return;
                     }
 
                     const ticket = ticketData[0];
+                    console.log('Processing ticket:', ticket.ticket_id);
                     
                     try {
                         // Execute each custom function
                         for (const customFunction of customFunctions) {
-                            const functionData = JSON.parse(customFunction.function_data);
-                            functionData.function_id = customFunction.function_id;
+                            console.log('Processing custom function:', customFunction.name);
+                            
+                            // Construct function data from the database result
+                            const functionData = {
+                                function_id: customFunction.function_id,
+                                name: customFunction.name,
+                                type: customFunction.type,
+                                handler: customFunction.handler,
+                                config: customFunction.config,
+                                service_id: customFunction.service_id,
+                                trigger_event: customFunction.trigger_event,
+                                created_by: customFunction.created_by
+                            };
+                            
+                            console.log('Function data:', functionData);
                             
                             // Map ticket data to template variables
                             const variables = customFunctionMapper.mapTicketDataToVariables(ticket, ticket);
+                            console.log('Mapped variables:', variables);
                             
                             // Execute the custom function
                             await customFunctionMapper.executeCustomFunction(
@@ -216,8 +248,11 @@ const ticketService = {
                                 variables
                             );
                         }
+                        
+                        console.log('All custom functions executed successfully');
                         resolve();
                     } catch (funcError) {
+                        console.error('Error executing custom functions:', funcError);
                         reject(funcError);
                     }
                 });

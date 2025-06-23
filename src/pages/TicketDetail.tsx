@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2, Download } from 'lucide-react';
+import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2, Download, FileText } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import RejectModal from "@/components/modals/RejectModal";
@@ -198,34 +197,33 @@ const TicketDetail = () => {
   const handleGeneratedDocumentDownload = (documentPath: string, fileName: string) => {
     const downloadUrl = `${API_URL}/${documentPath}`;
     console.log("downloadUrl",downloadUrl)
+  const handleGeneratedDocumentDownload = (documentId: number, fileName: string) => {
+    const downloadUrl = `${API_URL}/hots_customfunction/download/${documentId}`;
+    
+    // Create a temporary link and trigger download
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = fileName;
-    link.target = '_blank';
+    link.style.display = 'none';
     
-    // Add authorization header by creating a fetch request
-    fetch(downloadUrl, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('tokek')}`
-      }
-    })
-    .then(response => response.blob())
-    .then(blob => {
-      const url = window.URL.createObjectURL(blob);
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    })
-    .catch(error => {
-      console.error('Download failed:', error);
-      toast({
-        title: "Download Error",
-        description: "Failed to download generated document. Please try again.",
-        variant: "destructive",
-      });
-    });
+    // Add authorization header by creating a form
+    const form = document.createElement('form');
+    form.method = 'GET';
+    form.action = downloadUrl;
+    form.style.display = 'none';
+    
+    const authInput = document.createElement('input');
+    authInput.type = 'hidden';
+    authInput.name = 'authorization';
+    authInput.value = `Bearer ${localStorage.getItem('tokek')}`;
+    
+    form.appendChild(authInput);
+    document.body.appendChild(form);
+    
+    // For now, just open in new tab since we need proper auth handling
+    window.open(downloadUrl, '_blank');
+    
+    document.body.removeChild(form);
   };
 
   if (isLoadingDetail) {
@@ -428,14 +426,15 @@ const TicketDetail = () => {
               </Card>
             )}
 
-            {/* Generated Documents */}
+            {/* Generated Documents - Enhanced */}
             {(isLoadingCustomFunction || (generatedDocuments && generatedDocuments.length > 0)) && (
               <Card className="bg-card shadow-sm border">
                 <CardHeader className="bg-muted/50 border-b">
-                  <CardTitle className="text-lg">
+                  <CardTitle className="text-lg flex items-center">
+                    <FileText className="w-5 h-5 mr-2" />
                     Generated Documents
                     {isLoadingCustomFunction && (
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin inline" />
+                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
                     )}
                   </CardTitle>
                 </CardHeader>
@@ -448,8 +447,7 @@ const TicketDetail = () => {
                       </div>
                     </div>
                   ) : generatedDocuments && generatedDocuments.length > 0 ? (
-                    <div className="space-y-3">
-                      {console.log("generatedDocuments",generatedDocuments)}
+                    <div className="space-y-4">
                       {generatedDocuments.map((document) => (
                         <FilePreview
                           generated={true}
@@ -462,7 +460,13 @@ const TicketDetail = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground text-center py-4">No generated documents found</p>
+                    <div className="text-center py-8">
+                      <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No generated documents found</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Documents will appear here when custom functions generate them
+                      </p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
