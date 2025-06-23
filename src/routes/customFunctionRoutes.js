@@ -1,59 +1,43 @@
-
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { readToken } = require('../config/encrypts')
-const { hotscustomfunctionController } = require('../controller')
-const { decodeTokenHT } = require('../config/encrypts')
+const customFunctionController = require('../controllers/customFunctionController');
 
-// Get all custom functions
-router.get('/list', decodeTokenHT, hotscustomfunctionController.getCustomFunctions);
+// Define routes for custom function management
+router.get('/list', customFunctionController.getAllCustomFunctions);
+router.get('/:id', customFunctionController.getCustomFunction);
+router.post('/create', customFunctionController.createCustomFunction);
+router.put('/update/:id', customFunctionController.updateCustomFunction);
+router.delete('/delete/:id', customFunctionController.deleteCustomFunction);
 
-// Get custom functions for a specific service
-router.get('/service/:serviceId', decodeTokenHT, hotscustomfunctionController.getServiceCustomFunctions);
+// Service Assignment Routes
+router.get('/service/:service_id', customFunctionController.getServiceCustomFunctions);
+router.post('/assign_service', customFunctionController.assignFunctionToService);
+router.put('/update_service_assignment/:id', customFunctionController.updateServiceFunctionAssignment);
+router.delete('/remove_service_assignment/:id', customFunctionController.deleteServiceFunctionAssignment);
 
-// Create a new custom function
-router.post('/create', decodeTokenHT, hotscustomfunctionController.createCustomFunction);
+// Template Routes
+router.get('/templates', customFunctionController.getAllFunctionTemplates);
+router.get('/templates/:id', customFunctionController.getFunctionTemplate);
+router.post('/templates/create', customFunctionController.createFunctionTemplate);
+router.put('/templates/update/:id', customFunctionController.updateFunctionTemplate);
+router.delete('/templates/delete/:id', customFunctionController.deleteFunctionTemplate);
 
-// Update a custom function
-router.put('/update/:id', decodeTokenHT, hotscustomfunctionController.updateCustomFunction);
+// Execute Route
+router.post('/execute/:function_id', customFunctionController.executeCustomFunction);
 
-// Delete a custom function (soft delete)
-router.delete('/delete/:id', decodeTokenHT, hotscustomfunctionController.deleteCustomFunction);
+// Upload Excel Route
+router.post('/upload_excel', customFunctionController.uploadExcelFile);
 
-// Assign custom function to service
-router.post('/assign_service', decodeTokenHT, hotscustomfunctionController.assignFunctionToService);
-
-// Execute a custom function
-router.post('/execute/:functionId', decodeTokenHT, hotscustomfunctionController.executeCustomFunction);
-
-// Upload and process Excel file
-router.post('/upload_excel', decodeTokenHT, hotscustomfunctionController.uploadExcelFile);
-
-// Get function execution logs for a ticket
-router.get('/logs/:ticketId', decodeTokenHT, hotscustomfunctionController.getFunctionLogs);
+// Get function logs for a ticket
+router.get('/logs/:ticket_id', customFunctionController.getFunctionLogs);
 
 // Get generated documents for a ticket
-router.get('/documents/:ticketId', decodeTokenHT, hotscustomfunctionController.getGeneratedDocuments);
+router.get('/documents/:ticket_id', customFunctionController.getGeneratedDocuments);
 
-// Download a generated document
-router.get('/download/:documentId', decodeTokenHT, hotscustomfunctionController.downloadDocument);
+// Download generated document by path
+router.get('/download/document/:document_path', customFunctionController.downloadDocument);
 
-// Get all function templates
-router.get('/templates', decodeTokenHT, hotscustomfunctionController.getFunctionTemplates);
-
-// Create function template
-router.post('/templates/create', decodeTokenHT, hotscustomfunctionController.createFunctionTemplate);
-
-// Update function template
-router.put('/templates/update/:id', decodeTokenHT, hotscustomfunctionController.updateFunctionTemplate);
-
-// Delete function template
-router.delete('/templates/delete/:id', decodeTokenHT, hotscustomfunctionController.deleteFunctionTemplate);
-
-// Get function execution statistics
-router.get('/stats', decodeTokenHT, hotscustomfunctionController.getFunctionStats);
-
-// Test function configuration
-router.post('/test/:functionId', decodeTokenHT, hotscustomfunctionController.testFunction);
+// Download generated document by ID
+router.get('/download/:document_id', customFunctionController.downloadById);
 
 module.exports = router;
