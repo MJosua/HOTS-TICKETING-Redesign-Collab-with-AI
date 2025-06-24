@@ -60,13 +60,85 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
         //   },
         // });
 
-        // if (response.data && response.data.fileId) {
-        //   uploadedIds.push(response.data.fileId);
-        // }
-        console.log('Uploaded', file.name);
-        uploadedIds.push(i + 1); // Mock IDs
-      } catch (error) {
-        console.error('Upload error:', error);
+    const formData = new FormData();
+    Array.from(files).forEach((file, index) => {
+      formData.append(`file`, file);
+    });
+
+    try {
+      const result = await dispatch(uploadFiles(formData)).unwrap();
+      if (result.success && result.data) {
+        setUploadedFiles(prev => [...prev, ...result.data]);
+        return result.data.map((f: any) => f.url);
+      }
+      return [];
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
+  const handleSubmit = async (data: any) => {
+    console.log("rowgroup")
+    if (!serviceId) {
+      const mappedData = mapFormDataToTicketColumns(
+        data,
+        config.fields || [],
+        config.rowGroups || []
+      );
+      toast({
+        title: "TEST NO SERVICE ID",
+        description: JSON.stringify(mappedData, null, 2),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      console.log('Raw form data:', data);
+
+      // Handle file uploads first
+      let uploadIds: number[] = [];
+      for (const [key, value] of Object.entries(data)) {
+        if (value instanceof FileList && value.length > 0) {
+          const fileUploadIds = await handleFileUpload(value);
+          uploadIds.push(...fileUploadIds);
+          // Remove the FileList from form data
+          delete data[key];
+        }
+      }
+
+      // Map form data to cstm_col and lbl_col structure
+      const mappedData = mapFormDataToTicketColumns(
+        data,
+        config.fields || [],
+        config.rowGroups || []
+      );
+      console.log('Mapped ticket data:', mappedData);
+
+      // Create the ticket data payload
+      const ticketData = {
+        subject: data.subject || 'Service Request',
+        upload_ids: uploadIds,
+        ...mappedData
+      };
+
+      console.log('Creating ticket with data:', ticketData);
+
+      // Create the ticket
+      const result = await dispatch(createTicket({
+        serviceId,
+        ticketData
+      })).unwrap();
+      console.log("serviceId", serviceId)
+      if (result.success) {
         toast({
           title: "Upload Error",
           description: `Failed to upload ${file.name}`,
@@ -119,54 +191,13 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
           </CardContent>
         </Card>
 
-        {/* Enhanced Row Groups Section */}
-        {config.rowGroups && config.rowGroups.length > 0 && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold">Dynamic Sections</h3>
-            {config.rowGroups.map((rowGroup, index) => {
-              if (rowGroup.isStructuredInput) {
-                // Calculate starting column index based on previous fields and row groups
-                const previousFieldCount = (config.fields?.length || 0) + 
-                  config.rowGroups.slice(0, index).reduce((sum, rg) => 
-                    sum + (rg.isStructuredInput ? 1 : rg.rowGroup.length), 0
-                  );
-                
-                return (
-                  <div key={index} className="space-y-4">
-                    <h4 className="font-medium">
-                      {rowGroup.structure?.firstColumn?.label || `Section ${index + 1}`}
-                    </h4>
-                    <EnhancedStructuredRowGroup
-                      rowGroup={rowGroup}
-                      form={form}
-                      groupIndex={index}
-                      maxTotalFields={16}
-                      currentFieldCount={totalFieldCount}
-                      onFieldCountChange={(count) => {
-                        // Update total field count
-                        const newTotal = (config.fields?.length || 0) + 
-                          config.rowGroups.reduce((sum, rg, rgIndex) => 
-                            sum + (rgIndex === index ? count : (rg.isStructuredInput ? 1 : rg.rowGroup.length)), 0
-                          );
-                        setTotalFieldCount(newTotal);
-                      }}
-                      startingColumnIndex={previousFieldCount + 1}
-                    />
-                  </div>
-                );
-              }
-              
-              return (
-                <RowGroupComponent
-                  key={index}
-                  rowGroup={rowGroup}
-                  form={form}
-                  groupIndex={index}
-                  serviceId={serviceId || 'default'}
-                />
-              );
-            })}
-          </div>
+
+  return (
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>{config.title}</CardTitle>
+        {config.description && (
+          <p className="text-sm text-muted-foreground">{config.description}</p>
         )}
 
         <Button type="submit">Submit</Button>

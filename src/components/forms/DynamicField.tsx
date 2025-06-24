@@ -51,7 +51,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   onFileUpload
 }) => {
   const systemContext = useSystemVariableContext();
-  
+
   // Check if field is required - either explicitly set or has asterisk in label
   const isRequired = field.required === true || field.label.includes('*');
   const hasAsterisk = field.label.includes('*');
@@ -68,7 +68,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
   const resolvedOptions = React.useMemo(() => {
     if (!field.options) return [];
-    
+
     return field.options.map(option => {
       const resolved = resolveSystemVariable(option, systemContext);
       return Array.isArray(resolved) ? resolved : [resolved];
@@ -169,8 +169,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             }}
             defaultChecked={Boolean(
               (typeof field.default === 'string' && (
-                field.default === 'on' || 
-                field.default === 'true' || 
+                field.default === 'on' ||
+                field.default === 'true' ||
                 field.default === 'yes'
               )) ||
               (typeof field.default === 'boolean' && field.default)
@@ -205,46 +205,100 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       case 'file':
         return (
           <div className="space-y-2">
-            <div className="flex items-center justify-center w-full">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or drag and drop
-                  </p>
-                  {field.accept && (
-                    <p className="text-xs text-gray-500">{field.accept.join(', ')}</p>
-                  )}
-                  {field.maxSizeMB && (
-                    <p className="text-xs text-gray-500">Max size: {field.maxSizeMB}MB</p>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept={field.accept?.join(',')}
-                  multiple={field.multiple}
-                  onChange={async (e) => {
-                    const files = e.target.files;
 
-                    if (files?.length) {
-                      form.setValue(fieldKey, files);
-                      onValueChange?.(files);
+            {/* Show uploaded file names */}
+            {form.watch(fieldKey)?.length > 0 ? (
+              <ul className="mt-2 space-y-1 text-sm text-gray-700">
+                {console.log("Preview files:", Array.from(form.watch(`${fieldKey}_raw`) || []))}
 
-                      // If you need to upload immediately and return file IDs:
+                {Array.from(form.watch(`${fieldKey}_raw`) || []).map((file: File, i: number) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span className="truncate max-w-xs">{file.name}</span>
+                    <span className="text-xs text-gray-400">
+                      ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </span>
+
+                    <button
+                      type="button"
+                      className="text-red-500 text-xs"
+                      onClick={() => {
+                        const rawFiles = Array.from(form.watch(`${fieldKey}_raw`) || []);
+                        const uploadedUrls = Array.from(form.watch(fieldKey) || []);
+
+                        // Remove both preview and submitted value
+                        rawFiles.splice(i, 1);
+                        uploadedUrls.splice(i, 1);
+
+                        const dt = new DataTransfer();
+                        rawFiles.forEach((f) => dt.items.add(f));
+
+                        form.setValue(`${fieldKey}_raw`, dt.files);
+                        form.setValue(fieldKey, uploadedUrls);
+                      }}
+                    >
+                      Remove
+                    </button>
+
+                    {file.type.startsWith('image/') && (
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={file.name}
+                        className="h-10 w-10 object-cover rounded"
+                      />
+                    )}
+                  </li>
+                ))}
+              </ul>
+
+            )
+              :
+              <div className="flex items-center justify-center w-full">
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 mb-4 text-gray-500" />
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    {field.accept && (
+                      <p className="text-xs text-gray-500">{field.accept.join(', ')}</p>
+                    )}
+                    {field.maxSizeMB && (
+                      <p className="text-xs text-gray-500">Max size: {field.maxSizeMB}MB</p>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept={field.accept?.join(',')}
+                    multiple={field.multiple}
+                    onChange={async (e) => {
+                      const files = e.target.files;
+                      if (!files?.length) return;
+
+                      // 1. Set raw files for preview
+                      form.setValue(`${fieldKey}_raw`, files);
+
+                      // 2. Upload the files
                       if (onFileUpload) {
                         try {
-                          const uploadedIds = await onFileUpload(files);
-                          form.setValue(`${fieldKey}_uploaded_ids`, uploadedIds); // Optional usage
+                          const uploadedData = await onFileUpload(files); // returns array of objects or strings
+                          const uploadedUrls = uploadedData.map((f: any) => f.url || f); // normalize
+
+                          // 3. Store the URLs (for submission)
+                          form.setValue(fieldKey, uploadedUrls);
+
+                          onValueChange?.(uploadedUrls);
                         } catch (uploadError) {
                           console.error('File upload error:', uploadError);
                         }
                       }
-                    }
-                  }}
-                />
-              </label>
-            </div>
+                    }}
+                  />
+                </label>
+              </div>
+
+            }
+
             {field.note && (
               <p className="text-xs text-muted-foreground">{field.note}</p>
             )}
