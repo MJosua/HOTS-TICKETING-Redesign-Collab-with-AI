@@ -1,4 +1,3 @@
-
 export interface FormField {
   label: string;
   name: string; // New field for API data mapping
@@ -26,7 +25,7 @@ export interface RowGroup {
     firstColumn: FormField;
     secondColumn: FormField;
     thirdColumn: FormField;
-    combinedMapping?: 'second_third'; // How to combine columns
+    combinedMapping?: 'none' | 'first_second' | 'second_third'; // Fixed to allow all values
   };
 }
 

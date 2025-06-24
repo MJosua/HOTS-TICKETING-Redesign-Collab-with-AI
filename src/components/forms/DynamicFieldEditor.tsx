@@ -530,7 +530,7 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
             <Input
               type="number"
               value={rowGroup.maxRows || 10}
-              onChange={(e) => updateRowGroup({ maxRows: parseInt(e.target.value) })}
+              onChange={(e) => updateRowGroup({ maxRows: parseInt(e.target.value) || 10 })}
               placeholder="Maximum number of rows"
             />
           </div>
@@ -565,7 +565,6 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
             <div>
               <Label className="text-xs">First Column Label</Label>
               <Input
-                size="sm"
                 value={rowGroup.structure?.firstColumn?.label || ''}
                 onChange={(e) => updateStructureColumn('firstColumn', { label: e.target.value })}
                 placeholder="Column 1 Label"
@@ -574,7 +573,6 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
             <div>
               <Label className="text-xs">Field Name</Label>
               <Input
-                size="sm"
                 value={rowGroup.structure?.firstColumn?.name || ''}
                 onChange={(e) => updateStructureColumn('firstColumn', { name: e.target.value })}
                 placeholder="field_name"
@@ -586,7 +584,7 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
                 value={rowGroup.structure?.firstColumn?.type || 'text'}
                 onValueChange={(value) => updateStructureColumn('firstColumn', { type: value })}
               >
-                <SelectTrigger size="sm">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -603,7 +601,6 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
             <div>
               <Label className="text-xs">Second Column Label</Label>
               <Input
-                size="sm"
                 value={rowGroup.structure?.secondColumn?.label || ''}
                 onChange={(e) => updateStructureColumn('secondColumn', { label: e.target.value })}
                 placeholder="Column 2 Label"
@@ -612,7 +609,6 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
             <div>
               <Label className="text-xs">Field Name</Label>
               <Input
-                size="sm"
                 value={rowGroup.structure?.secondColumn?.name || ''}
                 onChange={(e) => updateStructureColumn('secondColumn', { name: e.target.value })}
                 placeholder="field_name"
@@ -624,7 +620,7 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
                 value={rowGroup.structure?.secondColumn?.type || 'text'}
                 onValueChange={(value) => updateStructureColumn('secondColumn', { type: value })}
               >
-                <SelectTrigger size="sm">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -641,7 +637,6 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
             <div>
               <Label className="text-xs">Third Column Label</Label>
               <Input
-                size="sm"
                 value={rowGroup.structure?.thirdColumn?.label || ''}
                 onChange={(e) => updateStructureColumn('thirdColumn', { label: e.target.value })}
                 placeholder="Column 3 Label"
@@ -650,7 +645,6 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
             <div>
               <Label className="text-xs">Field Name</Label>
               <Input
-                size="sm"
                 value={rowGroup.structure?.thirdColumn?.name || ''}
                 onChange={(e) => updateStructureColumn('thirdColumn', { name: e.target.value })}
                 placeholder="field_name"
@@ -662,7 +656,7 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
                 value={rowGroup.structure?.thirdColumn?.type || 'text'}
                 onValueChange={(value) => updateStructureColumn('thirdColumn', { type: value })}
               >
-                <SelectTrigger size="sm">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

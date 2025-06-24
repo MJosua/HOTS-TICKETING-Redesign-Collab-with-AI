@@ -504,7 +504,7 @@ const ServiceFormEditor = () => {
                   </TabsContent>
 
                   <TabsContent value="rowGroups" className="mt-4">
-                    <RowGroup
+                    <RowGroupEditor
                       rowGroups={config.rowGroups || []}
                       onUpdate={(rowGroups) => setConfig({ ...config, rowGroups })}
                     />
