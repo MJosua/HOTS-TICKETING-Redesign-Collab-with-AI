@@ -95,7 +95,7 @@ export const useSystemVariableContext = (): SystemVariableContext => {
       u.role_name?.toLowerCase().includes('supervisor')
     ) || [],
     departments: userManagement.departments || [],
-    divisions: userManagement.divisions || [],
+    divisions: userManagement.departments || [], // Use departments since divisions doesn't exist in state
     teams: userManagement.teams || []
   };
 };

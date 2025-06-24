@@ -88,6 +88,8 @@ export interface FormConfig {
   approval?: ApprovalFlow;
   apiEndpoint?: string;
   m_workflow_groups?: string; // New field to link forms to workflow groups
+  servis_aktif?: number; // Add this property
+  active?: number; // Add this property
   submit?: {
     label: string;
     type: string;

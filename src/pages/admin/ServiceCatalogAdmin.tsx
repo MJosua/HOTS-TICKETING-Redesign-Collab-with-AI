@@ -21,7 +21,12 @@ import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
 const ServiceCatalogAdmin = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; serviceId: string; serviceName: string }>({
+  const [deleteModal, setDeleteModal] = useState<{ 
+    isOpen: boolean; 
+    serviceId: string; 
+    serviceName: string;
+    value?: any;
+  }>({
     isOpen: false,
     serviceId: '',
     serviceName: '',
@@ -117,7 +122,6 @@ const ServiceCatalogAdmin = () => {
     setIsDeleting(true);
 
     try {
-      // console.log('Deleting service with ID:', deleteModal.serviceId);
       const response = await axios.post(
         `${API_URL}/hots_settings/toggle/service/${deleteModal.serviceId}/${deleteModal.value}`,
         {}, // no body needed if route uses only params
@@ -127,9 +131,6 @@ const ServiceCatalogAdmin = () => {
           }
         }
       );
-
-
-      // console.log('Delete response:', response.data);
 
       toast({
         title: "Success",

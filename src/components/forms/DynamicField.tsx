@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import {
@@ -167,7 +166,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               form.setValue(fieldKey, checked);
               onValueChange?.(checked);
             }}
-            defaultChecked={resolvedDefault === 'on' || resolvedDefault === true}
+            defaultChecked={resolvedDefault === 'on' || resolvedDefault === 'true' || resolvedDefault === true}
           />
         );
 

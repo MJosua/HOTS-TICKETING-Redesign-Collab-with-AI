@@ -8,12 +8,14 @@ import { API_URL } from '@/config/sourceConfig';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
+
 interface FilePreviewProps {
   fileName: string;
   filePath?: string;
   fileUrl?: string;
   fileSize?: number;
   uploadDate?: string;
+  generated?: boolean; // Add this property
   onDownload: () => void;
 }
 

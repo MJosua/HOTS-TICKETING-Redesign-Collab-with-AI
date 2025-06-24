@@ -50,14 +50,10 @@ const ServiceFormEditor = () => {
 
   useEffect(() => {
     if (isEdit && id && serviceCatalog.length > 0) {
-      // console.log('Loading service data for edit mode, ID:', id);
-
       // Find the service by ID
       const serviceData = serviceCatalog.find(service => service.service_id.toString() === id);
 
       if (serviceData) {
-        // console.log('Found service data:', serviceData);
-
         // Get category name from category_id
         const category = categoryList.find(cat => cat.category_id === serviceData.category_id);
         const categoryName = category?.category_name || '';
@@ -71,9 +67,8 @@ const ServiceFormEditor = () => {
           description: serviceData.service_description,
           apiEndpoint: `/api/${serviceData.nav_link}`,
           fields: [],
-          test: "test",
           servis_aktif: Number(serviceData.active) ?? 0,
-          active: Number(service.active ?? parsed.active ?? 0),
+          active: Number(serviceData.active) ?? 0,
           rowGroups: []
         };
 
@@ -84,7 +79,6 @@ const ServiceFormEditor = () => {
             parsedConfig = {
               servis_aktif: Number(serviceData.active) ?? 0,
               active: Number(serviceData.active) ?? 0,
-              tester: "Number(serviceData.active) ?? 0",
               ...parsedConfig,
               ...jsonConfig,
               // Override with database values
@@ -98,10 +92,8 @@ const ServiceFormEditor = () => {
         }
 
         setConfig(parsedConfig);
-        // console.log("serviceData..workflow_group_id", serviceData.m_workflow_groups)
         // Set workflow group from service data if available
         if (serviceData.m_workflow_groups) {
-          // console.log("jalan")
           setSelectedWorkflowGroup(serviceData.m_workflow_groups);
         }
       } else {
