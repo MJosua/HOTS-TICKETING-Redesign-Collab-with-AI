@@ -129,6 +129,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     }));
   };
 
+  
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">

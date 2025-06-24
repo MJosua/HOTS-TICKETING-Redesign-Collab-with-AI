@@ -52,14 +52,14 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
     const formData = new FormData();
     Array.from(files).forEach((file, index) => {
-      formData.append(`files`, file);
+      formData.append(`file`, file);
     });
 
     try {
       const result = await dispatch(uploadFiles(formData)).unwrap();
-      if (result.success && result.files) {
-        setUploadedFiles(prev => [...prev, ...result.files]);
-        return result.files.map((f: any) => f.upload_id);
+      if (result.success && result.data) {
+        setUploadedFiles(prev => [...prev, ...result.data]);
+        return result.data.map((f: any) => f.url);
       }
       return [];
     } catch (error) {
@@ -74,10 +74,16 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   };
 
   const handleSubmit = async (data: any) => {
+    console.log("rowgroup")
     if (!serviceId) {
+      const mappedData = mapFormDataToTicketColumns(
+        data,
+        config.fields || [],
+        config.rowGroups || []
+      );
       toast({
-        title: "Error",
-        description: "Service ID is required",
+        title: "TEST NO SERVICE ID",
+        description: JSON.stringify(mappedData, null, 2),
         variant: "destructive",
       });
       return;
@@ -100,7 +106,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       }
 
       // Map form data to cstm_col and lbl_col structure
-      const mappedData = mapFormDataToTicketColumns(data, config.fields || []);
+      const mappedData = mapFormDataToTicketColumns(
+        data,
+        config.fields || [],
+        config.rowGroups || []
+      );
       console.log('Mapped ticket data:', mappedData);
 
       // Create the ticket data payload
@@ -196,6 +206,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       </div>
     );
   };
+
 
   return (
     <Card className="max-w-4xl mx-auto">

@@ -19,24 +19,40 @@ export interface MappedTicketData extends TicketColumnMapping, TicketLabelMappin
  */
 export const mapFormDataToTicketColumns = (
   formData: Record<string, any>,
-  fields: FormField[]
+  fields: FormField[],
+  rowGroups: RowGroup[] = []
 ): MappedTicketData => {
   const mappedData: MappedTicketData = {};
+  let counter = 1;
 
+  // 🔹 Step 1: Map regular fields
   fields.forEach((field, index) => {
-    const columnIndex = index + 1;
-    const cstmColKey = `cstm_col${columnIndex}`;
-    const lblColKey = `lbl_col${columnIndex}`;
-    
-    // Get the field value from form data
+    const cstmColKey = `cstm_col${counter}`;
+    const lblColKey = `lbl_col${counter}`;
+
     const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
     const fieldValue = formData[fieldKey];
-    
-    // Map the data
-    mappedData[cstmColKey] = fieldValue || '';
+
+    mappedData[cstmColKey] = fieldValue ?? '';
     mappedData[lblColKey] = field.label;
-    
-    console.log(`Mapping field ${index}: ${field.label} -> ${cstmColKey}:`, fieldValue);
+    counter++;
+  });
+
+  // 🔸 Step 2: Map structured row groups
+  rowGroups.forEach((group, gIndex) => {
+    group.rowGroup?.forEach((row, rIndex) => {
+      const columns = ['firstColumn', 'secondColumn', 'thirdColumn'] as const;
+
+      columns.forEach((colKey) => {
+        const col = group.structure?.[colKey];
+        if (!col?.name || !col?.label) return;
+
+        const value = row[col.name];
+        mappedData[`cstm_col${counter}`] = value ?? '';
+        mappedData[`lbl_col${counter}`] = col.label;
+        counter++;
+      });
+    });
   });
 
   return mappedData;

@@ -17,6 +17,9 @@ import { fetchTicketDetail, approveTicket, rejectTicket, clearTicketDetail } fro
 import { fetchGeneratedDocuments, fetchFunctionLogs } from '@/store/slices/customFunctionSlice';
 import { useToast } from '@/hooks/use-toast';
 import { API_URL } from '@/config/sourceConfig';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Eye, FileText } from 'lucide-react';
+import ExcelPreview from '@/components/ExcelPreview';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -29,7 +32,7 @@ const TicketDetail = () => {
   const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
   const { generatedDocuments, functionLogs, isLoading: isLoadingCustomFunction } = useAppSelector(state => state.customFunction);
   const { user } = useAppSelector(state => state.auth);
-
+  console.log("ticketDetail", ticketDetail)
   useEffect(() => {
     if (id) {
       dispatch(fetchTicketDetail(id));
@@ -41,6 +44,8 @@ const TicketDetail = () => {
       dispatch(clearTicketDetail());
     };
   }, [dispatch, id]);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
 
   const handleApprove = async () => {
     if (!ticketDetail || !id) return;
@@ -115,6 +120,7 @@ const TicketDetail = () => {
       default: return "bg-gray-100 text-gray-800";
     }
   };
+
 
   const formatApprovalSteps = () => {
     if (!ticketDetail?.list_approval) return [];
@@ -225,6 +231,56 @@ const TicketDetail = () => {
       });
   };
 
+  const extractFirstUrl = (rawValue: string | string[]): string => {
+    try {
+      // If it's an actual array, return first element
+      if (Array.isArray(rawValue)) return rawValue[0];
+
+      // If it's a JSON string array, like '["/uploads/file.jpg"]'
+      const parsed = JSON.parse(rawValue);
+      if (Array.isArray(parsed)) return parsed[0];
+    } catch (err) {
+      console.warn("Failed to parse file URL:", err);
+    }
+
+    // Otherwise, return the string as-is
+    return typeof rawValue === 'string' ? rawValue : '';
+  };
+
+
+
+  const renderPreview = (filename: string | string[], fileUrl: string | string[]) => {
+    const safeUrl = extractFirstUrl(fileUrl);
+    const safeFilename = extractFirstUrl(filename);
+    const ext = getFileExtension(safeFilename);
+
+    if (!safeUrl) return <p className="text-gray-400">Preview not available</p>;
+
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+      return <img src={
+        `${API_URL}${safeUrl.replace(/\\/g, '/')}`}
+        alt="Preview" className="max-h-48 rounded shadow border" />;
+    }
+
+    if (ext === 'pdf') {
+      return <iframe src={
+        `${API_URL}${safeUrl.replace(/\\/g, '/')}`} className="w-full h-64 border rounded" title="PDF preview" />;
+    }
+
+    if (ext === 'xlsx' || ext === 'xls') {
+      return <ExcelPreview url={`${API_URL}${safeUrl.replace(/\\/g, '/')}`} />
+
+    }
+
+    return (
+      <a href={
+        `${API_URL}${safeUrl.replace(/\\/g, '/')}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+        Open File
+      </a>
+    );
+  };
+
+
   if (isLoadingDetail) {
     return (
       <AppLayout>
@@ -261,6 +317,9 @@ const TicketDetail = () => {
   const progressPercentage = approvalSteps.length > 0 ? (approvedCount / approvalSteps.length) * 100 : 0;
   const customFormData = getCustomFormData();
 
+  const getFileExtension = (filename: string) =>
+    filename.split('.').pop()?.toLowerCase() || '';
+
   // Get current approver for TaskApprovalActions
   const currentApprover = ticketDetail.list_approval?.find(
     approver => approver.approval_order === ticketDetail.current_step
@@ -274,7 +333,6 @@ const TicketDetail = () => {
   console.log('currentUserId:', user?.user_id);
   console.log('assignedToId:', currentApprover?.approver_id);
   console.log('=== END TASK APPROVAL ACTIONS PROPS ===');
-
   return (
     <AppLayout>
       <div className="space-y-6 relative z-0">
@@ -394,7 +452,52 @@ const TicketDetail = () => {
                       {customFormData.map((field, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{field.label}</TableCell>
-                          <TableCell>{field.value}</TableCell>
+                          <TableCell>
+
+
+                          </TableCell>
+                          <TableCell>
+                            {typeof field.value === 'string' && field.value.includes('/files/hots/it_support/') ? (
+                              <div className="flex items-center space-x-2">
+                                <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                      <Eye className="w-4 h-4" />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+                                    <DialogHeader>
+                                      <DialogTitle>{field.label}</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="mt-4">
+                                      {renderPreview(field.value, field.value)}
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+
+
+                              </div>
+
+                            ) : (
+                              field.value
+                            )}
+
+                          </TableCell>
+
+                          {typeof field.value === 'string' && field.value.includes('/files/hots/it_support/') && (
+
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  window.open(`${API_URL}/${extractFirstUrl(field.value)}`, '_blank');
+                                }}
+                              >
+                                Download
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -426,47 +529,7 @@ const TicketDetail = () => {
             )}
 
             {/* Generated Documents */}
-            {(isLoadingCustomFunction || (generatedDocuments && generatedDocuments.length > 0)) && (
-              <Card className="bg-card shadow-sm border">
-                <CardHeader className="bg-muted/50 border-b">
-                  <CardTitle className="text-lg">
-                    Generated Documents
-                    {isLoadingCustomFunction && (
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin inline" />
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {isLoadingCustomFunction ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="flex flex-col items-center space-y-2">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        <p className="text-sm text-muted-foreground">Loading generated documents...</p>
-                      </div>
-                    </div>
-                  ) : generatedDocuments && generatedDocuments.length > 0 ? (
-                    <div className="space-y-3">
-                      {(() => {
-                        console.log("generatedDocuments", generatedDocuments);
-                        return null;
-                      })()}
-                      {generatedDocuments.map((document) => (
-                        <FilePreview
-                          generated={true}
-                          key={document.id}
-                          fileName={document.file_name}
-                          filePath={document.file_path}
-                          uploadDate={document.generated_date}
-                          onDownload={() => handleGeneratedDocumentDownload(document.file_path, document.file_name)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-4">No generated documents found</p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+
           </div>
 
           {/* Sidebar */}
@@ -489,9 +552,9 @@ const TicketDetail = () => {
                   {approvalSteps.map((step, index) => (
                     <div key={step.id} className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${step.status === 'approved' ? 'bg-green-500 text-white' :
-                          step.status === 'rejected' ? 'bg-red-500 text-white' :
-                            step.status === 'pending' ? 'bg-yellow-500 text-white' :
-                              'bg-gray-300 text-gray-600'
+                        step.status === 'rejected' ? 'bg-red-500 text-white' :
+                          step.status === 'pending' ? 'bg-yellow-500 text-white' :
+                            'bg-gray-300 text-gray-600'
                         }`}>
                         {step.order}
                       </div>
@@ -523,8 +586,8 @@ const TicketDetail = () => {
                     ticketDetail.chat_messages.map((msg) => (
                       <div key={msg.id} className={`flex ${msg.isRequester ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${msg.isRequester
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-foreground'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-foreground'
                           }`}>
                           <p className="text-xs font-medium mb-1">{msg.user}</p>
                           <p className="text-sm">{msg.message}</p>
@@ -562,7 +625,7 @@ const TicketDetail = () => {
         onReject={handleReject}
         taskId={ticketDetail.ticket_id.toString()}
       />
-    </AppLayout>
+    </AppLayout >
   );
 };
 
