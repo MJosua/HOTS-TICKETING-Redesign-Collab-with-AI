@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -7,8 +8,9 @@ import { ApprovalFlowCard } from '@/components/ui/ApprovalFlowCard';
 import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
+import { StructuredRowGroup } from './StructuredRowGroup';
 import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
-import { mapFormDataToTicketColumns } from '@/utils/formFieldMapping';
+import { mapFormDataToTicketColumns, getMaxFormFields } from '@/utils/formFieldMapping';
 import { useAppDispatch } from '@/hooks/useAppSelector';
 import { createTicket, uploadFiles } from '@/store/slices/ticketsSlice';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +30,22 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [structuredRowCounts, setStructuredRowCounts] = useState<Record<number, number>>({});
+
+  const maxFields = getMaxFormFields();
+
+  // Calculate current field usage
+  const currentFieldCount = useMemo(() => {
+    const regularFields = config.fields?.length || 0;
+    const rowGroupFields = config.rowGroups?.reduce((acc, rg, index) => {
+      if (rg.isStructuredInput) {
+        return acc + (structuredRowCounts[index] || 1);
+      }
+      return acc + (rg.rowGroup?.length || 0);
+    }, 0) || 0;
+    
+    return regularFields + rowGroupFields;
+  }, [config.fields, config.rowGroups, structuredRowCounts]);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];
@@ -138,27 +156,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     return true;
   };
 
-  const renderApprovalFlow = () => {
-    if (!config.approval || !config.approval.steps || config.approval.steps.length === 0) return null;
-
-    const approvalSteps = config.approval.steps.map((step, index) => ({
-      id: `step-${index}`,
-      name: step,
-      status: 'waiting' as const,
-      approver: step
-    }));
-
-    return (
-      <div className="mb-6">
-        <ApprovalFlowCard
-          steps={approvalSteps}
-          mode={config.approval.mode}
-          className="mb-4"
-        />
-      </div>
-    );
-  };
-
   const getColSpanClass = (columnSpan: number) => {
     switch (columnSpan) {
       case 1:
@@ -200,46 +197,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     );
   };
 
-  const renderFields = (fields: FormField[]) => {
-    return renderFieldsInRows(fields);
-  };
-
-  const renderRowGroups = (rowGroups: RowGroup[]) => {
-    return rowGroups.map((rowGroup, index) => (
-      <RowGroupField
-        key={`rowgroup-${index}`}
-        rowGroup={rowGroup.rowGroup}
-        form={form}
-        groupIndex={index}
-        onValueChange={(fieldKey, value) => {
-          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-        }}
-      />
-    ));
-  };
-
-  const renderSections = () => {
-    if (!config.sections) return null;
-
-    return config.sections.map((section: FormSection, sectionIndex) => (
-      <div key={`section-${sectionIndex}`} className="mb-6">
-        <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
-
-        {section.repeatable ? (
-          <RepeatingSection
-            section={section}
-            form={form}
-          />
-        ) : (
-          <div className="space-y-4">
-            {section.fields && renderFields(section.fields)}
-            {section.rowGroups && renderRowGroups(section.rowGroups)}
-          </div>
-        )}
-      </div>
-    ));
-  };
-
   return (
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
@@ -247,7 +204,16 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         {config.description && (
           <p className="text-sm text-muted-foreground">{config.description}</p>
         )}
-        {/* {renderApprovalFlow()} */}
+        
+        {/* Field usage indicator */}
+        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
+          <span className="text-blue-800">
+            <strong>Form Fields:</strong> {currentFieldCount} of {maxFields} used
+          </span>
+          {currentFieldCount >= maxFields && (
+            <span className="text-red-600 font-medium">⚠️ Field limit reached</span>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -259,36 +225,25 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
             )}
 
             {config.rowGroups && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {config.rowGroups.map((rowGroup, index) => (
-                  <RowGroupField
-                    key={`rowgroup-${index}`}
-                    rowGroup={rowGroup.rowGroup}
-                    form={form}
-                    groupIndex={index}
-                    onValueChange={(fieldKey, value) => {
-                      setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* {config.sections && config.sections.map((section: FormSection, sectionIndex) => (
-              <div key={`section-${sectionIndex}`} className="mb-6">
-                <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
-
-                {section.repeatable ? (
-                  <RepeatingSection
-                    section={section}
-                    form={form}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    {section.fields && renderFieldsInRows(section.fields)}
-                    {section.rowGroups && section.rowGroups.map((rowGroup, index) => (
+                  <div key={`rowgroup-${index}`}>
+                    {rowGroup.isStructuredInput ? (
+                      <StructuredRowGroup
+                        rowGroup={rowGroup}
+                        form={form}
+                        groupIndex={index}
+                        maxTotalFields={maxFields}
+                        currentFieldCount={currentFieldCount}
+                        onFieldCountChange={(count) => {
+                          setStructuredRowCounts(prev => ({
+                            ...prev,
+                            [index]: count
+                          }));
+                        }}
+                      />
+                    ) : (
                       <RowGroupField
-                        key={`rowgroup-${index}`}
                         rowGroup={rowGroup.rowGroup}
                         form={form}
                         groupIndex={index}
@@ -296,11 +251,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                           setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
                         }}
                       />
-                    ))}
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            ))} */}
+            )}
 
             <div className="flex justify-end pt-6">
               <Button type="submit" disabled={isSubmitting} className="min-w-32">

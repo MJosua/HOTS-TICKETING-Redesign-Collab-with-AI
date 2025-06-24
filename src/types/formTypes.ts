@@ -1,3 +1,4 @@
+
 export interface FormField {
   label: string;
   name: string; // New field for API data mapping
@@ -14,10 +15,19 @@ export interface FormField {
   uiCondition?: string;
   note?: string;
   columnSpan?: 1 | 2 | 3 ; // New field for dynamic column spans
+  systemVariable?: string; // For template variables like ${user}
 }
 
 export interface RowGroup {
   rowGroup: FormField[];
+  isStructuredInput?: boolean; // New flag for special row group format
+  maxRows?: number; // Maximum allowed rows
+  structure?: {
+    firstColumn: FormField;
+    secondColumn: FormField;
+    thirdColumn: FormField;
+    combinedMapping?: 'second_third'; // How to combine columns
+  };
 }
 
 export interface FormSection {

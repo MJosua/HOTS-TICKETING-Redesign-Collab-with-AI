@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import {
   FormControl,
@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
+import { resolveSystemVariable, useSystemVariableContext } from '@/utils/systemVariableResolver';
 
 interface FormField {
   label: string;
@@ -31,6 +32,7 @@ interface FormField {
   multiple?: boolean;
   default?: string;
   note?: string;
+  systemVariable?: string;
 }
 
 interface DynamicFieldProps {
@@ -48,10 +50,38 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   onValueChange,
   onFileUpload
 }) => {
+  const systemContext = useSystemVariableContext();
+  
   // Check if field is required - either explicitly set or has asterisk in label
   const isRequired = field.required === true || field.label.includes('*');
   const hasAsterisk = field.label.includes('*');
   const cleanLabel = field.label.replace(/\*+$/, '');
+
+  // Resolve system variables in default value and options
+  const resolvedDefault = React.useMemo(() => {
+    if (field.default) {
+      const resolved = resolveSystemVariable(field.default, systemContext);
+      return Array.isArray(resolved) ? resolved[0] : resolved;
+    }
+    return field.value || '';
+  }, [field.default, field.value, systemContext]);
+
+  const resolvedOptions = React.useMemo(() => {
+    if (!field.options) return [];
+    
+    return field.options.map(option => {
+      const resolved = resolveSystemVariable(option, systemContext);
+      return Array.isArray(resolved) ? resolved : [resolved];
+    }).flat().filter(Boolean);
+  }, [field.options, systemContext]);
+
+  // Set default value when component mounts or resolved default changes
+  useEffect(() => {
+    if (resolvedDefault && !form.getValues(fieldKey)) {
+      form.setValue(fieldKey, resolvedDefault);
+      onValueChange?.(resolvedDefault);
+    }
+  }, [resolvedDefault, fieldKey, form, onValueChange]);
 
   const renderFieldContent = () => {
     switch (field.type?.trim()) {
@@ -62,7 +92,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             type={field.type}
             placeholder={field.placeholder}
             readOnly={field.readonly}
-            defaultValue={field.value}
+            defaultValue={resolvedDefault}
             {...form.register(fieldKey, {
               required: isRequired ? `${cleanLabel} is required` : false
             })}
@@ -78,7 +108,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           <Textarea
             placeholder={field.placeholder}
             readOnly={field.readonly}
-            defaultValue={field.value}
+            defaultValue={resolvedDefault}
             {...form.register(fieldKey, {
               required: isRequired ? `${cleanLabel} is required` : false
             })}
@@ -99,7 +129,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               <SelectValue placeholder={field.placeholder || `Select ${cleanLabel}`} />
             </SelectTrigger>
             <SelectContent>
-              {field.options?.map((option, index) => (
+              {resolvedOptions.map((option, index) => (
                 <SelectItem key={index} value={option}>
                   {option}
                 </SelectItem>
@@ -115,10 +145,10 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               form.setValue(fieldKey, value);
               onValueChange?.(value);
             }}
-            defaultValue={field.default}
+            defaultValue={resolvedDefault}
           >
             <div className="flex flex-col space-y-2">
-              {field.options?.map((option, index) => (
+              {resolvedOptions.map((option, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <RadioGroupItem value={option} id={`${fieldKey}-${index}`} />
                   <label htmlFor={`${fieldKey}-${index}`} className="text-sm">
@@ -137,7 +167,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               form.setValue(fieldKey, checked);
               onValueChange?.(checked);
             }}
-            defaultChecked={field.default === 'on'}
+            defaultChecked={resolvedDefault === 'on' || resolvedDefault === true}
           />
         );
 
@@ -218,6 +248,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         return (
           <Input
             placeholder={field.placeholder}
+            defaultValue={resolvedDefault}
             {...form.register(fieldKey, {
               required: isRequired ? `${cleanLabel} is required` : false
             })}

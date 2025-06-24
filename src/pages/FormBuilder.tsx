@@ -5,12 +5,167 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DynamicForm } from '@/components/forms/DynamicForm';
 import { FormConfig } from '@/types/formTypes';
 
 const FormBuilder = () => {
   const [selectedForm, setSelectedForm] = useState<FormConfig | null>(null);
+
+  // Enhanced Asset Request Form with System Variables
+  const assetRequestForm: FormConfig = {
+    url: "/asset-request",
+    title: "Asset Request Form",
+    fields: [
+      {
+        name: "requestedBy",
+        label: "Requested By *",
+        type: "text",
+        default: "${user}",
+        readonly: true,
+        required: true,
+        columnSpan: 1
+      },
+      {
+        name: "department",
+        label: "Department *",
+        type: "select",
+        options: ["${departments}"],
+        default: "${user.department}",
+        required: true,
+        columnSpan: 1
+      },
+      {
+        name: "supervisor",
+        label: "Supervisor",
+        type: "select", 
+        options: ["${superior}"],
+        required: false,
+        columnSpan: 1
+      },
+      {
+        name: "assetType",
+        label: "Asset Type *",
+        type: "select",
+        options: ["Laptop", "Desktop", "Monitor", "Printer", "Phone"],
+        required: true,
+        columnSpan: 1
+      },
+      {
+        name: "justification",
+        label: "Business Justification *",
+        type: "textarea",
+        placeholder: "Explain why this asset is needed",
+        required: true,
+        columnSpan: 3
+      }
+    ],
+    rowGroups: [
+      {
+        isStructuredInput: true,
+        maxRows: 10,
+        structure: {
+          firstColumn: {
+            label: "Item Name",
+            name: "item_name",
+            type: "text",
+            placeholder: "e.g., Glass Cup"
+          },
+          secondColumn: {
+            label: "Quantity",
+            name: "quantity", 
+            type: "number",
+            placeholder: "e.g., 5"
+          },
+          thirdColumn: {
+            label: "Unit",
+            name: "unit",
+            type: "select",
+            options: ["pieces", "units", "boxes", "sets", "packs"],
+            placeholder: "Select unit"
+          },
+          combinedMapping: 'second_third'
+        },
+        rowGroup: [] // Required for interface compatibility
+      }
+    ],
+    approval: {
+      steps: ["Direct Manager", "IT Department"],
+      mode: "sequential"
+    }
+  };
+
+  // Sample Request Form with System Variables and Structured Input
+  const sampleRequestForm: FormConfig = {
+    url: "/sample-request-enhanced",
+    title: "Enhanced Sample Request Form",
+    fields: [
+      {
+        label: "Request By",
+        name: "request_by", 
+        type: "text",
+        default: "${user}",
+        readonly: true,
+        required: true,
+        columnSpan: 1
+      },
+      {
+        label: "Division",
+        name: "division",
+        type: "select",
+        options: ["${divisions}"],
+        default: "${user.division}",
+        required: true,
+        columnSpan: 1
+      },
+      {
+        label: "Email",
+        name: "email",
+        type: "text",
+        default: "${user.email}",
+        readonly: true,
+        required: true,
+        columnSpan: 1
+      },
+      {
+        label: "Purpose *",
+        name: "purpose",
+        type: "textarea",
+        placeholder: "Describe the purpose of this request",
+        required: true,
+        columnSpan: 3
+      }
+    ],
+    rowGroups: [
+      {
+        isStructuredInput: true,
+        maxRows: 15,
+        structure: {
+          firstColumn: {
+            label: "Sample Name",
+            name: "sample_name",
+            type: "text",
+            placeholder: "Enter sample name"
+          },
+          secondColumn: {
+            label: "Qty",
+            name: "quantity",
+            type: "number", 
+            placeholder: "Amount"
+          },
+          thirdColumn: {
+            label: "Unit",
+            name: "uom",
+            type: "select",
+            options: ["ml", "gr", "kg", "pcs", "boxes", "liters"],
+            placeholder: "Unit"
+          }
+        },
+        rowGroup: []
+      }
+    ]
+  };
 
   // Asset Request Form Configuration
   const assetRequestForm: FormConfig = {
@@ -353,14 +508,14 @@ const FormBuilder = () => {
   };
 
   const formOptions = [
-    { id: 'asset-request', name: 'Asset Request Form', config: assetRequestForm },
-    { id: 'sample-request', name: 'Sample Request Form', config: sampleRequestForm },
+    { id: 'asset-request-enhanced', name: 'Enhanced Asset Request (with Variables)', config: assetRequestForm },
+    { id: 'sample-request-enhanced', name: 'Enhanced Sample Request (Structured)', config: sampleRequestForm },
     { id: 'it-support', name: 'IT Support Request', config: itSupportForm },
     { id: 'leave-request', name: 'Leave Request Form', config: leaveRequestForm }
   ];
 
   const handleFormSubmit = (data: any) => {
-    // console.log('Form submitted:', data);
+    console.log('Form submitted:', data);
     alert('Form submitted successfully!');
   };
 
@@ -368,8 +523,10 @@ const FormBuilder = () => {
     <AppLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Form Builder & Preview</h1>
-          <p className="text-muted-foreground">Select a form template to preview and test</p>
+          <h1 className="text-3xl font-bold">Enhanced Form Builder & Preview</h1>
+          <p className="text-muted-foreground">
+            Testing system variables (${'{user}'}, ${'{departments}'}) and structured row groups
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -383,7 +540,7 @@ const FormBuilder = () => {
                   <Button
                     key={form.id}
                     variant={selectedForm?.url === form.config.url ? "default" : "outline"}
-                    className="w-full justify-start"
+                    className="w-full justify-start text-sm"
                     onClick={() => setSelectedForm(form.config)}
                   >
                     {form.name}
@@ -391,6 +548,21 @@ const FormBuilder = () => {
                 ))}
               </CardContent>
             </Card>
+
+            {selectedForm && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="text-sm">Features Demonstrated</CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs space-y-2">
+                  <div>✅ System Variables: ${'{user}'}, ${'{departments}'}</div>
+                  <div>✅ Structured Row Groups</div>
+                  <div>✅ Dynamic Field Counting</div>
+                  <div>✅ 16 Field Limit Enforcement</div>
+                  <div>✅ Data Mapping: cstm_col + lbl_col</div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="lg:col-span-2">
@@ -398,6 +570,7 @@ const FormBuilder = () => {
               <DynamicForm 
                 config={selectedForm} 
                 onSubmit={handleFormSubmit}
+                serviceId="demo"
               />
             ) : (
               <Card>
