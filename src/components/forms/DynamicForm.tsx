@@ -43,7 +43,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       }
       return acc + (rg.rowGroup?.length || 0);
     }, 0) || 0;
-    
+
     return regularFields + rowGroupFields;
   }, [config.fields, config.rowGroups, structuredRowCounts]);
 
@@ -117,7 +117,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         serviceId,
         ticketData
       })).unwrap();
-      console.log("serviceId",serviceId)
+      console.log("serviceId", serviceId)
       if (result.success) {
         toast({
           title: "Success",
@@ -204,7 +204,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         {config.description && (
           <p className="text-sm text-muted-foreground">{config.description}</p>
         )}
-        
+
         {/* Field usage indicator */}
         <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
           <span className="text-blue-800">
@@ -256,6 +256,34 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 ))}
               </div>
             )}
+            {/* Yosua check this later */}
+            {/* {config.sections && config.sections.map((section: FormSection, sectionIndex) => (
+              <div key={`section-${sectionIndex}`} className="mb-6">
+                <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
+
+                {section.repeatable ? (
+                  <RepeatingSection
+                    section={section}
+                    form={form}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {section.fields && renderFieldsInRows(section.fields)}
+                    {section.rowGroups && section.rowGroups.map((rowGroup, index) => (
+                      <RowGroupField
+                        key={`rowgroup-${index}`}
+                        rowGroup={rowGroup.rowGroup}
+                        form={form}
+                        groupIndex={index}
+                        onValueChange={(fieldKey, value) => {
+                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))} */}
 
             <div className="flex justify-end pt-6">
               <Button type="submit" disabled={isSubmitting} className="min-w-32">
