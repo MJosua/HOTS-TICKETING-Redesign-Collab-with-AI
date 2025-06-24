@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ const FormBuilder = () => {
   const [selectedForm, setSelectedForm] = useState<FormConfig | null>(null);
 
   // Enhanced Asset Request Form with System Variables
-  const assetRequestForm: FormConfig = {
+  const assetRequestFormV1: FormConfig = {
     url: "/asset-request",
     title: "Asset Request Form",
     fields: [
@@ -97,7 +98,7 @@ const FormBuilder = () => {
   };
 
   // Sample Request Form with System Variables and Structured Input
-  const sampleRequestForm: FormConfig = {
+  const sampleRequestFormV1: FormConfig = {
     url: "/sample-request-enhanced",
     title: "Enhanced Sample Request Form",
     fields: [
@@ -167,10 +168,10 @@ const FormBuilder = () => {
     ]
   };
 
-  // Asset Request Form Configuration
-  const assetRequestForm: FormConfig = {
-    url: "/asset-request",
-    title: "Asset Request Form",
+  // Asset Request Form Configuration V2
+  const assetRequestFormV2: FormConfig = {
+    url: "/asset-request-v2",
+    title: "Asset Request Form V2",
     fields: [
       {
         name: "requestedBy",
@@ -241,10 +242,10 @@ const FormBuilder = () => {
     }
   };
 
-  // Sample Request Form Configuration  
-  const sampleRequestForm: FormConfig = {
-    url: "/sample-request-form",
-    title: "Sample Request Form",
+  // Sample Request Form Configuration V2
+  const sampleRequestFormV2: FormConfig = {
+    url: "/sample-request-form-v2",
+    title: "Sample Request Form V2",
     sections: [
       {
         title: "Basic Information",
@@ -372,7 +373,7 @@ const FormBuilder = () => {
       type: "button",
       action: "/submit-sample-request"
     }
-  }
+  };
 
   const itSupportForm: FormConfig = {
     url: "/it-support",
@@ -508,8 +509,8 @@ const FormBuilder = () => {
   };
 
   const formOptions = [
-    { id: 'asset-request-enhanced', name: 'Enhanced Asset Request (with Variables)', config: assetRequestForm },
-    { id: 'sample-request-enhanced', name: 'Enhanced Sample Request (Structured)', config: sampleRequestForm },
+    { id: 'asset-request-enhanced', name: 'Enhanced Asset Request (with Variables)', config: assetRequestFormV1 },
+    { id: 'sample-request-enhanced', name: 'Enhanced Sample Request (Structured)', config: sampleRequestFormV1 },
     { id: 'it-support', name: 'IT Support Request', config: itSupportForm },
     { id: 'leave-request', name: 'Leave Request Form', config: leaveRequestForm }
   ];

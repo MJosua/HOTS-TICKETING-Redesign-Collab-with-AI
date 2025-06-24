@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -157,8 +156,6 @@ const TicketDetail = () => {
     const currentApprover = ticketDetail.list_approval?.find(
       approver => approver.approval_order === ticketDetail.current_step
     );
-
-
 
     return currentApprover && currentApprover.approver_id === user.user_id;
   };
@@ -449,7 +446,10 @@ const TicketDetail = () => {
                     </div>
                   ) : generatedDocuments && generatedDocuments.length > 0 ? (
                     <div className="space-y-3">
-                      {console.log("generatedDocuments", generatedDocuments)}
+                      {(() => {
+                        console.log("generatedDocuments", generatedDocuments);
+                        return null;
+                      })()}
                       {generatedDocuments.map((document) => (
                         <FilePreview
                           generated={true}

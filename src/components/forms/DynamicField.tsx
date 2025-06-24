@@ -167,7 +167,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               form.setValue(fieldKey, checked);
               onValueChange?.(checked);
             }}
-            defaultChecked={resolvedDefault === 'on' || resolvedDefault === 'true' || resolvedDefault === true}
+            defaultChecked={Boolean(field.default === 'on' || field.default === 'true' || field.default === true)}
           />
         );
 
