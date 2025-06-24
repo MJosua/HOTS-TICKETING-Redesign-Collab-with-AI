@@ -41,12 +41,12 @@ interface DynamicFieldProps {
   onFileUpload?: (files: FileList | null) => Promise<number[]>;
 }
 
-export const DynamicField: React.FC<DynamicFieldProps> = ({ 
-  field, 
-  form, 
-  fieldKey, 
+export const DynamicField: React.FC<DynamicFieldProps> = ({
+  field,
+  form,
+  fieldKey,
   onValueChange,
-  onFileUpload 
+  onFileUpload
 }) => {
   // Check if field is required - either explicitly set or has asterisk in label
   const isRequired = field.required === true || field.label.includes('*');
@@ -63,8 +63,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             placeholder={field.placeholder}
             readOnly={field.readonly}
             defaultValue={field.value}
-            {...form.register(fieldKey, { 
-              required: isRequired ? `${cleanLabel} is required` : false 
+            {...form.register(fieldKey, {
+              required: isRequired ? `${cleanLabel} is required` : false
             })}
             onChange={(e) => {
               form.setValue(fieldKey, e.target.value);
@@ -79,8 +79,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             placeholder={field.placeholder}
             readOnly={field.readonly}
             defaultValue={field.value}
-            {...form.register(fieldKey, { 
-              required: isRequired ? `${cleanLabel} is required` : false 
+            {...form.register(fieldKey, {
+              required: isRequired ? `${cleanLabel} is required` : false
             })}
             onChange={(e) => {
               form.setValue(fieldKey, e.target.value);
@@ -110,7 +110,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
       case 'radio':
         return (
-          <RadioGroup 
+          <RadioGroup
             onValueChange={(value) => {
               form.setValue(fieldKey, value);
               onValueChange?.(value);
@@ -155,8 +155,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         return (
           <Input
             type="date"
-            {...form.register(fieldKey, { 
-              required: isRequired ? `${cleanLabel} is required` : false 
+            {...form.register(fieldKey, {
+              required: isRequired ? `${cleanLabel} is required` : false
             })}
             onChange={(e) => {
               form.setValue(fieldKey, e.target.value);
@@ -176,14 +176,10 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                     <span className="font-semibold">Click to upload</span> or drag and drop
                   </p>
                   {field.accept && (
-                    <p className="text-xs text-gray-500">
-                      {field.accept.join(', ')}
-                    </p>
+                    <p className="text-xs text-gray-500">{field.accept.join(', ')}</p>
                   )}
                   {field.maxSizeMB && (
-                    <p className="text-xs text-gray-500">
-                      Max size: {field.maxSizeMB}MB
-                    </p>
+                    <p className="text-xs text-gray-500">Max size: {field.maxSizeMB}MB</p>
                   )}
                 </div>
                 <input
@@ -191,13 +187,23 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                   className="hidden"
                   accept={field.accept?.join(',')}
                   multiple={field.multiple}
-                  {...form.register(fieldKey, { 
-                    required: isRequired ? `${cleanLabel} is required` : false 
-                  })}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const files = e.target.files;
-                    form.setValue(fieldKey, files);
-                    onValueChange?.(files);
+
+                    if (files?.length) {
+                      form.setValue(fieldKey, files);
+                      onValueChange?.(files);
+
+                      // If you need to upload immediately and return file IDs:
+                      if (onFileUpload) {
+                        try {
+                          const uploadedIds = await onFileUpload(files);
+                          form.setValue(`${fieldKey}_uploaded_ids`, uploadedIds); // Optional usage
+                        } catch (uploadError) {
+                          console.error('File upload error:', uploadError);
+                        }
+                      }
+                    }
                   }}
                 />
               </label>
@@ -212,8 +218,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         return (
           <Input
             placeholder={field.placeholder}
-            {...form.register(fieldKey, { 
-              required: isRequired ? `${cleanLabel} is required` : false 
+            {...form.register(fieldKey, {
+              required: isRequired ? `${cleanLabel} is required` : false
             })}
           />
         );

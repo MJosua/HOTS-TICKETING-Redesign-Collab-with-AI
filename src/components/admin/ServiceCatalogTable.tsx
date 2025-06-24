@@ -77,12 +77,11 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {console.log("forms", forms)}
             {forms.map((form) => {
               const service = serviceCatalog.find(s => s.service_id.toString() === form.id);
               const hasFormJson = service?.form_json && service.form_json.trim() !== '';
               const workflowName = getWorkflowGroupName(form.id!);
-
+              console.log("form",form)
               return (
                 <TableRow key={form.id}>
                   <TableCell className="font-medium">{form.title}</TableCell>
@@ -91,14 +90,14 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
                   </TableCell>
                   <TableCell className="font-mono text-sm">
 
-                    {parseInt(form.active) === 0 ?
+                    {parseInt(form.servis_aktif) === 0 ?
 
                       (
-                        <Badge className="bg-red-100 text-red-800">Inactive{form.active}</Badge>
+                        <Badge className="bg-red-100 text-red-800">Inactive{form.servis_aktif}</Badge>
                       )
                       :
                       (
-                        <Badge className="bg-green-100 text-green-800">Active{form.active}</Badge>
+                        <Badge className="bg-green-100 text-green-800">Active{form.servis_aktif}</Badge>
                       )
                     }
 

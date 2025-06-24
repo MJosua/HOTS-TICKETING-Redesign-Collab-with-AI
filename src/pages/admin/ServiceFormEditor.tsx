@@ -71,6 +71,9 @@ const ServiceFormEditor = () => {
           description: serviceData.service_description,
           apiEndpoint: `/api/${serviceData.nav_link}`,
           fields: [],
+          test: "test",
+          servis_aktif: Number(serviceData.active) ?? 0,
+          active: Number(service.active ?? parsed.active ?? 0),
           rowGroups: []
         };
 
@@ -79,6 +82,9 @@ const ServiceFormEditor = () => {
           try {
             const jsonConfig = JSON.parse(serviceData.form_json);
             parsedConfig = {
+              servis_aktif: Number(serviceData.active) ?? 0,
+              active: Number(serviceData.active) ?? 0,
+              tester: "Number(serviceData.active) ?? 0",
               ...parsedConfig,
               ...jsonConfig,
               // Override with database values

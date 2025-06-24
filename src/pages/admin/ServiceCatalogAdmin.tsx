@@ -49,13 +49,13 @@ const ServiceCatalogAdmin = () => {
   }, [dispatch]);
 
   // Convert service catalog data to FormConfig format for display
-  console.log("serviceCatalog",serviceCatalog)
   const forms: FormConfig[] = serviceCatalog.map(service => {
     // Try to parse form_json if it exists
     if (service.form_json) {
       try {
         const parsedConfig = JSON.parse(service.form_json);
         return {
+          servis_aktif: Number(service.active) ?? 0,
           ...parsedConfig,
           id: service.service_id.toString(),
           category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown'
@@ -64,13 +64,14 @@ const ServiceCatalogAdmin = () => {
         console.error(`Failed to parse form_json for service ${service.service_id}:`, error);
       }
     }
-
+    console.log("service", service)
     // Fallback to default form structure if form_json is not available or invalid
     return {
       id: service.service_id.toString(),
       title: service.service_name,
       url: `/${service.nav_link}`,
-      active: service.active,
+      servis_aktif: Number(service.active) ?? 0,
+      testing: "Tester",
       category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown',
       description: service.service_description,
       apiEndpoint: `/api/${service.nav_link}`,

@@ -104,7 +104,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
                 return (
                   <div
                     key={fieldIndex}
-                    className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs col-span-${field.columnSpan || 1}`}
+                    className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs col-span-${field.columnSpan || 3 }`}
                   >
                     <div className="font-medium text-center">{field.label}</div>
                     <div className="text-center text-blue-600 mt-1">

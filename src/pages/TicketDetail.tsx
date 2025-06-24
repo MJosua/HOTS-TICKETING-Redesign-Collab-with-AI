@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2, Download, FileText } from 'lucide-react';
+import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2, Download } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import RejectModal from "@/components/modals/RejectModal";
@@ -36,7 +37,7 @@ const TicketDetail = () => {
       dispatch(fetchGeneratedDocuments(parseInt(id)));
       dispatch(fetchFunctionLogs(parseInt(id)));
     }
-    
+
     return () => {
       dispatch(clearTicketDetail());
     };
@@ -46,19 +47,19 @@ const TicketDetail = () => {
     if (!ticketDetail || !id) return;
 
     const currentStep = ticketDetail.current_step || 1;
-    
+
     try {
-      await dispatch(approveTicket({ 
-        ticketId: id, 
-        approvalOrder: currentStep 
+      await dispatch(approveTicket({
+        ticketId: id,
+        approvalOrder: currentStep
       })).unwrap();
-      
+
       toast({
         title: "Success",
         description: "Ticket approved successfully!",
         variant: "default",
       });
-      
+
       // Refresh ticket data
       dispatch(fetchTicketDetail(id));
     } catch (error: any) {
@@ -74,20 +75,20 @@ const TicketDetail = () => {
     if (!ticketDetail || !id) return;
 
     const currentStep = ticketDetail.current_step || 1;
-    
+
     try {
-      await dispatch(rejectTicket({ 
-        ticketId: id, 
+      await dispatch(rejectTicket({
+        ticketId: id,
         approvalOrder: currentStep,
         rejectionRemark: reason
       })).unwrap();
-      
+
       toast({
         title: "Success",
         description: "Ticket rejected successfully!",
         variant: "default",
       });
-      
+
       // Refresh ticket data
       dispatch(fetchTicketDetail(id));
     } catch (error: any) {
@@ -118,14 +119,14 @@ const TicketDetail = () => {
 
   const formatApprovalSteps = () => {
     if (!ticketDetail?.list_approval) return [];
-    
+
     return ticketDetail.list_approval.map((approver, index) => ({
       id: `${approver.approver_id}-${index}`,
       name: approver.approver_name,
-      status: approver.approval_status === 1 ? 'approved' as const : 
-              approver.approval_status === 2 ? 'rejected' as const : 
-              approver.approval_order === ticketDetail.current_step ? 'pending' as const :
-              'waiting' as const,
+      status: approver.approval_status === 1 ? 'approved' as const :
+        approver.approval_status === 2 ? 'rejected' as const :
+          approver.approval_order === ticketDetail.current_step ? 'pending' as const :
+            'waiting' as const,
       approver: approver.approver_name,
       date: approver.approval_date || null,
       order: approver.approval_order
@@ -134,12 +135,12 @@ const TicketDetail = () => {
 
   const getCustomFormData = () => {
     if (!ticketDetail) return [];
-    
+
     const formData = [];
     for (let i = 1; i <= 16; i++) {
       const label = ticketDetail[`lbl_col${i}` as keyof typeof ticketDetail] as string;
       const value = ticketDetail[`cstm_col${i}` as keyof typeof ticketDetail] as string;
-      
+
       if (label && label.trim() && value && value.trim() && value !== '{}') {
         formData.push({
           label: label,
@@ -152,13 +153,13 @@ const TicketDetail = () => {
 
   const canUserApprove = () => {
     if (!ticketDetail || !user) return false;
-    
+
     const currentApprover = ticketDetail.list_approval?.find(
       approver => approver.approval_order === ticketDetail.current_step
     );
-    
-  
-    
+
+
+
     return currentApprover && currentApprover.approver_id === user.user_id;
   };
 
@@ -168,62 +169,63 @@ const TicketDetail = () => {
     link.href = downloadUrl;
     link.download = fileName;
     link.target = '_blank';
-    
+
     // Add authorization header by creating a fetch request
     fetch(downloadUrl, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`
       }
     })
-    .then(response => response.blob())
-    .then(blob => {
-      const url = window.URL.createObjectURL(blob);
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    })
-    .catch(error => {
-      console.error('Download failed:', error);
-      toast({
-        title: "Download Error",
-        description: "Failed to download file. Please try again.",
-        variant: "destructive",
+      .then(response => response.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(error => {
+        console.error('Download failed:', error);
+        toast({
+          title: "Download Error",
+          description: "Failed to download file. Please try again.",
+          variant: "destructive",
+        });
       });
-    });
   };
 
   const handleGeneratedDocumentDownload = (documentPath: string, fileName: string) => {
     const downloadUrl = `${API_URL}/${documentPath}`;
-    console.log("downloadUrl",downloadUrl)
-  const handleGeneratedDocumentDownload = (documentId: number, fileName: string) => {
-    const downloadUrl = `${API_URL}/hots_customfunction/download/${documentId}`;
-    
-    // Create a temporary link and trigger download
+    console.log("downloadUrl", downloadUrl)
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = fileName;
-    link.style.display = 'none';
-    
-    // Add authorization header by creating a form
-    const form = document.createElement('form');
-    form.method = 'GET';
-    form.action = downloadUrl;
-    form.style.display = 'none';
-    
-    const authInput = document.createElement('input');
-    authInput.type = 'hidden';
-    authInput.name = 'authorization';
-    authInput.value = `Bearer ${localStorage.getItem('tokek')}`;
-    
-    form.appendChild(authInput);
-    document.body.appendChild(form);
-    
-    // For now, just open in new tab since we need proper auth handling
-    window.open(downloadUrl, '_blank');
-    
-    document.body.removeChild(form);
+    link.target = '_blank';
+
+    // Add authorization header by creating a fetch request
+    fetch(downloadUrl, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('tokek')}`
+      }
+    })
+      .then(response => response.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(error => {
+        console.error('Download failed:', error);
+        toast({
+          title: "Download Error",
+          description: "Failed to download generated document. Please try again.",
+          variant: "destructive",
+        });
+      });
   };
 
   if (isLoadingDetail) {
@@ -294,7 +296,7 @@ const TicketDetail = () => {
             </div>
             {canUserApprove() && (
               <div className="flex items-center space-x-2">
-                <Button 
+                <Button
                   onClick={handleApprove}
                   className="bg-primary hover:bg-primary/90"
                   disabled={isSubmitting}
@@ -306,8 +308,8 @@ const TicketDetail = () => {
                   )}
                   Approve
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setIsRejectModalOpen(true)}
                   className="text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50"
                   disabled={isSubmitting}
@@ -367,7 +369,7 @@ const TicketDetail = () => {
                     </Badge>
                   </div>
                 </div>
-                
+
                 {ticketDetail.reason && (
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Description</p>
@@ -426,15 +428,14 @@ const TicketDetail = () => {
               </Card>
             )}
 
-            {/* Generated Documents - Enhanced */}
+            {/* Generated Documents */}
             {(isLoadingCustomFunction || (generatedDocuments && generatedDocuments.length > 0)) && (
               <Card className="bg-card shadow-sm border">
                 <CardHeader className="bg-muted/50 border-b">
-                  <CardTitle className="text-lg flex items-center">
-                    <FileText className="w-5 h-5 mr-2" />
+                  <CardTitle className="text-lg">
                     Generated Documents
                     {isLoadingCustomFunction && (
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 ml-2 animate-spin inline" />
                     )}
                   </CardTitle>
                 </CardHeader>
@@ -447,7 +448,8 @@ const TicketDetail = () => {
                       </div>
                     </div>
                   ) : generatedDocuments && generatedDocuments.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
+                      {console.log("generatedDocuments", generatedDocuments)}
                       {generatedDocuments.map((document) => (
                         <FilePreview
                           generated={true}
@@ -460,13 +462,7 @@ const TicketDetail = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">No generated documents found</p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Documents will appear here when custom functions generate them
-                      </p>
-                    </div>
+                    <p className="text-muted-foreground text-center py-4">No generated documents found</p>
                   )}
                 </CardContent>
               </Card>
@@ -488,16 +484,15 @@ const TicketDetail = () => {
                   </div>
                   <Progress value={progressPercentage} className="h-2" />
                 </div>
-                
+
                 <div className="space-y-3">
                   {approvalSteps.map((step, index) => (
                     <div key={step.id} className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                        step.status === 'approved' ? 'bg-green-500 text-white' :
-                        step.status === 'rejected' ? 'bg-red-500 text-white' :
-                        step.status === 'pending' ? 'bg-yellow-500 text-white' :
-                        'bg-gray-300 text-gray-600'
-                      }`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${step.status === 'approved' ? 'bg-green-500 text-white' :
+                          step.status === 'rejected' ? 'bg-red-500 text-white' :
+                            step.status === 'pending' ? 'bg-yellow-500 text-white' :
+                              'bg-gray-300 text-gray-600'
+                        }`}>
                         {step.order}
                       </div>
                       <div className="flex-1">
@@ -527,11 +522,10 @@ const TicketDetail = () => {
                   {ticketDetail.chat_messages && ticketDetail.chat_messages.length > 0 ? (
                     ticketDetail.chat_messages.map((msg) => (
                       <div key={msg.id} className={`flex ${msg.isRequester ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
-                          msg.isRequester 
-                            ? 'bg-primary text-primary-foreground' 
+                        <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${msg.isRequester
+                            ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-foreground'
-                        }`}>
+                          }`}>
                           <p className="text-xs font-medium mb-1">{msg.user}</p>
                           <p className="text-sm">{msg.message}</p>
                           <p className="text-xs opacity-75 mt-1">{msg.time}</p>

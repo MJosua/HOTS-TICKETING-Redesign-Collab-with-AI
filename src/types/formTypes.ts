@@ -13,7 +13,7 @@ export interface FormField {
   default?: string;
   uiCondition?: string;
   note?: string;
-  columnSpan?: 1 | 2 | 3; // New field for dynamic column spans
+  columnSpan?: 1 | 2 | 3 ; // New field for dynamic column spans
 }
 
 export interface RowGroup {
