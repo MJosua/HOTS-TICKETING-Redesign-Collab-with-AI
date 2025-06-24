@@ -5,16 +5,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
-import { FormField } from '@/types/formTypes';
+import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown, RefreshCw, Info } from 'lucide-react';
+import { FormField, RowGroup } from '@/types/formTypes';
 import { getMaxFormFields } from '@/utils/formFieldMapping';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface DynamicFieldEditorProps {
   fields: FormField[];
   onUpdate: (fields: FormField[]) => void;
+  rowGroups?: RowGroup[];
+  onUpdateRowGroups?: (rowGroups: RowGroup[]) => void;
 }
 
-export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, onUpdate }) => {
+export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ 
+  fields, 
+  onUpdate, 
+  rowGroups = [], 
+  onUpdateRowGroups 
+}) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const generateFieldName = (label: string) => {
@@ -39,9 +47,47 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
     onUpdate([...fields, newField]);
   };
 
+  const addRowGroup = () => {
+    if (!onUpdateRowGroups) return;
+    
+    const newRowGroup: RowGroup = {
+      isStructuredInput: true,
+      maxRows: 10,
+      structure: {
+        firstColumn: {
+          label: "Item Name",
+          name: "item_name",
+          type: "text",
+          placeholder: "Enter item name"
+        },
+        secondColumn: {
+          label: "Quantity",
+          name: "quantity",
+          type: "number",
+          placeholder: "Enter quantity"
+        },
+        thirdColumn: {
+          label: "Unit",
+          name: "unit",
+          type: "select",
+          options: ["pcs", "kg", "liter", "box"],
+          placeholder: "Select unit"
+        }
+      },
+      rowGroup: []
+    };
+    onUpdateRowGroups([...rowGroups, newRowGroup]);
+  };
+
   const removeField = (index: number) => {
     const updated = fields.filter((_, i) => i !== index);
     onUpdate(updated);
+  };
+
+  const removeRowGroup = (index: number) => {
+    if (!onUpdateRowGroups) return;
+    const updated = rowGroups.filter((_, i) => i !== index);
+    onUpdateRowGroups(updated);
   };
 
   const moveField = (index: number, direction: 'up' | 'down') => {
@@ -58,6 +104,13 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
     const updated = [...fields];
     updated[index] = updatedField;
     onUpdate(updated);
+  };
+
+  const updateRowGroup = (index: number, updatedRowGroup: RowGroup) => {
+    if (!onUpdateRowGroups) return;
+    const updated = [...rowGroups];
+    updated[index] = updatedRowGroup;
+    onUpdateRowGroups(updated);
   };
 
   const validateFieldName = (name: string, currentIndex: number) => {
@@ -126,7 +179,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Form Fields</h3>
+        <h3 className="text-lg font-semibold">Form Configuration</h3>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => onUpdate([...fields])}>
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -140,34 +193,68 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ fields, 
             <Plus className="w-4 h-4 mr-2" />
             Add Field ({fields.length}/{getMaxFormFields()})
           </Button>
+          {onUpdateRowGroups && (
+            <Button size="sm" variant="outline" onClick={addRowGroup}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Row Group
+            </Button>
+          )}
         </div>
       </div>
 
       {renderFieldsPreview()}
 
-      {fields.map((field, index) => (
-        <FieldEditor
-          key={index}
-          field={field}
-          index={index}
-          onUpdate={(updatedField) => updateField(index, updatedField)}
-          onRemove={() => removeField(index)}
-          onMoveUp={() => moveField(index, 'up')}
-          onMoveDown={() => moveField(index, 'down')}
-          canMoveUp={index > 0}
-          canMoveDown={index < fields.length - 1}
-          validateFieldName={validateFieldName}
-          generateFieldName={generateFieldName}
-        />
-      ))}
+      {/* Regular Fields */}
+      <div className="space-y-4">
+        <h4 className="text-md font-medium">Dynamic Fields</h4>
+        {fields.map((field, index) => (
+          <FieldEditor
+            key={index}
+            field={field}
+            index={index}
+            onUpdate={(updatedField) => updateField(index, updatedField)}
+            onRemove={() => removeField(index)}
+            onMoveUp={() => moveField(index, 'up')}
+            onMoveDown={() => moveField(index, 'down')}
+            canMoveUp={index > 0}
+            canMoveDown={index < fields.length - 1}
+            validateFieldName={validateFieldName}
+            generateFieldName={generateFieldName}
+          />
+        ))}
+      </div>
 
-      {fields.length === 0 && (
+      {/* Structured Row Groups */}
+      {onUpdateRowGroups && (
+        <div className="space-y-4">
+          <h4 className="text-md font-medium">Structured Row Groups</h4>
+          {rowGroups.map((rowGroup, index) => (
+            <RowGroupEditor
+              key={index}
+              rowGroup={rowGroup}
+              index={index}
+              onUpdate={(updatedRowGroup) => updateRowGroup(index, updatedRowGroup)}
+              onRemove={() => removeRowGroup(index)}
+            />
+          ))}
+        </div>
+      )}
+
+      {fields.length === 0 && rowGroups.length === 0 && (
         <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-          <p className="text-muted-foreground mb-4">No fields created yet</p>
-          <Button onClick={addField}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create First Field
-          </Button>
+          <p className="text-muted-foreground mb-4">No fields or row groups created yet</p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={addField}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create First Field
+            </Button>
+            {onUpdateRowGroups && (
+              <Button variant="outline" onClick={addRowGroup}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Row Group
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -186,6 +273,31 @@ interface FieldEditorProps {
   validateFieldName: (name: string, index: number) => boolean;
   generateFieldName: (label: string) => string;
 }
+
+const SystemVariableHelper = () => (
+  <Popover>
+    <PopoverTrigger asChild>
+      <Button variant="outline" size="sm">
+        <Info className="w-3 h-3 mr-1" />
+        System Variables
+      </Button>
+    </PopoverTrigger>
+    <PopoverContent className="w-80">
+      <div className="space-y-2">
+        <h4 className="font-medium">Available System Variables:</h4>
+        <div className="text-sm space-y-1">
+          <div><code className="bg-gray-100 px-1 rounded">${'{user}'}</code> - Current user name</div>
+          <div><code className="bg-gray-100 px-1 rounded">${'{user.email}'}</code> - User email</div>
+          <div><code className="bg-gray-100 px-1 rounded">${'{user.department}'}</code> - User department</div>
+          <div><code className="bg-gray-100 px-1 rounded">${'{user.division}'}</code> - User division</div>
+          <div><code className="bg-gray-100 px-1 rounded">${'{departments}'}</code> - All departments (for select)</div>
+          <div><code className="bg-gray-100 px-1 rounded">${'{divisions}'}</code> - All divisions (for select)</div>
+          <div><code className="bg-gray-100 px-1 rounded">${'{superior}'}</code> - Superior users (for select)</div>
+        </div>
+      </div>
+    </PopoverContent>
+  </Popover>
+);
 
 const FieldEditor: React.FC<FieldEditorProps> = ({
   field,
@@ -266,16 +378,20 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </div>
 
           <div>
-            <Label htmlFor={`name-${index}`}>Default Value</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor={`default-${index}`}>Default Value</Label>
+              <SystemVariableHelper />
+            </div>
             <Input
-              id={`name-${index}`}
-              value={field.value}
-              onChange={(e) => updateField({ value: e.target.value })}
-              placeholder="field_name"
+              id={`default-${index}`}
+              value={field.default || ''}
+              onChange={(e) => updateField({ default: e.target.value })}
+              placeholder="Default value or system variable (e.g., ${user})"
               className={nameError ? 'border-red-500' : ''}
             />
-            {nameError && <p className="text-xs text-red-500 mt-1">{nameError}</p>}
-            {/* <p className="text-xs text-gray-500 mt-1">Auto-generated from label, can be edited</p> */}
+            <p className="text-xs text-gray-500 mt-1">
+              Use system variables like ${'{user}'} for dynamic defaults
+            </p>
           </div>
         </div>
 
@@ -325,7 +441,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             />
             <Label>Required</Label>
           </div>
-
         </div>
 
         <div>
@@ -339,13 +454,19 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
         {(field.type === 'select' || field.type === 'radio') && (
           <div>
-            <Label>Options</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label>Options</Label>
+              <SystemVariableHelper />
+            </div>
             <Textarea
               value={field.options?.join('\n') || ''}
               onChange={(e) => updateField({ options: e.target.value.split('\n').filter(o => o.trim()) })}
-              placeholder="Enter options (one per line)"
+              placeholder="Enter options (one per line) or use system variables like ${departments}"
               rows={3}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              You can use system variables like ${'{departments}'} for dynamic options
+            </p>
           </div>
         )}
         <div className="flex items-center gap-2 pt-6">
@@ -355,6 +476,242 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             onChange={(e) => updateField({ readonly: e.target.checked })}
           />
           <Label>readonly</Label>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+interface RowGroupEditorProps {
+  rowGroup: RowGroup;
+  index: number;
+  onUpdate: (rowGroup: RowGroup) => void;
+  onRemove: () => void;
+}
+
+const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
+  rowGroup,
+  index,
+  onUpdate,
+  onRemove
+}) => {
+  const updateRowGroup = (updates: Partial<RowGroup>) => {
+    onUpdate({ ...rowGroup, ...updates });
+  };
+
+  const updateStructureColumn = (column: 'firstColumn' | 'secondColumn' | 'thirdColumn', updates: any) => {
+    onUpdate({
+      ...rowGroup,
+      structure: {
+        ...rowGroup.structure,
+        [column]: {
+          ...rowGroup.structure?.[column],
+          ...updates
+        }
+      }
+    });
+  };
+
+  return (
+    <Card className="p-4 border-l-4 border-orange-500">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Row Group {index + 1}</span>
+          </div>
+          <Button size="sm" variant="outline" onClick={onRemove}>
+            <Trash2 className="w-3 h-3" />
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <Label>Max Rows</Label>
+            <Input
+              type="number"
+              value={rowGroup.maxRows || 10}
+              onChange={(e) => updateRowGroup({ maxRows: parseInt(e.target.value) })}
+              placeholder="Maximum number of rows"
+            />
+          </div>
+          <div>
+            <Label>Combination Mapping</Label>
+            <Select
+              value={rowGroup.structure?.combinedMapping || 'none'}
+              onValueChange={(value) => updateRowGroup({
+                structure: {
+                  ...rowGroup.structure,
+                  combinedMapping: value as 'second_third' | 'first_second' | 'none'
+                }
+              })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Combination</SelectItem>
+                <SelectItem value="first_second">Combine 1st & 2nd</SelectItem>
+                <SelectItem value="second_third">Combine 2nd & 3rd</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h5 className="text-sm font-medium">Column Structure</h5>
+          
+          {/* First Column */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 p-3 bg-gray-50 rounded">
+            <div>
+              <Label className="text-xs">First Column Label</Label>
+              <Input
+                size="sm"
+                value={rowGroup.structure?.firstColumn?.label || ''}
+                onChange={(e) => updateStructureColumn('firstColumn', { label: e.target.value })}
+                placeholder="Column 1 Label"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Field Name</Label>
+              <Input
+                size="sm"
+                value={rowGroup.structure?.firstColumn?.name || ''}
+                onChange={(e) => updateStructureColumn('firstColumn', { name: e.target.value })}
+                placeholder="field_name"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Type</Label>
+              <Select
+                value={rowGroup.structure?.firstColumn?.type || 'text'}
+                onValueChange={(value) => updateStructureColumn('firstColumn', { type: value })}
+              >
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="select">Select</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Second Column */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 p-3 bg-gray-50 rounded">
+            <div>
+              <Label className="text-xs">Second Column Label</Label>
+              <Input
+                size="sm"
+                value={rowGroup.structure?.secondColumn?.label || ''}
+                onChange={(e) => updateStructureColumn('secondColumn', { label: e.target.value })}
+                placeholder="Column 2 Label"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Field Name</Label>
+              <Input
+                size="sm"
+                value={rowGroup.structure?.secondColumn?.name || ''}
+                onChange={(e) => updateStructureColumn('secondColumn', { name: e.target.value })}
+                placeholder="field_name"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Type</Label>
+              <Select
+                value={rowGroup.structure?.secondColumn?.type || 'text'}
+                onValueChange={(value) => updateStructureColumn('secondColumn', { type: value })}
+              >
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="select">Select</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Third Column */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 p-3 bg-gray-50 rounded">
+            <div>
+              <Label className="text-xs">Third Column Label</Label>
+              <Input
+                size="sm"
+                value={rowGroup.structure?.thirdColumn?.label || ''}
+                onChange={(e) => updateStructureColumn('thirdColumn', { label: e.target.value })}
+                placeholder="Column 3 Label"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Field Name</Label>
+              <Input
+                size="sm"
+                value={rowGroup.structure?.thirdColumn?.name || ''}
+                onChange={(e) => updateStructureColumn('thirdColumn', { name: e.target.value })}
+                placeholder="field_name"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Type</Label>
+              <Select
+                value={rowGroup.structure?.thirdColumn?.type || 'text'}
+                onValueChange={(value) => updateStructureColumn('thirdColumn', { type: value })}
+              >
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="select">Select</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Options for select fields */}
+          {(rowGroup.structure?.firstColumn?.type === 'select' || 
+            rowGroup.structure?.secondColumn?.type === 'select' || 
+            rowGroup.structure?.thirdColumn?.type === 'select') && (
+            <div className="space-y-2">
+              <Label className="text-xs">Select Options (for select type columns)</Label>
+              {rowGroup.structure?.firstColumn?.type === 'select' && (
+                <Textarea
+                  placeholder="First column options (one per line)"
+                  value={rowGroup.structure?.firstColumn?.options?.join('\n') || ''}
+                  onChange={(e) => updateStructureColumn('firstColumn', { 
+                    options: e.target.value.split('\n').filter(o => o.trim()) 
+                  })}
+                  rows={2}
+                />
+              )}
+              {rowGroup.structure?.secondColumn?.type === 'select' && (
+                <Textarea
+                  placeholder="Second column options (one per line)"
+                  value={rowGroup.structure?.secondColumn?.options?.join('\n') || ''}
+                  onChange={(e) => updateStructureColumn('secondColumn', { 
+                    options: e.target.value.split('\n').filter(o => o.trim()) 
+                  })}
+                  rows={2}
+                />
+              )}
+              {rowGroup.structure?.thirdColumn?.type === 'select' && (
+                <Textarea
+                  placeholder="Third column options (one per line)"
+                  value={rowGroup.structure?.thirdColumn?.options?.join('\n') || ''}
+                  onChange={(e) => updateStructureColumn('thirdColumn', { 
+                    options: e.target.value.split('\n').filter(o => o.trim()) 
+                  })}
+                  rows={2}
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Card>

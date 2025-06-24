@@ -498,11 +498,13 @@ const ServiceFormEditor = () => {
                     <DynamicFieldEditor
                       fields={config.fields || []}
                       onUpdate={(fields) => setConfig({ ...config, fields })}
+                      rowGroups={config.rowGroups || []}
+                      onUpdateRowGroups={(rowGroups) => setConfig({ ...config, rowGroups })}
                     />
                   </TabsContent>
 
                   <TabsContent value="rowGroups" className="mt-4">
-                    <RowGroupEditor
+                    <RowGroup
                       rowGroups={config.rowGroups || []}
                       onUpdate={(rowGroups) => setConfig({ ...config, rowGroups })}
                     />
