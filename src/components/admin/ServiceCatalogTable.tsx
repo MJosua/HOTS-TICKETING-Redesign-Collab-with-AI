@@ -36,7 +36,7 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
   isReloading
 }) => {
   const { workflowGroups } = useAppSelector(state => state.userManagement);
-  // console.log("serviceCatalog",serviceCatalog)
+
   const getWorkflowGroupName = (serviceId: string) => {
     const service = serviceCatalog.find(s => s.service_id.toString() === serviceId);
     if (!service?.m_workflow_groups) {
@@ -81,7 +81,7 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
               const service = serviceCatalog.find(s => s.service_id.toString() === form.id);
               const hasFormJson = service?.form_json && service.form_json.trim() !== '';
               const workflowName = getWorkflowGroupName(form.id!);
-              console.log("form",form)
+              
               return (
                 <TableRow key={form.id}>
                   <TableCell className="font-medium">{form.title}</TableCell>
@@ -89,19 +89,11 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
                     <Badge variant="secondary">{form.category}</Badge>
                   </TableCell>
                   <TableCell className="font-mono text-sm">
-
-                    {parseInt(form.servis_aktif) === 0 ?
-
-                      (
-                        <Badge className="bg-red-100 text-red-800">Inactive{form.servis_aktif}</Badge>
-                      )
-                      :
-                      (
-                        <Badge className="bg-green-100 text-green-800">Active{form.servis_aktif}</Badge>
-                      )
-                    }
-
-
+                    {parseInt((form.servis_aktif || 0).toString()) === 0 ? (
+                      <Badge className="bg-red-100 text-red-800">Inactive</Badge>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant={hasFormJson ? "default" : "outline"}>
