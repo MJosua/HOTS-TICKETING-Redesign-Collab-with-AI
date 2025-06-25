@@ -8,9 +8,8 @@ import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { StructuredRowGroup } from './StructuredRowGroup';
-import { ManualRowGroupField } from './ManualRowGroupField';
 import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
-import { mapFormDataToTicketColumns, getMaxFormFields, flattenRowGroupsToFields } from '@/utils/formFieldMapping';
+import { mapFormDataToTicketColumns, getMaxFormFields } from '@/utils/formFieldMapping';
 import { useAppDispatch } from '@/hooks/useAppSelector';
 import { createTicket, uploadFiles } from '@/store/slices/ticketsSlice';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +54,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     }, 0);
     return regularFields + rowGroupFields;
   }, [config.fields, rowGroups, structuredRowCounts]);
+
+    return regularFields + rowGroupFields;
+  }, [config.fields, config.rowGroups, structuredRowCounts]);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];
