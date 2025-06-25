@@ -23,6 +23,36 @@ export const FormPreviewPanel: React.FC<FormPreviewPanelProps> = ({ config }) =>
     });
   };
 
+  // Convert section-based structure to flat structure for DynamicForm
+  const convertToLegacyFormat = (config: FormConfig): FormConfig => {
+    if (!config.sections || config.sections.length === 0) {
+      return config;
+    }
+
+    const allFields: any[] = [];
+    const allRowGroups: any[] = [];
+
+    config.sections.forEach(section => {
+      // Add section fields
+      if (section.fields) {
+        allFields.push(...section.fields);
+      }
+      
+      // Add section row groups
+      if (section.rowGroups) {
+        allRowGroups.push(...section.rowGroups);
+      }
+    });
+
+    return {
+      ...config,
+      fields: allFields,
+      rowGroups: allRowGroups
+    };
+  };
+
+  const legacyConfig = convertToLegacyFormat(config);
+
   return (
     <div className="p-6 bg-gray-50 h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto">
@@ -34,10 +64,16 @@ export const FormPreviewPanel: React.FC<FormPreviewPanelProps> = ({ config }) =>
           </p>
         </div>
 
-        <DynamicForm
-          config={config}
-          onSubmit={handlePreviewSubmit}
-        />
+        {legacyConfig.fields?.length === 0 && legacyConfig.rowGroups?.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <p className="mb-4">No fields added yet. Add some fields in the Structure tab to see the preview.</p>
+          </div>
+        ) : (
+          <DynamicForm
+            config={legacyConfig}
+            onSubmit={handlePreviewSubmit}
+          />
+        )}
       </div>
     </div>
   );
