@@ -127,6 +127,21 @@ export const ManualRowGroupField: React.FC<ManualRowGroupFieldProps> = ({
     onUpdate(updatedRowGroup);
   };
 
+  const updateCombination = (combination: string) => {
+    const updatedRowGroup = {
+      ...rowGroup,
+      structure: {
+        ...rowGroup.structure,
+        firstColumn: rowGroup.rowGroup?.[0] || { label: '', name: '', type: 'text' },
+        secondColumn: rowGroup.rowGroup?.[1] || { label: '', name: '', type: 'text' },
+        thirdColumn: rowGroup.rowGroup?.[2] || { label: '', name: '', type: 'text' },
+        combinedMapping: combination as 'none' | 'first_second' | 'second_third'
+      }
+    };
+    
+    onUpdate(updatedRowGroup);
+  };
+
   return (
     <Card className="border-l-4 border-blue-500">
       <CardHeader className="pb-3">
@@ -182,6 +197,27 @@ export const ManualRowGroupField: React.FC<ManualRowGroupFieldProps> = ({
               <span className="text-xs text-gray-500">
                 {rowGroup.rowGroup?.length || 0}/3 fields
               </span>
+            </div>
+
+            {/* Combination Mapping Setting */}
+            <div className="p-3 bg-white rounded border">
+              <Label className="text-sm font-medium">Database Mapping Combination</Label>
+              <Select 
+                value={rowGroup.structure?.combinedMapping || 'none'} 
+                onValueChange={updateCombination}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select mapping combination" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None - Each field → separate cstm_col</SelectItem>
+                  <SelectItem value="first_second">First field → cstm_col, Second → lbl_col</SelectItem>
+                  <SelectItem value="second_third">Second field → cstm_col, Third → lbl_col</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Controls how row group data maps to database columns (cstm_col/lbl_col)
+              </p>
             </div>
             
             {rowGroup.rowGroup?.map((field, fieldIndex) => (
@@ -257,6 +293,19 @@ export const ManualRowGroupField: React.FC<ManualRowGroupFieldProps> = ({
 
         <div className="text-xs text-muted-foreground p-2 bg-blue-50 rounded">
           <strong>Row Group Info:</strong> Using {rows.length * (rowGroup.rowGroup?.length || 0)} of {maxTotalFields} total form fields
+          {rowGroup.structure?.combinedMapping && (
+            <span className="block mt-1">
+              <strong>Mapping:</strong> {
+                rowGroup.structure.combinedMapping === 'none' 
+                  ? 'Each field → separate cstm_col' 
+                  : rowGroup.structure.combinedMapping === 'first_second'
+                  ? 'First field → cstm_col, Second field → lbl_col'
+                  : rowGroup.structure.combinedMapping === 'second_third'
+                  ? 'Second field → cstm_col, Third field → lbl_col'
+                  : 'Custom mapping'
+              }
+            </span>
+          )}
         </div>
       </CardContent>
     </Card>

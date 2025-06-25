@@ -9,7 +9,7 @@ import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { StructuredRowGroup } from './StructuredRowGroup';
-import { ManualRowGroupField } from './ManualRowGroupField';
+import { RowGroupRenderer } from './RowGroupRenderer';
 import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
 import { mapFormDataToTicketColumns, getMaxFormFields, flattenRowGroupsToFields } from '@/utils/formFieldMapping';
 import { useAppDispatch } from '@/hooks/useAppSelector';
@@ -69,18 +69,17 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   };
 
   const handleSubmit = async (data: any) => {
-    console.log("rowgroup")
+    console.log("Form submission data:", data);
+    
     if (!serviceId) {
-      const mappedData = mapFormDataToTicketColumns(
-        data,
-        config.fields || [],
-        config.rowGroups || []
-      );
+      // Preview mode - just show the data
       toast({
-        title: "TEST NO SERVICE ID",
-        description: JSON.stringify(mappedData, null, 2),
-        variant: "destructive",
+        title: "Form Preview Submission",
+        description: `Data: ${JSON.stringify(data, null, 2)}`,
+        variant: "default",
+        duration: 5000
       });
+      onSubmit(data);
       return;
     }
 
@@ -122,7 +121,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         serviceId,
         ticketData
       })).unwrap();
-      console.log("serviceId", serviceId)
+      
       if (result.success) {
         toast({
           title: "Success",
@@ -202,17 +201,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     );
   };
 
-  const handleRowGroupUpdate = (groupIndex: number, updatedRowGroup: RowGroup) => {
-    if (!config.rowGroups) return;
-    
-    const updatedRowGroups = [...config.rowGroups];
-    updatedRowGroups[groupIndex] = updatedRowGroup;
-    
-    // This would need to be passed from parent component
-    // For now, we'll just log the update
-    console.log('Row group updated:', { groupIndex, updatedRowGroup });
-  };
-
   return (
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
@@ -244,12 +232,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold">Dynamic Sections</h3>
                 {config.rowGroups.map((rowGroup, index) => (
-                  <ManualRowGroupField
+                  <RowGroupRenderer
                     key={`rowgroup-${index}`}
                     rowGroup={rowGroup}
                     form={form}
                     groupIndex={index}
-                    onUpdate={(updatedRowGroup) => handleRowGroupUpdate(index, updatedRowGroup)}
                     maxTotalFields={maxFields}
                     currentFieldCount={currentFieldCount}
                   />
