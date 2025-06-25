@@ -9,9 +9,8 @@ import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { StructuredRowGroup } from './StructuredRowGroup';
-import { ManualRowGroupField } from './ManualRowGroupField';
 import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
-import { mapFormDataToTicketColumns, getMaxFormFields, flattenRowGroupsToFields } from '@/utils/formFieldMapping';
+import { mapFormDataToTicketColumns, getMaxFormFields } from '@/utils/formFieldMapping';
 import { useAppDispatch } from '@/hooks/useAppSelector';
 import { createTicket, uploadFiles } from '@/store/slices/ticketsSlice';
 import { useToast } from '@/hooks/use-toast';
@@ -35,12 +34,18 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   const maxFields = getMaxFormFields();
 
-  // Calculate current field usage including flattened row groups
+  // Calculate current field usage
   const currentFieldCount = useMemo(() => {
     const regularFields = config.fields?.length || 0;
-    const flattenedRowGroupFields = flattenRowGroupsToFields(config.rowGroups || []).length;
-    return regularFields + flattenedRowGroupFields;
-  }, [config.fields, config.rowGroups]);
+    const rowGroupFields = config.rowGroups?.reduce((acc, rg, index) => {
+      if (rg.isStructuredInput) {
+        return acc + (structuredRowCounts[index] || 1);
+      }
+      return acc + (rg.rowGroup?.length || 0);
+    }, 0) || 0;
+
+    return regularFields + rowGroupFields;
+  }, [config.fields, config.rowGroups, structuredRowCounts]);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];
@@ -202,16 +207,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     );
   };
 
-  const handleRowGroupUpdate = (groupIndex: number, updatedRowGroup: RowGroup) => {
-    if (!config.rowGroups) return;
-    
-    const updatedRowGroups = [...config.rowGroups];
-    updatedRowGroups[groupIndex] = updatedRowGroup;
-    
-    // This would need to be passed from parent component
-    // For now, we'll just log the update
-    console.log('Row group updated:', { groupIndex, updatedRowGroup });
-  };
 
   return (
     <Card className="max-w-4xl mx-auto">
@@ -242,20 +237,64 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
             {config.rowGroups && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold">Dynamic Sections</h3>
                 {config.rowGroups.map((rowGroup, index) => (
-                  <ManualRowGroupField
-                    key={`rowgroup-${index}`}
-                    rowGroup={rowGroup}
-                    form={form}
-                    groupIndex={index}
-                    onUpdate={(updatedRowGroup) => handleRowGroupUpdate(index, updatedRowGroup)}
-                    maxTotalFields={maxFields}
-                    currentFieldCount={currentFieldCount}
-                  />
+                  <div key={`rowgroup-${index}`}>
+                    {rowGroup.isStructuredInput ? (
+                      <StructuredRowGroup
+                        rowGroup={rowGroup}
+                        form={form}
+                        groupIndex={index}
+                        maxTotalFields={maxFields}
+                        currentFieldCount={currentFieldCount}
+                        onFieldCountChange={(count) => {
+                          setStructuredRowCounts(prev => ({
+                            ...prev,
+                            [index]: count
+                          }));
+                        }}
+                      />
+                    ) : (
+                      <RowGroupField
+                        rowGroup={rowGroup.rowGroup}
+                        form={form}
+                        groupIndex={index}
+                        onValueChange={(fieldKey, value) => {
+                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                        }}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             )}
+            {/* Yosua check this later */}
+            {/* {config.sections && config.sections.map((section: FormSection, sectionIndex) => (
+              <div key={`section-${sectionIndex}`} className="mb-6">
+                <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
+
+                {section.repeatable ? (
+                  <RepeatingSection
+                    section={section}
+                    form={form}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {section.fields && renderFieldsInRows(section.fields)}
+                    {section.rowGroups && section.rowGroups.map((rowGroup, index) => (
+                      <RowGroupField
+                        key={`rowgroup-${index}`}
+                        rowGroup={rowGroup.rowGroup}
+                        form={form}
+                        groupIndex={index}
+                        onValueChange={(fieldKey, value) => {
+                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))} */}
 
             <div className="flex justify-end pt-6">
               <Button type="submit" disabled={isSubmitting} className="min-w-32">
