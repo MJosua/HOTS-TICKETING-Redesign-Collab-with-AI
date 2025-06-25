@@ -20,7 +20,7 @@ export const resolveSystemVariable = (
 
   // Handle simple variables
   if (value === '${user}') {
-    return context.user?.username || context.user?.name || '';
+    return (`${context.user?.firstname} ${context.user?.lastname}`) || context.user?.uid || '';
   }
 
   if (value === '${user.email}') {
@@ -56,19 +56,19 @@ export const resolveSystemVariable = (
   const filterMatch = value.match(/\$\{(\w+)\(filter:\s*"([^"]+)"\)\}/);
   if (filterMatch) {
     const [, variableName, filterExpression] = filterMatch;
-    
+
     // Parse simple filter like "name = john"
     const filterParts = filterExpression.split('=').map(p => p.trim());
     if (filterParts.length === 2) {
       const [filterKey, filterValue] = filterParts;
       const cleanFilterValue = filterValue.replace(/['"]/g, '');
-      
+
       if (variableName === 'superior' && context.superior) {
         return context.superior
           .filter(s => s[filterKey]?.toLowerCase().includes(cleanFilterValue.toLowerCase()))
           .map(s => s.name || s.username) || [];
       }
-      
+
       if (variableName === 'departments' && context.departments) {
         return context.departments
           .filter(d => d[filterKey]?.toLowerCase().includes(cleanFilterValue.toLowerCase()))
@@ -87,11 +87,11 @@ export const resolveSystemVariable = (
 export const useSystemVariableContext = (): SystemVariableContext => {
   const auth = useAppSelector(state => state.auth);
   const userManagement = useAppSelector(state => state.userManagement);
-  
+
   return {
     user: auth.user,
-    superior: userManagement.users?.filter(u => 
-      u.role_name?.toLowerCase().includes('manager') || 
+    superior: userManagement.users?.filter(u =>
+      u.role_name?.toLowerCase().includes('manager') ||
       u.role_name?.toLowerCase().includes('supervisor')
     ) || [],
     departments: userManagement.departments || [],

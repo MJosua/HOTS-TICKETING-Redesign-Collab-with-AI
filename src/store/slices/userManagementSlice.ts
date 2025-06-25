@@ -4,6 +4,7 @@ import { API_URL } from '@/config/sourceConfig';
 
 export interface UserType {
   user_id: number;
+  user_name: string;
   firstname: string;
   lastname: string;
   uid: string;
@@ -530,7 +531,7 @@ export const fetchServices = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     })
-    console.log("response.data.data",response.data.data)
+    console.log("response.data.data", response.data.data)
     return response.data.data;
   }
 );
@@ -543,7 +544,7 @@ export const fetchActiveServices = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("response.data.data",response.data.data)
+    console.log("response.data.data", response.data.data)
     return response.data.data;
   }
 );

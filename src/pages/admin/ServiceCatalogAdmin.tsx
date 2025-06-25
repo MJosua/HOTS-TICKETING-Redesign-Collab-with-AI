@@ -69,7 +69,6 @@ const ServiceCatalogAdmin = () => {
         console.error(`Failed to parse form_json for service ${service.service_id}:`, error);
       }
     }
-    console.log("service", service)
     // Fallback to default form structure if form_json is not available or invalid
     return {
       id: service.service_id.toString(),

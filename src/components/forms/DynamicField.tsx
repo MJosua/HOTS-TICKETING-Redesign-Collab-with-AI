@@ -51,7 +51,6 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   onFileUpload
 }) => {
   const systemContext = useSystemVariableContext();
-
   // Check if field is required - either explicitly set or has asterisk in label
   const isRequired = field.required === true || field.label.includes('*');
   const hasAsterisk = field.label.includes('*');
@@ -62,6 +61,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
     if (field.default) {
       const resolved = resolveSystemVariable(field.default, systemContext);
       return Array.isArray(resolved) ? resolved[0] : resolved;
+
     }
     return field.value || '';
   }, [field.default, field.value, systemContext]);
