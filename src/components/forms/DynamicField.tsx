@@ -205,53 +205,56 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       case 'file':
         return (
           <div className="space-y-2">
-
             {/* Show uploaded file names */}
             {form.watch(fieldKey)?.length > 0 ? (
               <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                {console.log("Preview files:", Array.from(form.watch(`${fieldKey}_raw`) || []))}
+                {(() => {
+                  console.log("Preview files:", Array.from(form.watch(`${fieldKey}_raw`) || []));
+                  return null;
+                })()}
 
-                {Array.from(form.watch(`${fieldKey}_raw`) || []).map((file: File, i: number) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <span className="truncate max-w-xs">{file.name}</span>
-                    <span className="text-xs text-gray-400">
-                      ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                    </span>
+                {Array.from(form.watch(`${fieldKey}_raw`) || []).map((file: unknown, i: number) => {
+                  const typedFile = file as File;
+                  return (
+                    <li key={i} className="flex items-center gap-2">
+                      <span className="truncate max-w-xs">{typedFile.name}</span>
+                      <span className="text-xs text-gray-400">
+                        ({(typedFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
 
-                    <button
-                      type="button"
-                      className="text-red-500 text-xs"
-                      onClick={() => {
-                        const rawFiles = Array.from(form.watch(`${fieldKey}_raw`) || []);
-                        const uploadedUrls = Array.from(form.watch(fieldKey) || []);
+                      <button
+                        type="button"
+                        className="text-red-500 text-xs"
+                        onClick={() => {
+                          const rawFiles = Array.from(form.watch(`${fieldKey}_raw`) || []);
+                          const uploadedUrls = Array.from(form.watch(fieldKey) || []);
 
-                        // Remove both preview and submitted value
-                        rawFiles.splice(i, 1);
-                        uploadedUrls.splice(i, 1);
+                          // Remove both preview and submitted value
+                          rawFiles.splice(i, 1);
+                          uploadedUrls.splice(i, 1);
 
-                        const dt = new DataTransfer();
-                        rawFiles.forEach((f) => dt.items.add(f));
+                          const dt = new DataTransfer();
+                          rawFiles.forEach((f) => dt.items.add(f as File));
 
-                        form.setValue(`${fieldKey}_raw`, dt.files);
-                        form.setValue(fieldKey, uploadedUrls);
-                      }}
-                    >
-                      Remove
-                    </button>
+                          form.setValue(`${fieldKey}_raw`, dt.files);
+                          form.setValue(fieldKey, uploadedUrls);
+                        }}
+                      >
+                        Remove
+                      </button>
 
-                    {file.type.startsWith('image/') && (
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={file.name}
-                        className="h-10 w-10 object-cover rounded"
-                      />
-                    )}
-                  </li>
-                ))}
+                      {typedFile.type.startsWith('image/') && (
+                        <img
+                          src={URL.createObjectURL(typedFile)}
+                          alt={typedFile.name}
+                          className="h-10 w-10 object-cover rounded"
+                        />
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
-
-            )
-              :
+            ) : (
               <div className="flex items-center justify-center w-full">
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -296,8 +299,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                   />
                 </label>
               </div>
-
-            }
+            )}
 
             {field.note && (
               <p className="text-xs text-muted-foreground">{field.note}</p>
