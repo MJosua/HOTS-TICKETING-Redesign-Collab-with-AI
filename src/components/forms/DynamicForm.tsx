@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { StructuredRowGroup } from './StructuredRowGroup';
+import { ManualRowGroupField } from './ManualRowGroupField';
 import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
 import { mapFormDataToTicketColumns, getMaxFormFields, flattenRowGroupsToFields } from '@/utils/formFieldMapping';
 import { useAppDispatch } from '@/hooks/useAppSelector';
