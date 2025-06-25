@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -267,34 +266,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 ))}
               </div>
             )}
-            {/* Yosua check this later */}
-            {/* {config.sections && config.sections.map((section: FormSection, sectionIndex) => (
-              <div key={`section-${sectionIndex}`} className="mb-6">
-                <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
-
-                {section.repeatable ? (
-                  <RepeatingSection
-                    section={section}
-                    form={form}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    {section.fields && renderFieldsInRows(section.fields)}
-                    {section.rowGroups && section.rowGroups.map((rowGroup, index) => (
-                      <RowGroupField
-                        key={`rowgroup-${index}`}
-                        rowGroup={rowGroup.rowGroup}
-                        form={form}
-                        groupIndex={index}
-                        onValueChange={(fieldKey, value) => {
-                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))} */}
 
             <div className="flex justify-end pt-6">
               <Button type="submit" disabled={isSubmitting} className="min-w-32">
