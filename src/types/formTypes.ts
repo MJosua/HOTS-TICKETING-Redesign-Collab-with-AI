@@ -1,6 +1,8 @@
+
 export interface FormField {
+  id?: string; // Add unique identifier for drag-and-drop
   label: string;
-  name: string; // New field for API data mapping
+  name: string;
   type: string;
   placeholder?: string;
   required?: boolean;
@@ -13,8 +15,8 @@ export interface FormField {
   default?: string;
   uiCondition?: string;
   note?: string;
-  columnSpan?: 1 | 2 | 3 ; // New field for dynamic column spans
-  systemVariable?: string; // For template variables like ${user}
+  columnSpan?: 1 | 2 | 3;
+  systemVariable?: string;
   
   // Row group metadata (internal use)
   _isRowGroupField?: boolean;
@@ -25,19 +27,23 @@ export interface FormField {
 }
 
 export interface RowGroup {
+  id?: string; // Add unique identifier
+  title?: string; // Row group title
   rowGroup: FormField[];
-  isStructuredInput?: boolean; // New flag for special row group format
-  maxRows?: number; // Maximum allowed rows
+  isStructuredInput?: boolean;
+  maxRows?: number;
   structure?: {
     firstColumn: FormField;
     secondColumn: FormField;
     thirdColumn: FormField;
-    combinedMapping?: 'none' | 'first_second' | 'second_third'; // Fixed to allow all values
+    combinedMapping?: 'none' | 'first_second' | 'second_third';
   };
 }
 
 export interface FormSection {
+  id?: string; // Add unique identifier
   title: string;
+  description?: string;
   fields?: FormField[];
   rowGroups?: RowGroup[];
   repeatable?: boolean;
@@ -47,6 +53,9 @@ export interface FormSection {
     type: string;
     calculated: boolean;
   };
+  condition?: string; // Conditional display
+  collapsible?: boolean;
+  collapsed?: boolean;
 }
 
 export interface ApprovalStep {
@@ -79,7 +88,7 @@ export interface WorkflowGroup {
 export interface ApprovalFlow {
   steps: string[];
   mode: 'sequential' | 'parallel';
-  m_workflow_groups?: string; // Link to workflow group
+  m_workflow_groups?: string;
 }
 
 export interface FormConfig {
@@ -88,17 +97,43 @@ export interface FormConfig {
   title: string;
   description?: string;
   category?: string;
-  fields?: FormField[];
-  rowGroups?: RowGroup[];
-  sections?: FormSection[];
+  fields?: FormField[]; // Legacy support
+  rowGroups?: RowGroup[]; // Legacy support
+  sections?: FormSection[]; // New section-based structure
   approval?: ApprovalFlow;
   apiEndpoint?: string;
-  m_workflow_groups?: string; // New field to link forms to workflow groups
-  servis_aktif?: number; // Add this property
-  active?: number; // Add this property
+  m_workflow_groups?: string;
+  servis_aktif?: number;
+  active?: number;
   submit?: {
     label: string;
     type: string;
     action: string;
   };
+  // New metadata
+  metadata?: {
+    version: string;
+    createdAt?: string;
+    updatedAt?: string;
+    fieldCount: number;
+    maxFields: number;
+  };
+}
+
+// Field templates for quick insertion
+export interface FieldTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  field: Omit<FormField, 'id' | 'name'>;
+}
+
+// System variable definitions
+export interface SystemVariable {
+  key: string;
+  label: string;
+  description: string;
+  type: 'string' | 'array' | 'object';
+  resolver?: string;
 }
