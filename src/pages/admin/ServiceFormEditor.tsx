@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileText, Settings, Database } from 'lucide-react';
 import { FormConfig } from '@/types/formTypes';
 import { ModernFormBuilder } from '@/components/forms/ModernFormBuilder';
 import { useCatalogData } from '@/hooks/useCatalogData';
@@ -24,6 +24,8 @@ const ServiceFormEditor = () => {
 
   const [config, setConfig] = useState<FormConfig | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentService, setCurrentService] = useState<any>(null);
+  const [currentCategory, setCurrentCategory] = useState<any>(null);
 
   // Fetch workflow groups on component mount
   useEffect(() => {
@@ -36,8 +38,11 @@ const ServiceFormEditor = () => {
       const serviceData = serviceCatalog.find(service => service.service_id.toString() === id);
 
       if (serviceData) {
+        setCurrentService(serviceData);
+        
         // Get category name from category_id
         const category = categoryList.find(cat => cat.category_id === serviceData.category_id);
+        setCurrentCategory(category);
         const categoryName = category?.category_name || '';
 
         // Parse form_json if it exists, otherwise create default structure
@@ -154,6 +159,16 @@ const ServiceFormEditor = () => {
     }
   };
 
+  const getCategoryIcon = (categoryName: string) => {
+    const iconMap: { [key: string]: React.ReactNode } = {
+      'IT Services': <Settings className="w-5 h-5" />,
+      'HR Services': <FileText className="w-5 h-5" />,
+      'Finance': <Database className="w-5 h-5" />,
+      'General': <FileText className="w-5 h-5" />
+    };
+    return iconMap[categoryName] || <FileText className="w-5 h-5" />;
+  };
+
   if (!config) {
     return (
       <AppLayout>
@@ -172,9 +187,28 @@ const ServiceFormEditor = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Service Catalog
           </Button>
-          <h1 className="text-xl font-semibold">
-            {isEdit ? 'Edit' : 'Create'} Service Form
-          </h1>
+          
+          <div className="flex items-center gap-3">
+            {currentCategory && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-lg">
+                {getCategoryIcon(currentCategory.category_name)}
+                <span className="text-sm font-medium text-blue-700">
+                  {currentCategory.category_name}
+                </span>
+              </div>
+            )}
+            
+            <div>
+              <h1 className="text-xl font-semibold">
+                {isEdit ? 'Edit' : 'Create'} Service Form
+              </h1>
+              {currentService && (
+                <p className="text-sm text-gray-600">
+                  {currentService.service_name}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
         
         <div className="flex-1 overflow-hidden">
