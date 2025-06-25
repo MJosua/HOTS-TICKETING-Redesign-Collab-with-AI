@@ -18,7 +18,7 @@ export interface FormField {
 }
 
 export interface RowGroup {
-  rowGroup: FormField[];
+  rowGroup: RowData[];
   isStructuredInput?: boolean; // New flag for special row group format
   maxRows?: number; // Maximum allowed rows
   structure?: {

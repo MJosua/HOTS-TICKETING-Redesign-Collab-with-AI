@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Camera, Save } from 'lucide-react';
+import { useAppSelector } from '@/hooks/useAppSelector';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     bio: 'International Operations Manager with 5+ years experience in global supply chain management.',
     avatar: ''
   });
-
+  const { user } = useAppSelector((state) => state.auth);
   const handleSave = () => {
     // console.log('Saving profile:', profile);
     onClose();
@@ -34,20 +35,17 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Avatar Section */}
           <div className="flex flex-col items-center space-y-3">
             <Avatar className="w-20 h-20">
               <AvatarImage src={profile.avatar} />
               <AvatarFallback className="text-lg font-semibold">
-                {profile.name.split(' ').map(n => n[0]).join('')}
+                {user ? user?.firstname.split(' ').map(n => n[0]).join('') : "n"}
               </AvatarFallback>
             </Avatar>
-            <Button variant="outline" size="sm">
-              <Camera className="w-4 h-4 mr-2" />
-              Change Photo
-            </Button>
+
           </div>
 
           {/* Form Fields */}
@@ -56,8 +54,9 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
-                value={profile.name}
-                onChange={(e) => setProfile({...profile, name: e.target.value})}
+                value={user?.user_name || user?.firstname}
+                disabled
+                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
               />
             </div>
 
@@ -66,8 +65,9 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
               <Input
                 id="email"
                 type="email"
-                value={profile.email}
-                onChange={(e) => setProfile({...profile, email: e.target.value})}
+                value={user?.email || ""}
+                disabled
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
               />
             </div>
 
@@ -75,41 +75,27 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
               <Label htmlFor="department">Department</Label>
               <Input
                 id="department"
-                value={profile.department}
-                onChange={(e) => setProfile({...profile, department: e.target.value})}
+                value={user?.department_name}
+                disabled
+                onChange={(e) => setProfile({ ...profile, department: e.target.value })}
               />
             </div>
 
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">nik</Label>
               <Input
-                id="phone"
-                value={profile.phone}
-                onChange={(e) => setProfile({...profile, phone: e.target.value})}
+                id="nik"
+                value={user?.nik || ""}
+                disabled
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
               />
             </div>
 
-            <div>
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                rows={3}
-                value={profile.bio}
-                onChange={(e) => setProfile({...profile, bio: e.target.value})}
-              />
-            </div>
+           
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </Button>
-          </div>
+
         </div>
       </DialogContent>
     </Dialog>

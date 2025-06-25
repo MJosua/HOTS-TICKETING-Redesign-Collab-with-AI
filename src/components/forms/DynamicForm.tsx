@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,29 +31,36 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [structuredRowCounts, setStructuredRowCounts] = useState<Record<number, number>>({});
 
-  const maxFields = getMaxFormFields();
+  const maxFields = useMemo(() => getMaxFormFields(), []);
+  const [rowGroups, setRowGroups] = useState<RowGroup[]>(() => JSON.parse(JSON.stringify(config.rowGroups || [])));
+  const handleUpdateRowGroup = (groupIndex: number, updatedRows: any[]) => {
+    setRowGroups(prev => {
+      const updated = [...prev];
+      updated[groupIndex] = {
+        ...updated[groupIndex],
+        rowGroup: updatedRows
+      };
+      return updated;
+    });
+  };
 
-  // Calculate current field usage
   const currentFieldCount = useMemo(() => {
     const regularFields = config.fields?.length || 0;
-    const rowGroupFields = config.rowGroups?.reduce((acc, rg, index) => {
+    const rowGroupFields = rowGroups.reduce((acc, rg, index) => {
       if (rg.isStructuredInput) {
         return acc + (structuredRowCounts[index] || 1);
       }
       return acc + (rg.rowGroup?.length || 0);
-    }, 0) || 0;
-
+    }, 0);
     return regularFields + rowGroupFields;
-  }, [config.fields, config.rowGroups, structuredRowCounts]);
+  }, [config.fields, rowGroups, structuredRowCounts]);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];
-
     const formData = new FormData();
-    Array.from(files).forEach((file, index) => {
+    Array.from(files).forEach((file) => {
       formData.append(`file`, file);
     });
-
     try {
       const result = await dispatch(uploadFiles(formData)).unwrap();
       if (result.success && result.data) {
@@ -72,70 +78,54 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       return [];
     }
   };
+  
 
   const handleSubmit = async (data: any) => {
-    console.log("rowgroup")
+
     if (!serviceId) {
       const mappedData = mapFormDataToTicketColumns(
         data,
         config.fields || [],
-        config.rowGroups || []
+        rowGroups,
+
       );
+
       toast({
         title: "TEST NO SERVICE ID",
         description: JSON.stringify(mappedData, null, 2),
         variant: "destructive",
       });
+
+      console.log("config", mappedData)
       return;
     }
-
     setIsSubmitting(true);
-
     try {
-      console.log('Raw form data:', data);
-
-      // Handle file uploads first
       let uploadIds: number[] = [];
       for (const [key, value] of Object.entries(data)) {
         if (value instanceof FileList && value.length > 0) {
           const fileUploadIds = await handleFileUpload(value);
           uploadIds.push(...fileUploadIds);
-          // Remove the FileList from form data
           delete data[key];
         }
       }
-
-      // Map form data to cstm_col and lbl_col structure
       const mappedData = mapFormDataToTicketColumns(
         data,
         config.fields || [],
-        config.rowGroups || []
+        rowGroups
       );
-      console.log('Mapped ticket data:', mappedData);
-
-      // Create the ticket data payload
       const ticketData = {
         subject: data.subject || 'Service Request',
         upload_ids: uploadIds,
         ...mappedData
       };
-
-      console.log('Creating ticket with data:', ticketData);
-
-      // Create the ticket
-      const result = await dispatch(createTicket({
-        serviceId,
-        ticketData
-      })).unwrap();
-      console.log("serviceId", serviceId)
+      const result = await dispatch(createTicket({ serviceId, ticketData })).unwrap();
       if (result.success) {
         toast({
           title: "Success",
           description: "Your request has been submitted successfully!",
           variant: "default",
         });
-
-        // Navigate to tickets page or call the original onSubmit
         navigate('/my-tickets');
       } else {
         throw new Error(result.message || 'Failed to create ticket');
@@ -154,15 +144,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   const shouldShowField = (field: FormField, values: Record<string, any>) => {
     if (!field.uiCondition) return true;
-
-    // Simple condition parsing for "show if toggle is on"
     if (field.uiCondition.includes('toggle is on')) {
       const toggleFields = Object.keys(values).filter(key =>
         form.watch(key) === true || form.watch(key) === 'on'
       );
       return toggleFields.length > 0;
     }
-
     return true;
   };
 
@@ -184,11 +171,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {fields.map((field, fieldIndex) => {
           const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
-
-          if (!shouldShowField(field, watchedValues)) {
-            return null;
-          }
-
+          if (!shouldShowField(field, watchedValues)) return null;
           return (
             <div key={fieldKey} className={getColSpanClass(field.columnSpan || 1)}>
               <DynamicField
@@ -207,7 +190,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     );
   };
 
-
   return (
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
@@ -215,8 +197,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         {config.description && (
           <p className="text-sm text-muted-foreground">{config.description}</p>
         )}
-
-        {/* Field usage indicator */}
         <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
           <span className="text-blue-800">
             <strong>Form Fields:</strong> {currentFieldCount} of {maxFields} used
@@ -234,68 +214,32 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 {renderFieldsInRows(config.fields)}
               </div>
             )}
-
-            {config.rowGroups && (
-              <div className="space-y-6">
-                {config.rowGroups.map((rowGroup, index) => (
-                  <div key={`rowgroup-${index}`}>
-                    {rowGroup.isStructuredInput ? (
-                      <StructuredRowGroup
-                        rowGroup={rowGroup}
-                        form={form}
-                        groupIndex={index}
-                        maxTotalFields={maxFields}
-                        currentFieldCount={currentFieldCount}
-                        onFieldCountChange={(count) => {
-                          setStructuredRowCounts(prev => ({
-                            ...prev,
-                            [index]: count
-                          }));
-                        }}
-                      />
-                    ) : (
-                      <RowGroupField
-                        rowGroup={rowGroup.rowGroup}
-                        form={form}
-                        groupIndex={index}
-                        onValueChange={(fieldKey, value) => {
-                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-                        }}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {/* Yosua check this later */}
-            {/* {config.sections && config.sections.map((section: FormSection, sectionIndex) => (
-              <div key={`section-${sectionIndex}`} className="mb-6">
-                <h3 className="text-lg font-semibold mb-4">{section.title}</h3>
-
-                {section.repeatable ? (
-                  <RepeatingSection
-                    section={section}
+            {rowGroups.map((rowGroup, index) => (
+              <div key={`rowgroup-${index}`}>
+                {rowGroup.title && <h3 className="text-lg font-medium mb-2">{rowGroup.title}</h3>}
+                {rowGroup.isStructuredInput ? (
+                  <StructuredRowGroup
+                    key={index}
+                    rowGroup={rowGroup}
+                    groupIndex={index}
                     form={form}
+                    maxTotalFields={50}
+                    currentFieldCount={currentFieldCount}
+                    onFieldCountChange={(count) => setStructuredRowCounts(prev => ({ ...prev, [index]: count }))}
+                    onUpdateRowGroup={handleUpdateRowGroup}
                   />
                 ) : (
-                  <div className="space-y-4">
-                    {section.fields && renderFieldsInRows(section.fields)}
-                    {section.rowGroups && section.rowGroups.map((rowGroup, index) => (
-                      <RowGroupField
-                        key={`rowgroup-${index}`}
-                        rowGroup={rowGroup.rowGroup}
-                        form={form}
-                        groupIndex={index}
-                        onValueChange={(fieldKey, value) => {
-                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-                        }}
-                      />
-                    ))}
-                  </div>
+                  <RowGroupField
+                    rowGroup={rowGroup.rowGroup}
+                    form={form}
+                    groupIndex={index}
+                    onValueChange={(fieldKey, value) => {
+                      setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                    }}
+                  />
                 )}
               </div>
-            ))} */}
-
+            ))}
             <div className="flex justify-end pt-6">
               <Button type="submit" disabled={isSubmitting} className="min-w-32">
                 {isSubmitting ? 'Submitting...' : (config.submit?.label || 'Submit')}

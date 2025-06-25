@@ -76,12 +76,12 @@ const Index = () => {
   }, [dispatch]);
 
   const dashboardData = monthlyData.length > 0 ? monthlyData : [
-    { name: 'Jan', tickets: 45 },
-    { name: 'Feb', tickets: 52 },
-    { name: 'Mar', tickets: 48 },
-    { name: 'Apr', tickets: 61 },
-    { name: 'May', tickets: 55 },
-    { name: 'Jun', tickets: 67 },
+    { name: 'Jan', tickets: 0 },
+    { name: 'Feb', tickets: 0 },
+    { name: 'Mar', tickets: 0 },
+    { name: 'Apr', tickets: 0 },
+    { name: 'May', tickets: 0 },
+    { name: 'Jun', tickets: 0 },
   ];
 
   return (
@@ -141,7 +141,7 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              {/* <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 bg-purple-100 rounded-lg">
@@ -153,7 +153,7 @@ const Index = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
 
             <Card>

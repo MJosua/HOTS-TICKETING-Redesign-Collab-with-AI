@@ -646,18 +646,17 @@ export const updateWorkflowGroup = createAsyncThunk(
 
 export const deleteWorkflowGroup = createAsyncThunk(
   'userManagement/deleteWorkflowGroup',
-  async (id: number) => {
+  async (id: number, { rejectWithValue }) => {
     try {
       const response = await axios.delete(`${API_URL}/hots_settings/delete/workflow_group/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
         }
       });
-      // console.log("workflow group deleted", response.data);
       return id;
     } catch (error: any) {
       console.error("Workflow group deletion error:", error);
-      throw error;
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
