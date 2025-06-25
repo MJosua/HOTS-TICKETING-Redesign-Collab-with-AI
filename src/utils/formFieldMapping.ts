@@ -1,5 +1,5 @@
 
-import { FormField } from '@/types/formTypes';
+import { FormField, RowGroup } from '@/types/formTypes';
 
 export interface TicketColumnMapping {
   [key: string]: any; // cstm_col1, cstm_col2, etc.
