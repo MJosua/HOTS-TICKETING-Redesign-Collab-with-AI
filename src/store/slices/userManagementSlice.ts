@@ -4,6 +4,7 @@ import { API_URL } from '@/config/sourceConfig';
 
 export interface UserType {
   user_id: number;
+  user_name: string;
   firstname: string;
   lastname: string;
   uid: string;
@@ -530,7 +531,7 @@ export const fetchServices = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     })
-    console.log("response.data.data",response.data.data)
+    console.log("response.data.data", response.data.data)
     return response.data.data;
   }
 );
@@ -543,7 +544,7 @@ export const fetchActiveServices = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("response.data.data",response.data.data)
+    console.log("response.data.data", response.data.data)
     return response.data.data;
   }
 );
@@ -645,18 +646,17 @@ export const updateWorkflowGroup = createAsyncThunk(
 
 export const deleteWorkflowGroup = createAsyncThunk(
   'userManagement/deleteWorkflowGroup',
-  async (id: number) => {
+  async (id: number, { rejectWithValue }) => {
     try {
       const response = await axios.delete(`${API_URL}/hots_settings/delete/workflow_group/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
         }
       });
-      // console.log("workflow group deleted", response.data);
       return id;
     } catch (error: any) {
       console.error("Workflow group deletion error:", error);
-      throw error;
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );

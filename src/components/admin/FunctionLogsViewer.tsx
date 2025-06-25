@@ -10,12 +10,13 @@ import { useAppDispatch } from '@/hooks/useAppDispatch';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import { fetchFunctionLogs, fetchGeneratedDocuments } from '@/store/slices/customFunctionSlice';
 import { useToast } from '@/hooks/use-toast';
+import { API_URL } from '@/config/sourceConfig';
 
 export default function FunctionLogsViewer() {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const { functionLogs, generatedDocuments, isLoading } = useAppSelector(state => state.customFunction);
-  
+
   const [ticketId, setTicketId] = useState('');
 
   const handleLoadLogs = async () => {
@@ -52,7 +53,7 @@ export default function FunctionLogsViewer() {
   };
 
   const handleDownloadDocument = (documentId: number) => {
-    window.open(`/api/hots_customfunction/download/${documentId}`, '_blank');
+    window.open(`${API_URL}/hots/generateddocuments/${documentId}`, '_blank');
   };
 
   return (
@@ -152,7 +153,7 @@ export default function FunctionLogsViewer() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDownloadDocument(document.id)}
+                      onClick={() => handleDownloadDocument(document.file_name)}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       Download

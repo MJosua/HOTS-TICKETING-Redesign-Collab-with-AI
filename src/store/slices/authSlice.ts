@@ -69,7 +69,6 @@ export const loginUser = createAsyncThunk(
         const { tokek, userData } = response.data;
         localStorage.setItem('tokek', tokek);
         localStorage.setItem('isAuthenticated', 'true');
-        
         // Persist user data for recovery scenarios
         persistUserData(userData);
         

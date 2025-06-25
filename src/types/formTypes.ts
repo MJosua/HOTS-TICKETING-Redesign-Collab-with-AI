@@ -15,10 +15,17 @@ export interface FormField {
   note?: string;
   columnSpan?: 1 | 2 | 3 ; // New field for dynamic column spans
   systemVariable?: string; // For template variables like ${user}
+  
+  // Row group metadata (internal use)
+  _isRowGroupField?: boolean;
+  _groupIndex?: number;
+  _fieldIndex?: number;
+  _columnType?: 'cstm_col' | 'lbl_col';
+  _combinedFields?: FormField[];
 }
 
 export interface RowGroup {
-  rowGroup: FormField[];
+  rowGroup: RowData[];
   isStructuredInput?: boolean; // New flag for special row group format
   maxRows?: number; // Maximum allowed rows
   structure?: {

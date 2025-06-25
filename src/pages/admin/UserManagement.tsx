@@ -374,11 +374,21 @@ const UserManagement = () => {
             description: "Team deleted successfully",
           });
         } else if (deleteTarget.type === 'workflow') {
-          await dispatch(deleteWorkflowGroup(deleteTarget.item.id));
-          toast({
-            title: "Success",
-            description: "Workflow group deleted successfully",
-          });
+          try {
+            await dispatch(deleteWorkflowGroup(deleteTarget.item.id)).unwrap();
+            toast({
+              title: "Success",
+              description: "Workflow group deleted successfully",
+              variant: "default",
+            });
+          } catch (error: any) {
+            console.error("Delete workflow group failed:", error);
+            toast({
+              title: "Error",
+              description: error?.message || "Failed to delete workflow group",
+              variant: "destructive",
+            });
+          }
           dispatch(fetchWorkflowGroups());
         }
         setIsDeleteModalOpen(false);
@@ -607,7 +617,7 @@ const UserManagement = () => {
                       <TableRow key={group.id}>
                         <TableCell className="font-medium">{highlightText(group.name, searchValue)}</TableCell>
                         <TableCell className="text-gray-600">{highlightText(group.description, searchValue)}</TableCell>
-                        
+
                         <TableCell>
                           {getStatusBadge(group)}
                         </TableCell>
@@ -664,16 +674,16 @@ const UserManagement = () => {
           >
             <AlertDialogHeader>
               <AlertDialogTitle
-              className="text-red-600"
+                className="text-red-600"
               >Delete {deleteTarget?.type === 'user' ? 'User' : deleteTarget?.type === 'team' ? 'Team' : 'Workflow Group'}</AlertDialogTitle>
               <AlertDialogDescription
-              className="text-gray-600"
+                className="text-gray-600"
               >
                 Are you sure you want to delete "{deleteTarget?.item.team_name || deleteTarget?.item.name || deleteTarget?.item.firstname + ' ' + deleteTarget?.item.lastname}"? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter
-            className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 rounded-b-lg"
+              className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 rounded-b-lg"
             >
               <AlertDialogCancel onClick={handleDeleteCancel}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">

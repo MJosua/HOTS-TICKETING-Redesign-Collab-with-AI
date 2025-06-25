@@ -123,7 +123,6 @@ export function AppSidebar() {
 
       if (response.data.success) {
         setUserProfile(response.data.data);
-        console.log("userProfile", response.data.data);
       }
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
@@ -244,7 +243,7 @@ export function AppSidebar() {
               {userProfile ? `${userProfile.firstname} ${userProfile.lastname}` : 'Loading...'}
             </p>
             <p className="text-xs text-sidebar-foreground/70 truncate">
-              {userProfile?.team_name || 'Loading...'}
+              {userProfile?.department_name || 'Loading...'}
             </p>
             {userProfile?.superior_name && (
               <p className="text-xs text-sidebar-foreground/60 truncate">

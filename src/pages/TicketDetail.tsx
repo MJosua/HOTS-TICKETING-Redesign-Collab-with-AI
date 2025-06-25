@@ -528,8 +528,46 @@ const TicketDetail = () => {
               </Card>
             )}
 
-            {/* Generated Documents */}
 
+            {/* Generated Documents */}
+            {(isLoadingCustomFunction || (generatedDocuments && generatedDocuments.length > 0)) && (
+              <Card className="bg-card shadow-sm border">
+                <CardHeader className="bg-muted/50 border-b">
+                  <CardTitle className="text-lg">
+                    Generated Documents
+                    {isLoadingCustomFunction && (
+                      <Loader2 className="w-4 h-4 ml-2 animate-spin inline" />
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {isLoadingCustomFunction ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="flex flex-col items-center space-y-2">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <p className="text-sm text-muted-foreground">Loading generated documents...</p>
+                      </div>
+                    </div>
+                  ) : generatedDocuments && generatedDocuments.length > 0 ? (
+                    <div className="space-y-3">
+                      {console.log("generatedDocuments", generatedDocuments)}
+                      {generatedDocuments.map((document) => (
+                        <FilePreview
+                          generated={true}
+                          key={document.id}
+                          fileName={document.file_name}
+                          filePath={document.file_path}
+                          uploadDate={document.generated_date}
+                          onDownload={() => handleGeneratedDocumentDownload(document.file_path, document.file_name)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">No generated documents found</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
