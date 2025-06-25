@@ -12,10 +12,84 @@ export interface TicketLabelMapping {
 export interface MappedTicketData extends TicketColumnMapping, TicketLabelMapping {}
 
 /**
- * Maps form data to ticket database column structure
- * @param formData - Raw form submission data
- * @param fields - Form field definitions
- * @returns Object with cstm_colX and lbl_colX properties
+ * Flattens row groups into individual field configs with cstm_col/lbl_col mapping
+ */
+export const flattenRowGroupsToFields = (
+  rowGroups: RowGroup[]
+): FormField[] => {
+  const flattenedFields: FormField[] = [];
+  
+  rowGroups.forEach((group, groupIndex) => {
+    if (group.isStructuredInput && group.structure) {
+      // For structured input, create fields based on combination mode
+      const { firstColumn, secondColumn, thirdColumn, combinedMapping } = group.structure;
+      
+      if (combinedMapping === 'none') {
+        // Each column becomes separate cstm_col
+        if (firstColumn) {
+          flattenedFields.push({
+            ...firstColumn,
+            name: `rowgroup_${groupIndex}_first`,
+            label: firstColumn.label,
+            _isRowGroupField: true,
+            _groupIndex: groupIndex,
+            _columnType: 'cstm_col'
+          });
+        }
+        if (secondColumn) {
+          flattenedFields.push({
+            ...secondColumn,
+            name: `rowgroup_${groupIndex}_second`,
+            label: secondColumn.label,
+            _isRowGroupField: true,
+            _groupIndex: groupIndex,
+            _columnType: 'cstm_col'
+          });
+        }
+        if (thirdColumn) {
+          flattenedFields.push({
+            ...thirdColumn,
+            name: `rowgroup_${groupIndex}_third`,
+            label: thirdColumn.label,
+            _isRowGroupField: true,
+            _groupIndex: groupIndex,
+            _columnType: 'cstm_col'
+          });
+        }
+      } else {
+        // Combined mapping - first column as cstm_col, others as lbl_col
+        if (firstColumn) {
+          flattenedFields.push({
+            ...firstColumn,
+            name: `rowgroup_${groupIndex}_combined`,
+            label: firstColumn.label,
+            _isRowGroupField: true,
+            _groupIndex: groupIndex,
+            _columnType: 'cstm_col',
+            _combinedFields: [secondColumn, thirdColumn].filter(Boolean)
+          });
+        }
+      }
+    } else {
+      // Regular row group - each field becomes cstm_col
+      group.rowGroup?.forEach((field, fieldIndex) => {
+        flattenedFields.push({
+          ...field,
+          name: `rowgroup_${groupIndex}_field_${fieldIndex}`,
+          _isRowGroupField: true,
+          _groupIndex: groupIndex,
+          _fieldIndex: fieldIndex,
+          _columnType: 'cstm_col'
+        });
+      });
+    }
+  });
+  
+  return flattenedFields;
+};
+
+/**
+ * Maps form data to ticket database column structure including flattened row groups
  */
 export const mapFormDataToTicketColumns = (
   formData: Record<string, any>,
@@ -25,8 +99,8 @@ export const mapFormDataToTicketColumns = (
   const mappedData: MappedTicketData = {};
   let counter = 1;
 
-  // 🔹 Step 1: Map regular fields
-  fields.forEach((field, index) => {
+  // Map regular fields
+  fields.forEach((field) => {
     const cstmColKey = `cstm_col${counter}`;
     const lblColKey = `lbl_col${counter}`;
 
@@ -38,21 +112,29 @@ export const mapFormDataToTicketColumns = (
     counter++;
   });
 
-  // 🔸 Step 2: Map structured row groups
-  rowGroups.forEach((group, gIndex) => {
-    group.rowGroup?.forEach((row, rIndex) => {
-      const columns = ['firstColumn', 'secondColumn', 'thirdColumn'] as const;
+  // Map flattened row groups
+  const flattenedFields = flattenRowGroupsToFields(rowGroups);
+  flattenedFields.forEach((field) => {
+    const cstmColKey = `cstm_col${counter}`;
+    const lblColKey = `lbl_col${counter}`;
 
-      columns.forEach((colKey) => {
-        const col = group.structure?.[colKey];
-        if (!col?.name || !col?.label) return;
-
-        const value = row[col.name];
-        mappedData[`cstm_col${counter}`] = value ?? '';
-        mappedData[`lbl_col${counter}`] = col.label;
-        counter++;
-      });
-    });
+    if (field._columnType === 'cstm_col') {
+      const fieldValue = formData[field.name!];
+      mappedData[cstmColKey] = fieldValue ?? '';
+      
+      // Handle combined fields for lbl_col
+      if (field._combinedFields && field._combinedFields.length > 0) {
+        const combinedValues = field._combinedFields
+          .map(f => formData[`${field.name}_${f.name}`])
+          .filter(Boolean)
+          .join(' | ');
+        mappedData[lblColKey] = combinedValues || field.label;
+      } else {
+        mappedData[lblColKey] = field.label;
+      }
+      
+      counter++;
+    }
   });
 
   return mappedData;
