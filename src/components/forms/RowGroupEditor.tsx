@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
-import { FormField, RowGroup } from '@/types/formTypes';
+import { FormField, RowGroup, RowData } from '@/types/formTypes';
 
 interface RowGroupEditorProps {
   rowGroups: RowGroup[];
@@ -47,24 +48,29 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
 
   const addFieldToRow = (groupIndex: number) => {
     const updated = [...rowGroups];
-    if (updated[groupIndex].rowGroup.length < 3) {
-      const fieldNumber = updated[groupIndex].rowGroup.length + 1;
-      updated[groupIndex].rowGroup.push({
+    const currentRowGroup = updated[groupIndex];
+    
+    // Only add to non-structured row groups
+    if (!currentRowGroup.isStructuredInput && currentRowGroup.rowGroup.length < 3) {
+      const fieldNumber = currentRowGroup.rowGroup.length + 1;
+      const newRowData: RowData = {
         [`new_field_${groupIndex}_${fieldNumber}`]: ''
-      });
+      };
+      (currentRowGroup.rowGroup as RowData[]).push(newRowData);
       onUpdate(updated);
     }
   };
 
   const removeFieldFromRow = (groupIndex: number, fieldIndex: number) => {
     const updated = [...rowGroups];
-    if (updated[groupIndex].rowGroup.length > 1) {
-      updated[groupIndex].rowGroup = updated[groupIndex].rowGroup.filter((_, i) => i !== fieldIndex);
+    const currentRowGroup = updated[groupIndex];
+    
+    // Only remove from non-structured row groups
+    if (!currentRowGroup.isStructuredInput && currentRowGroup.rowGroup.length > 1) {
+      currentRowGroup.rowGroup = currentRowGroup.rowGroup.filter((_, i) => i !== fieldIndex);
       onUpdate(updated);
     }
   };
-
-  
 
   return (
     <div className="space-y-4">
@@ -83,6 +89,9 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <GripVertical className="w-4 h-4 text-muted-foreground" />
                 Row Group {groupIndex + 1}
+                {rowGroup.isStructuredInput && (
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Structured</span>
+                )}
               </CardTitle>
               <div className="flex gap-1">
                 <Button 
@@ -101,14 +110,16 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
                 >
                   <ArrowDown className="w-3 h-3" />
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => addFieldToRow(groupIndex)}
-                  disabled={rowGroup.rowGroup.length >= 3}
-                >
-                  <Plus className="w-3 h-3" />
-                </Button>
+                {!rowGroup.isStructuredInput && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => addFieldToRow(groupIndex)}
+                    disabled={rowGroup.rowGroup.length >= 3}
+                  >
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" onClick={() => removeRowGroup(groupIndex)}>
                   <Trash2 className="w-3 h-3" />
                 </Button>
@@ -116,35 +127,51 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {rowGroup.rowGroup.map((field, fieldIndex) => (
-                <div key={fieldIndex} className="p-3 border border-muted rounded">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Input
-                        value={Object.keys(field)[0] || ''}
-                        onChange={(e) => {
-                          const updated = [...rowGroups];
-                          const oldKey = Object.keys(field)[0];
-                          const newKey = e.target.value;
-                          const value = field[oldKey];
-                          delete updated[groupIndex].rowGroup[fieldIndex][oldKey];
-                          updated[groupIndex].rowGroup[fieldIndex][newKey] = value;
-                          onUpdate(updated);
-                        }}
-                        placeholder="Field Name"
-                        className="text-sm font-medium"
-                      />
-                      {rowGroup.rowGroup.length > 1 && (
-                        <Button size="sm" variant="ghost" onClick={() => removeFieldFromRow(groupIndex, fieldIndex)}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      )}
+            {rowGroup.isStructuredInput ? (
+              <div className="p-3 border border-muted rounded bg-gray-50">
+                <p className="text-sm text-muted-foreground">
+                  This is a structured row group with predefined columns. 
+                  Use the form preview to see how it will appear to users.
+                </p>
+                {rowGroup.structure && (
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                    <div className="font-medium">{rowGroup.structure.firstColumn.label}</div>
+                    <div className="font-medium">{rowGroup.structure.secondColumn.label}</div>
+                    <div className="font-medium">{rowGroup.structure.thirdColumn.label}</div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(rowGroup.rowGroup as RowData[]).map((field, fieldIndex) => (
+                  <div key={fieldIndex} className="p-3 border border-muted rounded">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Input
+                          value={Object.keys(field)[0] || ''}
+                          onChange={(e) => {
+                            const updated = [...rowGroups];
+                            const oldKey = Object.keys(field)[0];
+                            const newKey = e.target.value;
+                            const value = field[oldKey];
+                            delete (updated[groupIndex].rowGroup as RowData[])[fieldIndex][oldKey];
+                            (updated[groupIndex].rowGroup as RowData[])[fieldIndex][newKey] = value;
+                            onUpdate(updated);
+                          }}
+                          placeholder="Field Name"
+                          className="text-sm font-medium"
+                        />
+                        {rowGroup.rowGroup.length > 1 && (
+                          <Button size="sm" variant="ghost" onClick={() => removeFieldFromRow(groupIndex, fieldIndex)}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
