@@ -152,12 +152,16 @@ const TaskList = () => {
         const userApprovalOrder = getUserApprovalOrder(originalTicket);
         const canApprove = userApprovalOrder !== null;
 
-        const currentApprover = task.approvalSteps?.find(
-          approver =>
-            approver.approval_order === task.current_step &&
-            approver.approver === user?.firstname + ' ' + user?.lastname &&
-            approver.approval_status === 0
-        );
+       
+
+        const currentApprover = () => {
+          return task.approvalSteps?.some(
+            approver =>
+              approver.approval_order === task.current_step &&
+              approver.approver_id === user.user_id &&
+              approver.approval_status === 0 // optional: only if approval is still open
+          );
+        };
 
         console.log("taskList.list_approval", task);
         console.log("taskList.current_step", task.current_step);
@@ -214,6 +218,7 @@ const TaskList = () => {
                   </span>
                 </div>
 
+
                 {canApprove && userApprovalOrder && (
                   <TaskApprovalActions
                     ticketId={task.id}
@@ -226,6 +231,8 @@ const TaskList = () => {
                 )}
               </CardContent>
             </Card>
+
+
           </div>
         );
       })}

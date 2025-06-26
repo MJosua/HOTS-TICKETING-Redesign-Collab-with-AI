@@ -33,7 +33,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   const maxFields = useMemo(() => getMaxFormFields(), []);
   const [rowGroups, setRowGroups] = useState<RowGroup[]>(() => JSON.parse(JSON.stringify(config.rowGroups || [])));
-  
   const handleUpdateRowGroup = (groupIndex: number, updatedRows: any[]) => {
     setRowGroups(prev => {
       const updated = [...prev];
@@ -55,6 +54,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     }, 0);
     return regularFields + rowGroupFields;
   }, [config.fields, rowGroups, structuredRowCounts]);
+
+    
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];
@@ -79,6 +80,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       return [];
     }
   };
+  
 
   const handleSubmit = async (data: any) => {
 
@@ -230,7 +232,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                   />
                 ) : (
                   <RowGroupField
-                    rowGroup={rowGroup.rowGroup as any}
+                    rowGroup={rowGroup.rowGroup}
                     form={form}
                     groupIndex={index}
                     onValueChange={(fieldKey, value) => {

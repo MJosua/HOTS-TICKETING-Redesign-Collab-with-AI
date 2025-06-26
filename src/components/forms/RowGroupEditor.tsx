@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
-import { FormField, RowGroup, RowData, StructuredRowData } from '@/types/formTypes';
+import { FormField, RowGroup } from '@/types/formTypes';
 
 interface RowGroupEditorProps {
   rowGroups: RowGroup[];
@@ -18,8 +18,8 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
   const addRowGroup = () => {
     const newRowGroup: RowGroup = {
       rowGroup: [
-        { new_field_1: 'value1' },
-        { new_field_2: 'value2' }
+        { label: 'New Field 1', name: 'new_field_1', type: 'text', required: false },
+        { label: 'New Field 2', name: 'new_field_2', type: 'text', required: false }
       ]
     };
     onUpdate([...rowGroups, newRowGroup]);
@@ -48,29 +48,30 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
 
   const addFieldToRow = (groupIndex: number) => {
     const updated = [...rowGroups];
-    const currentRowGroup = updated[groupIndex];
-    
-    // Only add to non-structured row groups
-    if (!currentRowGroup.isStructuredInput && currentRowGroup.rowGroup.length < 3) {
-      const fieldNumber = currentRowGroup.rowGroup.length + 1;
-      const newRowData: RowData = {
-        [`new_field_${groupIndex}_${fieldNumber}`]: ''
-      };
-      // Ensure we're working with RowData array for non-structured groups
-      (currentRowGroup.rowGroup as RowData[]).push(newRowData);
+    if (updated[groupIndex].rowGroup.length < 3) {
+      const fieldNumber = updated[groupIndex].rowGroup.length + 1;
+      updated[groupIndex].rowGroup.push({
+        label: `New Field ${fieldNumber}`,
+        name: `new_field_${groupIndex}_${fieldNumber}`,
+        type: 'text',
+        required: false
+      });
       onUpdate(updated);
     }
   };
 
   const removeFieldFromRow = (groupIndex: number, fieldIndex: number) => {
     const updated = [...rowGroups];
-    const currentRowGroup = updated[groupIndex];
-    
-    // Only remove from non-structured row groups
-    if (!currentRowGroup.isStructuredInput && currentRowGroup.rowGroup.length > 1) {
-      currentRowGroup.rowGroup = (currentRowGroup.rowGroup as RowData[]).filter((_, i) => i !== fieldIndex);
+    if (updated[groupIndex].rowGroup.length > 1) {
+      updated[groupIndex].rowGroup = updated[groupIndex].rowGroup.filter((_, i) => i !== fieldIndex);
       onUpdate(updated);
     }
+  };
+
+  const updateFieldInRow = (groupIndex: number, fieldIndex: number, updatedField: FormField) => {
+    const updated = [...rowGroups];
+    updated[groupIndex].rowGroup[fieldIndex] = updatedField;
+    onUpdate(updated);
   };
 
   return (
@@ -90,9 +91,6 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <GripVertical className="w-4 h-4 text-muted-foreground" />
                 Row Group {groupIndex + 1}
-                {rowGroup.isStructuredInput && (
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Structured</span>
-                )}
               </CardTitle>
               <div className="flex gap-1">
                 <Button 
@@ -111,16 +109,14 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
                 >
                   <ArrowDown className="w-3 h-3" />
                 </Button>
-                {!rowGroup.isStructuredInput && (
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => addFieldToRow(groupIndex)}
-                    disabled={rowGroup.rowGroup.length >= 3}
-                  >
-                    <Plus className="w-3 h-3" />
-                  </Button>
-                )}
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => addFieldToRow(groupIndex)}
+                  disabled={rowGroup.rowGroup.length >= 3}
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => removeRowGroup(groupIndex)}>
                   <Trash2 className="w-3 h-3" />
                 </Button>
@@ -128,51 +124,17 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {rowGroup.isStructuredInput ? (
-              <div className="p-3 border border-muted rounded bg-gray-50">
-                <p className="text-sm text-muted-foreground">
-                  This is a structured row group with predefined columns. 
-                  Use the form preview to see how it will appear to users.
-                </p>
-                {rowGroup.structure && (
-                  <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-                    <div className="font-medium">{rowGroup.structure.firstColumn.label}</div>
-                    <div className="font-medium">{rowGroup.structure.secondColumn.label}</div>
-                    <div className="font-medium">{rowGroup.structure.thirdColumn.label}</div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {(rowGroup.rowGroup as RowData[]).map((field, fieldIndex) => (
-                  <div key={fieldIndex} className="p-3 border border-muted rounded">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Input
-                          value={Object.keys(field)[0] || ''}
-                          onChange={(e) => {
-                            const updated = [...rowGroups];
-                            const oldKey = Object.keys(field)[0];
-                            const newKey = e.target.value;
-                            const value = field[oldKey];
-                            delete (updated[groupIndex].rowGroup as RowData[])[fieldIndex][oldKey];
-                            (updated[groupIndex].rowGroup as RowData[])[fieldIndex][newKey] = value;
-                            onUpdate(updated);
-                          }}
-                          placeholder="Field Name"
-                          className="text-sm font-medium"
-                        />
-                        {rowGroup.rowGroup.length > 1 && (
-                          <Button size="sm" variant="ghost" onClick={() => removeFieldFromRow(groupIndex, fieldIndex)}>
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {rowGroup.rowGroup.map((field, fieldIndex) => (
+                <FieldInRowEditor
+                  key={fieldIndex}
+                  field={field}
+                  onUpdate={(updatedField) => updateFieldInRow(groupIndex, fieldIndex, updatedField)}
+                  onRemove={() => removeFieldFromRow(groupIndex, fieldIndex)}
+                  canRemove={rowGroup.rowGroup.length > 1}
+                />
+              ))}
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -187,5 +149,102 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
         </div>
       )}
     </div>
+  );
+};
+
+interface FieldInRowEditorProps {
+  field: FormField;
+  onUpdate: (field: FormField) => void;
+  onRemove: () => void;
+  canRemove: boolean;
+}
+
+const FieldInRowEditor: React.FC<FieldInRowEditorProps> = ({ field, onUpdate, onRemove, canRemove }) => {
+  const updateField = (updates: Partial<FormField>) => {
+    onUpdate({ ...field, ...updates });
+  };
+
+  const generateFieldName = (label: string) => {
+    return label.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  };
+
+  const handleLabelChange = (label: string) => {
+    const suggestedName = generateFieldName(label);
+    updateField({ 
+      label, 
+      name: field.name || suggestedName 
+    });
+  };
+
+  return (
+    <Card className="p-3 border border-muted">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Input
+            value={field.label}
+            onChange={(e) => handleLabelChange(e.target.value)}
+            placeholder="Field Label"
+            className="text-sm font-medium"
+          />
+          {canRemove && (
+            <Button size="sm" variant="ghost" onClick={onRemove}>
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          )}
+        </div>
+
+        <Input
+          value={field.name}
+          onChange={(e) => updateField({ name: e.target.value })}
+          placeholder="field_name"
+          className="text-xs"
+        />
+
+        <div className="grid grid-cols-2 gap-2">
+          <Select value={field.type} onValueChange={(value) => updateField({ type: value })}>
+            <SelectTrigger className="text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="text">Text</SelectItem>
+              <SelectItem value="textarea">Textarea</SelectItem>
+              <SelectItem value="select">Select</SelectItem>
+              <SelectItem value="radio">Radio</SelectItem>
+              <SelectItem value="checkbox">Checkbox</SelectItem>
+              <SelectItem value="date">Date</SelectItem>
+              <SelectItem value="file">File</SelectItem>
+              <SelectItem value="toggle">Toggle</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={field.required}
+              onChange={(e) => updateField({ required: e.target.checked })}
+              className="scale-75"
+            />
+            <Label className="text-xs">Required</Label>
+          </div>
+        </div>
+
+        <Input
+          value={field.placeholder || ''}
+          onChange={(e) => updateField({ placeholder: e.target.value })}
+          placeholder="Placeholder text"
+          className="text-xs"
+        />
+
+        {(field.type === 'select' || field.type === 'radio') && (
+          <Textarea
+            value={field.options?.join('\n') || ''}
+            onChange={(e) => updateField({ options: e.target.value.split('\n').filter(o => o.trim()) })}
+            placeholder="Options (one per line)"
+            rows={2}
+            className="text-xs"
+          />
+        )}
+      </div>
+    </Card>
   );
 };

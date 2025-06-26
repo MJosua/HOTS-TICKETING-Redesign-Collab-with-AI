@@ -128,23 +128,13 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
     setShowRejectBox(false);
   };
 
-  const toggleCommentBox = () => {
-    setShowCommentBox(!showCommentBox);
-    if (showRejectBox) setShowRejectBox(false);
-  };
-
-  const toggleRejectBox = () => {
-    setShowRejectBox(!showRejectBox);
-    if (showCommentBox) setShowCommentBox(false);
-  };
-
   return (
     <Card className='w-full h-full  items-center justify-center'>
       <CardContent >
         <div className="w-full  bg-primaryspace-y-1  justify-center items-center">
           <div className="flex gap-3 mt-5">
             <Button
-              onClick={toggleCommentBox}
+              onClick={() => setShowCommentBox(!showCommentBox, setShowRejectBox(false))}
               disabled={isSubmitting}
               className="bg-primary hover:bg-primary/90"
             >
@@ -153,7 +143,7 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
             </Button>
 
             <Button
-              onClick={toggleRejectBox}
+              onClick={() => setShowRejectBox(!showRejectBox, setShowCommentBox(false))}
               disabled={isSubmitting}
               className="text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50"
               variant="outline"

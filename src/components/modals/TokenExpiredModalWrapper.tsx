@@ -6,11 +6,7 @@ import { useTokenExpiration } from '@/hooks/useTokenExpiration';
 import { useAppDispatch } from '@/hooks/useAppDispatch';
 import { logoutUser } from '@/store/slices/authSlice';
 
-interface TokenExpiredModalWrapperProps {
-  children: React.ReactNode;
-}
-
-const TokenExpiredModalWrapper: React.FC<TokenExpiredModalWrapperProps> = ({ children }) => {
+const TokenExpiredModalWrapper: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isTokenExpiredModalOpen, closeTokenExpiredModal, username } = useTokenExpiration();
@@ -27,15 +23,12 @@ const TokenExpiredModalWrapper: React.FC<TokenExpiredModalWrapperProps> = ({ chi
   };
 
   return (
-    <>
-      {children}
-      <TokenExpiredModal
-        isOpen={isTokenExpiredModalOpen}
-        onClose={closeTokenExpiredModal}
-        onNavigateToLogin={handleNavigateToLogin}
-        username={username}
-      />
-    </>
+    <TokenExpiredModal
+      isOpen={isTokenExpiredModalOpen}
+      onClose={closeTokenExpiredModal}
+      onNavigateToLogin={handleNavigateToLogin}
+      username={username}
+    />
   );
 };
 
