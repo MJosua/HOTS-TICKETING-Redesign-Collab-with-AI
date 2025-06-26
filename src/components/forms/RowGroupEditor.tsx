@@ -30,7 +30,7 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
           type: 'text', 
           required: false 
         } as FormField
-      ]
+      ] as FormField[]
     };
     onUpdate([...rowGroups, newRowGroup]);
   };
@@ -61,7 +61,7 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
     const currentRowGroup = updated[groupIndex].rowGroup;
     
     // Only allow adding fields to FormField arrays (legacy row groups)
-    if (Array.isArray(currentRowGroup) && currentRowGroup.length > 0 && 'label' in currentRowGroup[0]) {
+    if (Array.isArray(currentRowGroup) && (currentRowGroup.length === 0 || 'label' in currentRowGroup[0])) {
       const formFields = currentRowGroup as FormField[];
       if (formFields.length < 3) {
         const fieldNumber = formFields.length + 1;
@@ -81,7 +81,7 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
     const updated = [...rowGroups];
     const currentRowGroup = updated[groupIndex].rowGroup;
     
-    if (Array.isArray(currentRowGroup) && currentRowGroup.length > 1 && 'label' in currentRowGroup[0]) {
+    if (Array.isArray(currentRowGroup) && currentRowGroup.length > 1 && (currentRowGroup.length === 0 || 'label' in currentRowGroup[0])) {
       const formFields = currentRowGroup as FormField[];
       updated[groupIndex].rowGroup = formFields.filter((_, i) => i !== fieldIndex);
       onUpdate(updated);
@@ -92,7 +92,7 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
     const updated = [...rowGroups];
     const currentRowGroup = updated[groupIndex].rowGroup;
     
-    if (Array.isArray(currentRowGroup) && 'label' in currentRowGroup[0]) {
+    if (Array.isArray(currentRowGroup) && (currentRowGroup.length === 0 || 'label' in currentRowGroup[0])) {
       const formFields = [...(currentRowGroup as FormField[])];
       formFields[fieldIndex] = updatedField;
       updated[groupIndex].rowGroup = formFields;
@@ -100,25 +100,28 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
     }
   };
 
+  // Helper function to check if a row group is legacy (contains FormField[])
+  const isLegacyRowGroup = (rowGroup: RowGroup): rowGroup is RowGroup & { rowGroup: FormField[] } => {
+    return !rowGroup.isStructuredInput && 
+           Array.isArray(rowGroup.rowGroup) && 
+           (rowGroup.rowGroup.length === 0 || 'label' in rowGroup.rowGroup[0]);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Row Groups</h3>
+        <h3 className="text-lg font-semibold">Legacy Row Groups</h3>
         <Button size="sm" onClick={addRowGroup}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Row Group
+          Add Legacy Row Group
         </Button>
       </div>
 
       {rowGroups.map((rowGroup, groupIndex) => {
         // Only render legacy row groups that contain FormField arrays
-        const isLegacyRowGroup = Array.isArray(rowGroup.rowGroup) && 
-          rowGroup.rowGroup.length > 0 && 
-          'label' in rowGroup.rowGroup[0];
+        if (!isLegacyRowGroup(rowGroup)) return null;
         
-        if (!isLegacyRowGroup) return null;
-        
-        const formFields = rowGroup.rowGroup as FormField[];
+        const formFields = rowGroup.rowGroup;
         
         return (
           <Card key={groupIndex} className="border-l-4 border-blue-500">
@@ -126,7 +129,7 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <GripVertical className="w-4 h-4 text-muted-foreground" />
-                  Row Group {groupIndex + 1}
+                  Legacy Row Group {groupIndex + 1}
                 </CardTitle>
                 <div className="flex gap-1">
                   <Button 
@@ -176,12 +179,12 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
         );
       })}
 
-      {rowGroups.length === 0 && (
+      {rowGroups.filter(rg => isLegacyRowGroup(rg)).length === 0 && (
         <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-          <p className="text-muted-foreground mb-4">No row groups created yet</p>
+          <p className="text-muted-foreground mb-4">No legacy row groups created yet</p>
           <Button onClick={addRowGroup}>
             <Plus className="w-4 h-4 mr-2" />
-            Create First Row Group
+            Create First Legacy Row Group
           </Button>
         </div>
       )}

@@ -206,6 +206,14 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     );
   };
 
+  // Helper function to check if a row group is legacy (contains FormField[])
+  const isLegacyRowGroup = (rg: RowGroup): rg is RowGroup & { rowGroup: FormField[] } => {
+    return !rg.isStructuredInput && 
+           Array.isArray(rg.rowGroup) && 
+           rg.rowGroup.length > 0 && 
+           'label' in rg.rowGroup[0];
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Render assigned widgets before the form */}
@@ -281,9 +289,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                     />
                   ) : (
                     // Handle legacy row groups that contain FormField arrays
-                    Array.isArray(rowGroup.rowGroup) && rowGroup.rowGroup.length > 0 && 'label' in rowGroup.rowGroup[0] ? (
+                    isLegacyRowGroup(rowGroup) ? (
                       <RowGroupField
-                        rowGroup={rowGroup.rowGroup as FormField[]}
+                        rowGroup={rowGroup.rowGroup}
                         form={form}
                         groupIndex={index}
                         onValueChange={(fieldKey, value) => {
