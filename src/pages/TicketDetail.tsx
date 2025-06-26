@@ -33,6 +33,7 @@ const TicketDetail = () => {
   const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
   const { generatedDocuments, functionLogs, isLoading: isLoadingCustomFunction } = useAppSelector(state => state.customFunction);
   const { user } = useAppSelector(state => state.auth);
+  
   useEffect(() => {
     if (id) {
       dispatch(fetchTicketDetail(id));
@@ -44,8 +45,8 @@ const TicketDetail = () => {
       dispatch(clearTicketDetail());
     };
   }, [dispatch, id]);
+  
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
 
   const handleApprove = async () => {
     if (!ticketDetail || !id) return;
@@ -121,7 +122,6 @@ const TicketDetail = () => {
     }
   };
 
-
   const formatApprovalSteps = () => {
     if (!ticketDetail?.list_approval) return [];
 
@@ -166,6 +166,7 @@ const TicketDetail = () => {
         approver.approval_status === 0 // optional: only if approval is still open
     );
   };
+  
   const handleFileDownload = (filePath: string, fileName: string) => {
     const downloadUrl = `${API_URL}/hots_ticket/download/file/${filePath}`;
     const link = document.createElement('a');
@@ -247,8 +248,6 @@ const TicketDetail = () => {
     return typeof rawValue === 'string' ? rawValue : '';
   };
 
-
-
   const renderPreview = (filename: string | string[], fileUrl: string | string[]) => {
     const safeUrl = extractFirstUrl(fileUrl);
     const safeFilename = extractFirstUrl(filename);
@@ -269,7 +268,6 @@ const TicketDetail = () => {
 
     if (ext === 'xlsx' || ext === 'xls') {
       return <ExcelPreview url={`${API_URL}${safeUrl.replace(/\\/g, '/')}`} />
-
     }
 
     return (
@@ -279,7 +277,6 @@ const TicketDetail = () => {
       </a>
     );
   };
-
 
   if (isLoadingDetail) {
     return (
@@ -341,16 +338,12 @@ const TicketDetail = () => {
                 <p className="text-muted-foreground">{ticketDetail?.service_name}</p>
               </div>
             </div>
-
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Form Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Add TaskApprovalActions card */}
-
-
             {/* Request Information */}
             <Card className="bg-card shadow-sm border">
               <CardHeader className="bg-muted/50 border-b">
@@ -412,10 +405,6 @@ const TicketDetail = () => {
                         <TableRow key={index}>
                           <TableCell className="font-medium">{field.label}</TableCell>
                           <TableCell>
-
-
-                          </TableCell>
-                          <TableCell>
                             {typeof field.value === 'string' && field.value.includes('/files/hots/it_support/') ? (
                               <div className="flex items-center space-x-2">
                                 <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
@@ -433,18 +422,12 @@ const TicketDetail = () => {
                                     </div>
                                   </DialogContent>
                                 </Dialog>
-
-
                               </div>
-
                             ) : (
                               field.value
                             )}
-
                           </TableCell>
-
                           {typeof field.value === 'string' && field.value.includes('/files/hots/it_support/') && (
-
                             <TableCell>
                               <Button
                                 variant="outline"
@@ -487,7 +470,6 @@ const TicketDetail = () => {
               </Card>
             )}
 
-
             {/* Generated Documents */}
             {(isLoadingCustomFunction || (generatedDocuments && generatedDocuments.length > 0)) && (
               <Card className="bg-card shadow-sm border">
@@ -509,7 +491,6 @@ const TicketDetail = () => {
                     </div>
                   ) : generatedDocuments && generatedDocuments.length > 0 ? (
                     <div className="space-y-3">
-                      {console.log("generatedDocuments", generatedDocuments)}
                       {generatedDocuments.map((document) => (
                         <FilePreview
                           generated={true}
@@ -538,22 +519,19 @@ const TicketDetail = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  
                   {canUserApprove() && (
-                    <div className="flex items-center justify-center w-full space-y-2">testse
+                    <div className="flex items-center justify-center w-full space-y-2">
                       <TaskApprovalActionsSimple
                         ticketId={ticketDetail.ticket_id.toString()}
                         approvalOrder={ticketDetail.current_step || 1}
                         canApprove={canUserApprove()}
                         currentStatus={currentApprover?.approval_status || 0}
                         currentUserId={user?.user_id}
-                        assignedToId={currentApprover}
+                        assignedToId={currentApprover?.approver_id}
                       />
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-
-
                     <span>Progress</span>
                     <span>{approvedCount}/{approvalSteps.length} approved</span>
                   </div>

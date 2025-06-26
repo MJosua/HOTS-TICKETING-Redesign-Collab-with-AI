@@ -76,7 +76,7 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
       });
 
       // Refresh the task list
-      dispatch(fetchTaskList());
+      dispatch(fetchTaskList(1));
       setComment('');
       setShowCommentBox(false);
     } catch (error) {

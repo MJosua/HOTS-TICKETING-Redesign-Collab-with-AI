@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,8 +17,8 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
   const addRowGroup = () => {
     const newRowGroup: RowGroup = {
       rowGroup: [
-        { label: 'New Field 1', name: 'new_field_1', type: 'text', required: false },
-        { label: 'New Field 2', name: 'new_field_2', type: 'text', required: false }
+        { new_field_1: 'value1' },
+        { new_field_2: 'value2' }
       ]
     };
     onUpdate([...rowGroups, newRowGroup]);
@@ -51,10 +50,7 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
     if (updated[groupIndex].rowGroup.length < 3) {
       const fieldNumber = updated[groupIndex].rowGroup.length + 1;
       updated[groupIndex].rowGroup.push({
-        label: `New Field ${fieldNumber}`,
-        name: `new_field_${groupIndex}_${fieldNumber}`,
-        type: 'text',
-        required: false
+        [`new_field_${groupIndex}_${fieldNumber}`]: ''
       });
       onUpdate(updated);
     }
@@ -68,11 +64,7 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
     }
   };
 
-  const updateFieldInRow = (groupIndex: number, fieldIndex: number, updatedField: FormField) => {
-    const updated = [...rowGroups];
-    updated[groupIndex].rowGroup[fieldIndex] = updatedField;
-    onUpdate(updated);
-  };
+  
 
   return (
     <div className="space-y-4">
@@ -126,13 +118,31 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {rowGroup.rowGroup.map((field, fieldIndex) => (
-                <FieldInRowEditor
-                  key={fieldIndex}
-                  field={field}
-                  onUpdate={(updatedField) => updateFieldInRow(groupIndex, fieldIndex, updatedField)}
-                  onRemove={() => removeFieldFromRow(groupIndex, fieldIndex)}
-                  canRemove={rowGroup.rowGroup.length > 1}
-                />
+                <div key={fieldIndex} className="p-3 border border-muted rounded">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Input
+                        value={Object.keys(field)[0] || ''}
+                        onChange={(e) => {
+                          const updated = [...rowGroups];
+                          const oldKey = Object.keys(field)[0];
+                          const newKey = e.target.value;
+                          const value = field[oldKey];
+                          delete updated[groupIndex].rowGroup[fieldIndex][oldKey];
+                          updated[groupIndex].rowGroup[fieldIndex][newKey] = value;
+                          onUpdate(updated);
+                        }}
+                        placeholder="Field Name"
+                        className="text-sm font-medium"
+                      />
+                      {rowGroup.rowGroup.length > 1 && (
+                        <Button size="sm" variant="ghost" onClick={() => removeFieldFromRow(groupIndex, fieldIndex)}>
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </CardContent>
@@ -149,102 +159,5 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
         </div>
       )}
     </div>
-  );
-};
-
-interface FieldInRowEditorProps {
-  field: FormField;
-  onUpdate: (field: FormField) => void;
-  onRemove: () => void;
-  canRemove: boolean;
-}
-
-const FieldInRowEditor: React.FC<FieldInRowEditorProps> = ({ field, onUpdate, onRemove, canRemove }) => {
-  const updateField = (updates: Partial<FormField>) => {
-    onUpdate({ ...field, ...updates });
-  };
-
-  const generateFieldName = (label: string) => {
-    return label.toLowerCase().replace(/[^a-z0-9]/g, '_');
-  };
-
-  const handleLabelChange = (label: string) => {
-    const suggestedName = generateFieldName(label);
-    updateField({ 
-      label, 
-      name: field.name || suggestedName 
-    });
-  };
-
-  return (
-    <Card className="p-3 border border-muted">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Input
-            value={field.label}
-            onChange={(e) => handleLabelChange(e.target.value)}
-            placeholder="Field Label"
-            className="text-sm font-medium"
-          />
-          {canRemove && (
-            <Button size="sm" variant="ghost" onClick={onRemove}>
-              <Trash2 className="w-3 h-3" />
-            </Button>
-          )}
-        </div>
-
-        <Input
-          value={field.name}
-          onChange={(e) => updateField({ name: e.target.value })}
-          placeholder="field_name"
-          className="text-xs"
-        />
-
-        <div className="grid grid-cols-2 gap-2">
-          <Select value={field.type} onValueChange={(value) => updateField({ type: value })}>
-            <SelectTrigger className="text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="text">Text</SelectItem>
-              <SelectItem value="textarea">Textarea</SelectItem>
-              <SelectItem value="select">Select</SelectItem>
-              <SelectItem value="radio">Radio</SelectItem>
-              <SelectItem value="checkbox">Checkbox</SelectItem>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="file">File</SelectItem>
-              <SelectItem value="toggle">Toggle</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-1">
-            <input
-              type="checkbox"
-              checked={field.required}
-              onChange={(e) => updateField({ required: e.target.checked })}
-              className="scale-75"
-            />
-            <Label className="text-xs">Required</Label>
-          </div>
-        </div>
-
-        <Input
-          value={field.placeholder || ''}
-          onChange={(e) => updateField({ placeholder: e.target.value })}
-          placeholder="Placeholder text"
-          className="text-xs"
-        />
-
-        {(field.type === 'select' || field.type === 'radio') && (
-          <Textarea
-            value={field.options?.join('\n') || ''}
-            onChange={(e) => updateField({ options: e.target.value.split('\n').filter(o => o.trim()) })}
-            placeholder="Options (one per line)"
-            rows={2}
-            className="text-xs"
-          />
-        )}
-      </div>
-    </Card>
   );
 };
