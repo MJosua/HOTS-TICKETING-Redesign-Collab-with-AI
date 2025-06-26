@@ -68,7 +68,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       if (rg.isStructuredInput) {
         return acc + (structuredRowCounts[index] || 1);
       }
-      return acc + (rg.rowGroup?.length || 0);
+      // For legacy row groups that contain FormField arrays
+      return acc + (Array.isArray(rg.rowGroup) ? rg.rowGroup.length : 0);
     }, 0);
     return regularFields + rowGroupFields;
   }, [config.fields, rowGroups, structuredRowCounts]);
@@ -279,14 +280,17 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                       onUpdateRowGroup={handleUpdateRowGroup}
                     />
                   ) : (
-                    <RowGroupField
-                      rowGroup={rowGroup.rowGroup as FormField[] || []}
-                      form={form}
-                      groupIndex={index}
-                      onValueChange={(fieldKey, value) => {
-                        setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-                      }}
-                    />
+                    // Handle legacy row groups that contain FormField arrays
+                    Array.isArray(rowGroup.rowGroup) && rowGroup.rowGroup.length > 0 && 'label' in rowGroup.rowGroup[0] ? (
+                      <RowGroupField
+                        rowGroup={rowGroup.rowGroup as FormField[]}
+                        form={form}
+                        groupIndex={index}
+                        onValueChange={(fieldKey, value) => {
+                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                        }}
+                      />
+                    ) : null
                   )}
                 </div>
               ))}

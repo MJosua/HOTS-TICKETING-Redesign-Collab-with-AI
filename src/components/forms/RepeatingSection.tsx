@@ -35,7 +35,8 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
   };
 
   const calculateTotal = () => {
-    if (!section.summary?.calculated) return null;
+    // Only calculate if summary is an object with calculated property
+    if (typeof section.summary !== 'object' || !section.summary?.calculated) return null;
     
     const total = items.reduce((sum, item, index) => {
       const quantityKey = `${section.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${index}_quantity`;
@@ -113,9 +114,11 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
           {typeof section.addButton === 'string' ? section.addButton : section.addButton?.label || 'Add Item'}
         </Button>
 
-        {section.summary?.calculated && (
+        {typeof section.summary === 'object' && section.summary?.calculated && (
           <div className="text-right">
-            <span className="text-sm text-muted-foreground">{section.summary.label}: </span>
+            <span className="text-sm text-muted-foreground">
+              {typeof section.summary === 'object' ? section.summary.label : section.summary}: 
+            </span>
             <span className="font-semibold">{calculateTotal()}</span>
           </div>
         )}

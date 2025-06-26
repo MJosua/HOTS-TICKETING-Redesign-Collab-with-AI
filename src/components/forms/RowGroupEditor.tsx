@@ -18,8 +18,18 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
   const addRowGroup = () => {
     const newRowGroup: RowGroup = {
       rowGroup: [
-        { label: 'New Field 1', name: 'new_field_1', type: 'text', required: false },
-        { label: 'New Field 2', name: 'new_field_2', type: 'text', required: false }
+        { 
+          label: 'New Field 1', 
+          name: 'new_field_1', 
+          type: 'text', 
+          required: false 
+        } as FormField,
+        { 
+          label: 'New Field 2', 
+          name: 'new_field_2', 
+          type: 'text', 
+          required: false 
+        } as FormField
       ]
     };
     onUpdate([...rowGroups, newRowGroup]);
@@ -48,30 +58,46 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
 
   const addFieldToRow = (groupIndex: number) => {
     const updated = [...rowGroups];
-    if (updated[groupIndex].rowGroup.length < 3) {
-      const fieldNumber = updated[groupIndex].rowGroup.length + 1;
-      updated[groupIndex].rowGroup.push({
-        label: `New Field ${fieldNumber}`,
-        name: `new_field_${groupIndex}_${fieldNumber}`,
-        type: 'text',
-        required: false
-      });
-      onUpdate(updated);
+    const currentRowGroup = updated[groupIndex].rowGroup;
+    
+    // Only allow adding fields to FormField arrays (legacy row groups)
+    if (Array.isArray(currentRowGroup) && currentRowGroup.length > 0 && 'label' in currentRowGroup[0]) {
+      const formFields = currentRowGroup as FormField[];
+      if (formFields.length < 3) {
+        const fieldNumber = formFields.length + 1;
+        const newField: FormField = {
+          label: `New Field ${fieldNumber}`,
+          name: `new_field_${groupIndex}_${fieldNumber}`,
+          type: 'text',
+          required: false
+        };
+        updated[groupIndex].rowGroup = [...formFields, newField];
+        onUpdate(updated);
+      }
     }
   };
 
   const removeFieldFromRow = (groupIndex: number, fieldIndex: number) => {
     const updated = [...rowGroups];
-    if (updated[groupIndex].rowGroup.length > 1) {
-      updated[groupIndex].rowGroup = updated[groupIndex].rowGroup.filter((_, i) => i !== fieldIndex);
+    const currentRowGroup = updated[groupIndex].rowGroup;
+    
+    if (Array.isArray(currentRowGroup) && currentRowGroup.length > 1 && 'label' in currentRowGroup[0]) {
+      const formFields = currentRowGroup as FormField[];
+      updated[groupIndex].rowGroup = formFields.filter((_, i) => i !== fieldIndex);
       onUpdate(updated);
     }
   };
 
   const updateFieldInRow = (groupIndex: number, fieldIndex: number, updatedField: FormField) => {
     const updated = [...rowGroups];
-    updated[groupIndex].rowGroup[fieldIndex] = updatedField;
-    onUpdate(updated);
+    const currentRowGroup = updated[groupIndex].rowGroup;
+    
+    if (Array.isArray(currentRowGroup) && 'label' in currentRowGroup[0]) {
+      const formFields = [...(currentRowGroup as FormField[])];
+      formFields[fieldIndex] = updatedField;
+      updated[groupIndex].rowGroup = formFields;
+      onUpdate(updated);
+    }
   };
 
   return (
@@ -84,60 +110,71 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
         </Button>
       </div>
 
-      {rowGroups.map((rowGroup, groupIndex) => (
-        <Card key={groupIndex} className="border-l-4 border-blue-500">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <GripVertical className="w-4 h-4 text-muted-foreground" />
-                Row Group {groupIndex + 1}
-              </CardTitle>
-              <div className="flex gap-1">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => moveRowGroup(groupIndex, 'up')} 
-                  disabled={groupIndex === 0}
-                >
-                  <ArrowUp className="w-3 h-3" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => moveRowGroup(groupIndex, 'down')} 
-                  disabled={groupIndex === rowGroups.length - 1}
-                >
-                  <ArrowDown className="w-3 h-3" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => addFieldToRow(groupIndex)}
-                  disabled={rowGroup.rowGroup.length >= 3}
-                >
-                  <Plus className="w-3 h-3" />
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => removeRowGroup(groupIndex)}>
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+      {rowGroups.map((rowGroup, groupIndex) => {
+        // Only render legacy row groups that contain FormField arrays
+        const isLegacyRowGroup = Array.isArray(rowGroup.rowGroup) && 
+          rowGroup.rowGroup.length > 0 && 
+          'label' in rowGroup.rowGroup[0];
+        
+        if (!isLegacyRowGroup) return null;
+        
+        const formFields = rowGroup.rowGroup as FormField[];
+        
+        return (
+          <Card key={groupIndex} className="border-l-4 border-blue-500">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <GripVertical className="w-4 h-4 text-muted-foreground" />
+                  Row Group {groupIndex + 1}
+                </CardTitle>
+                <div className="flex gap-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => moveRowGroup(groupIndex, 'up')} 
+                    disabled={groupIndex === 0}
+                  >
+                    <ArrowUp className="w-3 h-3" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => moveRowGroup(groupIndex, 'down')} 
+                    disabled={groupIndex === rowGroups.length - 1}
+                  >
+                    <ArrowDown className="w-3 h-3" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => addFieldToRow(groupIndex)}
+                    disabled={formFields.length >= 3}
+                  >
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => removeRowGroup(groupIndex)}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {rowGroup.rowGroup.map((field, fieldIndex) => (
-                <FieldInRowEditor
-                  key={fieldIndex}
-                  field={field}
-                  onUpdate={(updatedField) => updateFieldInRow(groupIndex, fieldIndex, updatedField)}
-                  onRemove={() => removeFieldFromRow(groupIndex, fieldIndex)}
-                  canRemove={rowGroup.rowGroup.length > 1}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {formFields.map((field, fieldIndex) => (
+                  <FieldInRowEditor
+                    key={fieldIndex}
+                    field={field}
+                    onUpdate={(updatedField) => updateFieldInRow(groupIndex, fieldIndex, updatedField)}
+                    onRemove={() => removeFieldFromRow(groupIndex, fieldIndex)}
+                    canRemove={formFields.length > 1}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
 
       {rowGroups.length === 0 && (
         <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
@@ -201,7 +238,7 @@ const FieldInRowEditor: React.FC<FieldInRowEditorProps> = ({ field, onUpdate, on
         />
 
         <div className="grid grid-cols-2 gap-2">
-          <Select value={field.type} onValueChange={(value) => updateField({ type: value })}>
+          <Select value={field.type} onValueChange={(value: FormField['type']) => updateField({ type: value })}>
             <SelectTrigger className="text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -214,6 +251,7 @@ const FieldInRowEditor: React.FC<FieldInRowEditorProps> = ({ field, onUpdate, on
               <SelectItem value="date">Date</SelectItem>
               <SelectItem value="file">File</SelectItem>
               <SelectItem value="toggle">Toggle</SelectItem>
+              <SelectItem value="number">Number</SelectItem>
             </SelectContent>
           </Select>
 
