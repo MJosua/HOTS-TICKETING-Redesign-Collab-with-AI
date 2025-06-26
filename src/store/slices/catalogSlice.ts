@@ -15,6 +15,7 @@ export interface ServiceCatalogItem {
   active: number;
   team_id: number | null;
   form_json?: string; // New field for JSON form configuration
+  widget?: string[]; // New field for widget array
 }
 
 export interface Category {
@@ -53,6 +54,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
     nav_link: "asset-request",
     active: 1,
     team_id: 2,
+    widget: ["stock_overview", "team_workload"], // Widget array
     form_json: JSON.stringify({
       url: "/asset-request",
       title: "PC/Notebook Request",
@@ -94,6 +96,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
     nav_link: "it-support",
     active: 1,
     team_id: 1,
+    widget: ["recent_requests"], // Widget array
     form_json: JSON.stringify({
       url: "/it-support",
       title: "IT Support Request",
@@ -136,6 +139,7 @@ const fallbackServiceCatalog: ServiceCatalogItem[] = [
     nav_link: "sample-request-form",
     active: 1,
     team_id: 8,
+    widget: ["gantt_room_schedule", "approval_progress"], // Widget array
     form_json: JSON.stringify({
       url: "/sample-request-form",
       title: "Sample Request Form",
@@ -387,4 +391,10 @@ export const selectGroupedMenu = (state: any, searchKeyword: string = '') => {
 
     return acc;
   }, []);
+};
+
+// New selector to get widgets for a service
+export const selectServiceWidgets = (state: any, serviceId: number) => {
+  const service = state.catalog.serviceCatalog.find((s: ServiceCatalogItem) => s.service_id === serviceId);
+  return service?.widget || [];
 };

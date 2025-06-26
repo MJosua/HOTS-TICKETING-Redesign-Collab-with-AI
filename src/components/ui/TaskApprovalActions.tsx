@@ -37,26 +37,6 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
   const assignedToIdNumber = typeof assignedToId === 'string' ? parseInt(assignedToId) : assignedToId;
   const userCanApprove = canApprove;
 
-  // console.log("currentUserId", currentUserId);
-  // console.log("assignedToId", assignedToId);
-  // console.log("assignedToIdNumber", assignedToIdNumber);
-
-  // console.log('=== TASK APPROVAL ACTIONS COMPONENT ===');
-  // console.log('ticketId:', ticketId);
-  // console.log('approvalOrder:', approvalOrder);
-  // console.log('canApprove:', canApprove);
-  // console.log('currentStatus:', currentStatus);
-  // console.log('currentUserId:', currentUserId);
-  // console.log('assignedToId:', assignedToId);
-  // console.log('userCanApprove calculation:');
-  // console.log('  canApprove:', canApprove);
-  // console.log('  currentStatus === 0:', currentStatus === 0);
-  // console.log('  currentUserId truthy:', !!currentUserId);
-  // console.log('  assignedToIdNumber truthy:', !!assignedToIdNumber);
-  // console.log('  IDs match:', currentUserId === assignedToIdNumber);
-  // console.log('userCanApprove result:', userCanApprove);
-  // console.log('=== END TASK APPROVAL ACTIONS COMPONENT ===');
-
   if (!userCanApprove) {
     console.log('TaskApprovalActions: Not rendering because userCanApprove is false');
     return null;
@@ -75,8 +55,8 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
         description: "Ticket approved successfully",
       });
 
-      // Refresh the task list
-      dispatch(fetchTaskList());
+      // Refresh the task list with proper parameters
+      dispatch(fetchTaskList(1));
       setComment('');
       setShowCommentBox(false);
     } catch (error) {

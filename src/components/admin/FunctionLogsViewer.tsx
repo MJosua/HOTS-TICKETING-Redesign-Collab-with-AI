@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,8 +51,10 @@ export default function FunctionLogsViewer() {
     }
   };
 
-  const handleDownloadDocument = (documentId: number) => {
-    window.open(`${API_URL}/hots/generateddocuments/${documentId}`, '_blank');
+  const handleDownloadDocument = (documentId: number | string) => {
+    // Convert to number if it's a string
+    const docId = typeof documentId === 'string' ? parseInt(documentId) : documentId;
+    window.open(`${API_URL}/hots/generateddocuments/${docId}`, '_blank');
   };
 
   return (

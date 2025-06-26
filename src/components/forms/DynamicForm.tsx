@@ -8,10 +8,14 @@ import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { StructuredRowGroup } from './StructuredRowGroup';
-import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
+import WidgetRenderer from '@/components/widgets/WidgetRenderer';
+import { FormConfig, FormField, RowGroup, FormSection, RowData } from '@/types/formTypes';
+import { WidgetConfig } from '@/types/widgetTypes';
+import { getWidgetById } from '@/registry/widgetRegistry';
 import { mapFormDataToTicketColumns, getMaxFormFields } from '@/utils/formFieldMapping';
-import { useAppDispatch } from '@/hooks/useAppSelector';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { createTicket, uploadFiles } from '@/store/slices/ticketsSlice';
+import { selectServiceWidgets } from '@/store/slices/catalogSlice';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,10 +34,26 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [structuredRowCounts, setStructuredRowCounts] = useState<Record<number, number>>({});
+  
+  const { user } = useAppSelector(state => state.auth);
 
   const maxFields = useMemo(() => getMaxFormFields(), []);
   const [rowGroups, setRowGroups] = useState<RowGroup[]>(() => JSON.parse(JSON.stringify(config.rowGroups || [])));
-  const handleUpdateRowGroup = (groupIndex: number, updatedRows: any[]) => {
+
+  // Get widgets from database for this service
+  const serviceWidgetIds = useAppSelector(state => 
+    serviceId ? selectServiceWidgets(state, parseInt(serviceId)) : []
+  );
+
+  // Get widget configurations from registry
+  const assignedWidgets: WidgetConfig[] = useMemo(() => {
+    return serviceWidgetIds
+      .map(id => getWidgetById(id))
+      .filter((widget): widget is WidgetConfig => widget !== undefined)
+      .filter(widget => widget.applicableTo.includes('form'));
+  }, [serviceWidgetIds]);
+
+  const handleUpdateRowGroup = (groupIndex: number, updatedRows: RowData[]) => {
     setRowGroups(prev => {
       const updated = [...prev];
       updated[groupIndex] = {
@@ -50,12 +70,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       if (rg.isStructuredInput) {
         return acc + (structuredRowCounts[index] || 1);
       }
-      return acc + (rg.rowGroup?.length || 0);
+      // For legacy row groups that contain FormField arrays
+      return acc + (Array.isArray(rg.rowGroup) ? rg.rowGroup.length : 0);
     }, 0);
     return regularFields + rowGroupFields;
   }, [config.fields, rowGroups, structuredRowCounts]);
-
-    
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];
@@ -81,15 +100,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     }
   };
   
-
   const handleSubmit = async (data: any) => {
-
     if (!serviceId) {
       const mappedData = mapFormDataToTicketColumns(
         data,
         config.fields || [],
         rowGroups,
-
       );
 
       toast({
@@ -192,64 +208,111 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     );
   };
 
+  // Helper function to check if a row group is legacy (contains FormField[])
+  const isLegacyRowGroup = (rg: RowGroup): rg is RowGroup & { rowGroup: FormField[] } => {
+    return !rg.isStructuredInput && 
+           Array.isArray(rg.rowGroup) && 
+           rg.rowGroup.length > 0 && 
+           'label' in rg.rowGroup[0];
+  };
+
   return (
-    <Card className="max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>{config.title}</CardTitle>
-        {config.description && (
-          <p className="text-sm text-muted-foreground">{config.description}</p>
-        )}
-        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
-          <span className="text-blue-800">
-            <strong>Form Fields:</strong> {currentFieldCount} of {maxFields} used
-          </span>
-          {currentFieldCount >= maxFields && (
-            <span className="text-red-600 font-medium">⚠️ Field limit reached</span>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Render widgets from database configuration */}
+      {assignedWidgets.map(widget => (
+        <WidgetRenderer
+          key={widget.id}
+          config={widget}
+          data={{
+            formData: watchedValues,
+            userData: user,
+            serviceId,
+            currentDateRange: {
+              start: new Date(),
+              end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            }
+          }}
+        />
+      ))}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{config.title}</CardTitle>
+          {config.description && (
+            <p className="text-sm text-muted-foreground">{config.description}</p>
           )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {config.fields && (
-              <div className="space-y-4">
-                {renderFieldsInRows(config.fields)}
-              </div>
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
+            <span className="text-blue-800">
+              <strong>Form Fields:</strong> {currentFieldCount} of {maxFields} used
+            </span>
+            {currentFieldCount >= maxFields && (
+              <span className="text-red-600 font-medium">⚠️ Field limit reached</span>
             )}
-            {rowGroups.map((rowGroup, index) => (
-              <div key={`rowgroup-${index}`}>
-                {rowGroup.title && <h3 className="text-lg font-medium mb-2">{rowGroup.title}</h3>}
-                {rowGroup.isStructuredInput ? (
-                  <StructuredRowGroup
-                    key={index}
-                    rowGroup={rowGroup}
-                    groupIndex={index}
-                    form={form}
-                    maxTotalFields={50}
-                    currentFieldCount={currentFieldCount}
-                    onFieldCountChange={(count) => setStructuredRowCounts(prev => ({ ...prev, [index]: count }))}
-                    onUpdateRowGroup={handleUpdateRowGroup}
-                  />
-                ) : (
-                  <RowGroupField
-                    rowGroup={rowGroup.rowGroup}
-                    form={form}
-                    groupIndex={index}
-                    onValueChange={(fieldKey, value) => {
-                      setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-                    }}
-                  />
-                )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              {config.fields && (
+                <div className="space-y-4">
+                  {renderFieldsInRows(config.fields)}
+                </div>
+              )}
+
+              {/* Render sections if they exist */}
+              {config.sections?.map((section, sectionIndex) => (
+                <div key={`section-${sectionIndex}`} className="space-y-4">
+                  <h3 className="text-lg font-medium">{section.title}</h3>
+                  {section.description && (
+                    <p className="text-sm text-muted-foreground">{section.description}</p>
+                  )}
+                  
+                  {section.repeatable ? (
+                    <RepeatingSection section={section} form={form} />
+                  ) : (
+                    renderFieldsInRows(section.fields)
+                  )}
+                </div>
+              ))}
+
+              {rowGroups.map((rowGroup, index) => (
+                <div key={`rowgroup-${index}`}>
+                  {rowGroup.title && <h3 className="text-lg font-medium mb-2">{rowGroup.title}</h3>}
+                  {rowGroup.isStructuredInput ? (
+                    <StructuredRowGroup
+                      key={index}
+                      rowGroup={rowGroup}
+                      groupIndex={index}
+                      form={form}
+                      maxTotalFields={50}
+                      currentFieldCount={currentFieldCount}
+                      onFieldCountChange={(count) => setStructuredRowCounts(prev => ({ ...prev, [index]: count }))}
+                      onUpdateRowGroup={handleUpdateRowGroup}
+                    />
+                  ) : (
+                    // Handle legacy row groups that contain FormField arrays
+                    isLegacyRowGroup(rowGroup) ? (
+                      <RowGroupField
+                        rowGroup={rowGroup.rowGroup}
+                        form={form}
+                        groupIndex={index}
+                        onValueChange={(fieldKey, value) => {
+                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                        }}
+                      />
+                    ) : null
+                  )}
+                </div>
+              ))}
+              <div className="flex justify-end pt-6">
+                <Button type="submit" disabled={isSubmitting} className="min-w-32">
+                  {isSubmitting ? 'Submitting...' : (config.submit?.label || 'Submit')}
+                </Button>
               </div>
-            ))}
-            <div className="flex justify-end pt-6">
-              <Button type="submit" disabled={isSubmitting} className="min-w-32">
-                {isSubmitting ? 'Submitting...' : (config.submit?.label || 'Submit')}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
