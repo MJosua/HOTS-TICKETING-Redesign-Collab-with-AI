@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import {
@@ -205,12 +204,9 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       case 'file':
         return (
           <div className="space-y-2">
-
             {/* Show uploaded file names */}
             {form.watch(fieldKey)?.length > 0 ? (
               <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                {console.log("Preview files:", Array.from(form.watch(`${fieldKey}_raw`) || []))}
-
                 {Array.from(form.watch(`${fieldKey}_raw`) || []).map((file: File, i: number) => (
                   <li key={i} className="flex items-center gap-2">
                     <span className="truncate max-w-xs">{file.name}</span>
@@ -249,9 +245,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                   </li>
                 ))}
               </ul>
-
-            )
-              :
+            ) : (
               <div className="flex items-center justify-center w-full">
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -281,8 +275,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                       // 2. Upload the files
                       if (onFileUpload) {
                         try {
-                          const uploadedData = await onFileUpload(files); // returns array of objects or strings
-                          const uploadedUrls = uploadedData.map((f: any) => f.url || f); // normalize
+                          const uploadedData = await onFileUpload(files);
+                          const uploadedUrls = uploadedData.map((f: any) => f.url || f);
 
                           // 3. Store the URLs (for submission)
                           form.setValue(fieldKey, uploadedUrls);
@@ -296,8 +290,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                   />
                 </label>
               </div>
-
-            }
+            )}
 
             {field.note && (
               <p className="text-xs text-muted-foreground">{field.note}</p>

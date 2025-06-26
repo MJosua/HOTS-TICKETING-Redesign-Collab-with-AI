@@ -1,3 +1,4 @@
+
 export interface FormField {
   label: string;
   name: string; // New field for API data mapping
@@ -17,7 +18,12 @@ export interface FormField {
   systemVariable?: string; // For template variables like ${user}
 }
 
+export interface RowData {
+  [key: string]: any;
+}
+
 export interface RowGroup {
+  title?: string; // Add title property
   rowGroup: RowData[];
   isStructuredInput?: boolean; // New flag for special row group format
   maxRows?: number; // Maximum allowed rows
