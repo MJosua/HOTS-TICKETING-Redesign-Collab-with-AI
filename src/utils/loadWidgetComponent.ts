@@ -15,13 +15,13 @@ export const loadWidgetComponent = async (componentPath: string): Promise<Compon
     console.error(`Failed to load widget component: ${componentPath}`, error);
     
     // Return a fallback error component
-    return () => (
-      <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-        <p className="text-red-600 text-sm">
-          Failed to load widget: {componentPath}
-        </p>
-      </div>
-    );
+    return ({ widgetName }: WidgetProps) => {
+      return React.createElement('div', {
+        className: 'p-4 border border-red-200 rounded-lg bg-red-50'
+      }, React.createElement('p', {
+        className: 'text-red-600 text-sm'
+      }, `Failed to load widget: ${widgetName || componentPath}`));
+    };
   }
 };
 
