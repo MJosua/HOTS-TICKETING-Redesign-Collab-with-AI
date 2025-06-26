@@ -398,7 +398,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <Label>Field Type</Label>
-            <Select value={field.type} onValueChange={(value) => updateField({ type: value })}>
+            <Select value={field.type} onValueChange={(value: FormField['type']) => updateField({ type: value })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -582,7 +582,7 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
               <Label className="text-xs">Type</Label>
               <Select
                 value={rowGroup.structure?.firstColumn?.type || 'text'}
-                onValueChange={(value) => updateStructureColumn('firstColumn', { type: value })}
+                onValueChange={(value: 'text' | 'number' | 'select') => updateStructureColumn('firstColumn', { type: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -618,7 +618,7 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
               <Label className="text-xs">Type</Label>
               <Select
                 value={rowGroup.structure?.secondColumn?.type || 'text'}
-                onValueChange={(value) => updateStructureColumn('secondColumn', { type: value })}
+                onValueChange={(value: 'text' | 'number' | 'select') => updateStructureColumn('secondColumn', { type: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -654,7 +654,7 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
               <Label className="text-xs">Type</Label>
               <Select
                 value={rowGroup.structure?.thirdColumn?.type || 'text'}
-                onValueChange={(value) => updateStructureColumn('thirdColumn', { type: value })}
+                onValueChange={(value: 'text' | 'number' | 'select') => updateStructureColumn('thirdColumn', { type: value })}
               >
                 <SelectTrigger>
                   <SelectValue />

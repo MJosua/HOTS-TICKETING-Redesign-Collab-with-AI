@@ -10,7 +10,7 @@ import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { StructuredRowGroup } from './StructuredRowGroup';
 import WidgetRenderer from '@/components/widgets/WidgetRenderer';
-import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
+import { FormConfig, FormField, RowGroup, FormSection, RowData } from '@/types/formTypes';
 import { WidgetConfig } from '@/types/widgetTypes';
 import { widgetPresets, getWidgetPresetById } from '@/models/widgets';
 import { mapFormDataToTicketColumns, getMaxFormFields } from '@/utils/formFieldMapping';
@@ -51,7 +51,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       .filter(widget => widget.applicableTo.includes('form'));
   }, [serviceId]);
 
-  const handleUpdateRowGroup = (groupIndex: number, updatedRows: any[]) => {
+  const handleUpdateRowGroup = (groupIndex: number, updatedRows: RowData[]) => {
     setRowGroups(prev => {
       const updated = [...prev];
       updated[groupIndex] = {
@@ -280,7 +280,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                     />
                   ) : (
                     <RowGroupField
-                      rowGroup={rowGroup.rowGroup || []}
+                      rowGroup={rowGroup.rowGroup as FormField[] || []}
                       form={form}
                       groupIndex={index}
                       onValueChange={(fieldKey, value) => {

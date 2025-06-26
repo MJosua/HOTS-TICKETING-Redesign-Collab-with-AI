@@ -25,12 +25,12 @@ export interface FormSection {
   title: string;
   description?: string;
   fields: FormField[];
-  repeatable?: boolean; // Add missing repeatable property
+  repeatable?: boolean;
   summary?: {
     label: string;
     type?: string;
     calculated?: boolean;
-  };
+  } | string;
   addButton?: {
     label: string;
   } | string;
@@ -81,21 +81,21 @@ export interface RowGroup {
       label: string;
       placeholder: string;
       name?: string;
-      type?: string;
+      type?: 'text' | 'number' | 'select';
       options?: string[];
     };
     secondColumn: {
       label: string;
       placeholder: string;
       name?: string;
-      type?: string;
+      type?: 'text' | 'number' | 'select';
       options?: string[];
     };
     thirdColumn: {
       label: string;
       placeholder: string;
       name?: string;
-      type?: string;
+      type?: 'text' | 'number' | 'select';
       options?: string[];
     };
     combinedMapping?: 'first_second' | 'second_third' | 'none';
