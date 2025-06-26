@@ -21,9 +21,8 @@
     --popover-foreground: 230 86% 12%;
     /* #01063D */
 
-    --primary: 208, 100%, 31%;
-    /* #01063D - changed from yellow to dark blue */
-    --primary-foreground: 0 0% 100%;
+    --primary: 208 100% 31%; /* HSL without commas for Tailwind compatibility */
+  --primary-foreground: 0 0% 100%;
     /* white text on dark background */
 
     --secondary: 0 0% 93%;

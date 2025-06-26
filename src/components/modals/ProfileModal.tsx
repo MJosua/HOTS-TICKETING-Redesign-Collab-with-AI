@@ -33,7 +33,7 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogTitle>Your Profile</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -42,7 +42,9 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
             <Avatar className="w-20 h-20">
               <AvatarImage src={profile.avatar} />
               <AvatarFallback className="text-lg font-semibold">
-                {user ? user?.firstname.split(' ').map(n => n[0]).join('') : "n"}
+                {typeof user?.firstname === 'string'
+                  ? user.firstname.split(' ').map(n => n?.[0] || '').join('')
+                  : 'N'}
               </AvatarFallback>
             </Avatar>
 
@@ -91,7 +93,7 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
               />
             </div>
 
-           
+
           </div>
 
           {/* Actions */}

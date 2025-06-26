@@ -47,11 +47,13 @@ const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBa
       </div>
     );
   }
+  {console.log("steps",steps)}
 
-  // Detailed view (for ticket detail page)
+                    
+                    // Detailed view (for ticket detail page)
   return (
-    <div className={cn("flex items-center space-x-2", className)}>
-      {steps.map((step, index) => (
+    <div className={cn("flex items-center space-x-2 overflow-x-auto whitespace-nowrap flex-nowrap max-w-full", className)}>
+      {steps.sort((a, b) => a.approval_order - b.approval_order).map((step, index) => (
         <div key={`${step.id}-${step.name}-${index}`} className="flex items-center">
           <div className="flex flex-col items-center">
             <div

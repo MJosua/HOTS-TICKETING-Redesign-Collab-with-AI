@@ -152,9 +152,16 @@ const TaskList = () => {
         const userApprovalOrder = getUserApprovalOrder(originalTicket);
         const canApprove = userApprovalOrder !== null;
 
-        const currentApprover = task.approvalSteps?.find(
-          approver => approver.approval_order === task.current_step
-        );
+       
+
+        const currentApprover = () => {
+          return task.approvalSteps?.some(
+            approver =>
+              approver.approval_order === task.current_step &&
+              approver.approver_id === user.user_id &&
+              approver.approval_status === 0 // optional: only if approval is still open
+          );
+        };
 
         console.log("taskList.list_approval", task);
         console.log("taskList.current_step", task.current_step);
@@ -210,19 +217,22 @@ const TaskList = () => {
                     {new Date(originalTicket?.creation_date || '').toLocaleDateString()}
                   </span>
                 </div>
+
+
+                {canApprove && userApprovalOrder && (
+                  <TaskApprovalActions
+                    ticketId={task.id}
+                    approvalOrder={task.current_step || 1}
+                    canApprove={canApprove}
+                    currentStatus={currentApprover?.approval_status || 0}
+                    currentUserId={user?.user_id}
+                    assignedToId={currentApprover?.id}
+                  />
+                )}
               </CardContent>
             </Card>
 
-            {canApprove && userApprovalOrder && (
-              <TaskApprovalActions
-                ticketId={task.id}
-                approvalOrder={task.current_step || 1}
-                canApprove={canApprove}
-                currentStatus={currentApprover?.approval_status || 0}
-                currentUserId={user?.user_id}
-                assignedToId={currentApprover?.id}
-              />
-            )}
+
           </div>
         );
       })}

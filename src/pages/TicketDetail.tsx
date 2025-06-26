@@ -20,6 +20,7 @@ import { API_URL } from '@/config/sourceConfig';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Eye, FileText } from 'lucide-react';
 import ExcelPreview from '@/components/ExcelPreview';
+import TaskApprovalActionsSimple from '@/components/ui/TaskApprovalActionssimple';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -32,7 +33,6 @@ const TicketDetail = () => {
   const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
   const { generatedDocuments, functionLogs, isLoading: isLoadingCustomFunction } = useAppSelector(state => state.customFunction);
   const { user } = useAppSelector(state => state.auth);
-  console.log("ticketDetail", ticketDetail)
   useEffect(() => {
     if (id) {
       dispatch(fetchTicketDetail(id));
@@ -159,13 +159,13 @@ const TicketDetail = () => {
   const canUserApprove = () => {
     if (!ticketDetail || !user) return false;
 
-    const currentApprover = ticketDetail.list_approval?.find(
-      approver => approver.approval_order === ticketDetail.current_step
+    return ticketDetail.list_approval?.some(
+      approver =>
+        approver.approval_order === ticketDetail.current_step &&
+        approver.approver_id === user.user_id &&
+        approver.approval_status === 0 // optional: only if approval is still open
     );
-
-    return currentApprover && currentApprover.approver_id === user.user_id;
   };
-
   const handleFileDownload = (filePath: string, fileName: string) => {
     const downloadUrl = `${API_URL}/hots_ticket/download/file/${filePath}`;
     const link = document.createElement('a');
@@ -325,14 +325,6 @@ const TicketDetail = () => {
     approver => approver.approval_order === ticketDetail.current_step
   );
 
-  console.log('=== TASK APPROVAL ACTIONS PROPS ===');
-  console.log('ticketId:', ticketDetail.ticket_id.toString());
-  console.log('approvalOrder:', ticketDetail.current_step || 1);
-  console.log('canApprove:', canUserApprove());
-  console.log('currentStatus:', currentApprover?.approval_status || 0);
-  console.log('currentUserId:', user?.user_id);
-  console.log('assignedToId:', currentApprover?.approver_id);
-  console.log('=== END TASK APPROVAL ACTIONS PROPS ===');
   return (
     <AppLayout>
       <div className="space-y-6 relative z-0">
@@ -349,31 +341,7 @@ const TicketDetail = () => {
                 <p className="text-muted-foreground">{ticketDetail?.service_name}</p>
               </div>
             </div>
-            {canUserApprove() && (
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={handleApprove}
-                  className="bg-primary hover:bg-primary/90"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <CheckSquare className="w-4 h-4 mr-2" />
-                  )}
-                  Approve
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsRejectModalOpen(true)}
-                  className="text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50"
-                  disabled={isSubmitting}
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Reject
-                </Button>
-              </div>
-            )}
+
           </div>
         </div>
 
@@ -381,16 +349,7 @@ const TicketDetail = () => {
           {/* Main Form Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Add TaskApprovalActions card */}
-            {canUserApprove() && (
-              <TaskApprovalActions
-                ticketId={ticketDetail.ticket_id.toString()}
-                approvalOrder={ticketDetail.current_step || 1}
-                canApprove={canUserApprove()}
-                currentStatus={currentApprover?.approval_status || 0}
-                currentUserId={user?.user_id}
-                assignedToId={currentApprover?.approver_id}
-              />
-            )}
+
 
             {/* Request Information */}
             <Card className="bg-card shadow-sm border">
@@ -579,7 +538,22 @@ const TicketDetail = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  
+                  {canUserApprove() && (
+                    <div className="flex items-center justify-center w-full space-y-2">testse
+                      <TaskApprovalActionsSimple
+                        ticketId={ticketDetail.ticket_id.toString()}
+                        approvalOrder={ticketDetail.current_step || 1}
+                        canApprove={canUserApprove()}
+                        currentStatus={currentApprover?.approval_status || 0}
+                        currentUserId={user?.user_id}
+                        assignedToId={currentApprover}
+                      />
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
+
+
                     <span>Progress</span>
                     <span>{approvedCount}/{approvalSteps.length} approved</span>
                   </div>
@@ -587,28 +561,30 @@ const TicketDetail = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {approvalSteps.map((step, index) => (
-                    <div key={step.id} className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${step.status === 'approved' ? 'bg-green-500 text-white' :
-                        step.status === 'rejected' ? 'bg-red-500 text-white' :
-                          step.status === 'pending' ? 'bg-yellow-500 text-white' :
-                            'bg-gray-300 text-gray-600'
-                        }`}>
-                        {step.order}
+                  {approvalSteps
+                    .sort((a, b) => a.order - b.order)
+                    .map((step, index) => (
+                      <div key={step.id} className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${step.status === 'approved' ? 'bg-green-500 text-white' :
+                          step.status === 'rejected' ? 'bg-red-500 text-white' :
+                            step.status === 'pending' ? 'bg-yellow-500 text-white' :
+                              'bg-gray-300 text-gray-600'
+                          }`}>
+                          {step.order}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{step.name}</p>
+                          {step.date && (
+                            <p className="text-xs text-muted-foreground">
+                              {step.status === 'approved' ? 'Approved' : 'Rejected'} on {new Date(step.date).toLocaleDateString()}
+                            </p>
+                          )}
+                          {step.status === 'pending' && (
+                            <p className="text-xs text-yellow-600">Pending approval</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{step.name}</p>
-                        {step.date && (
-                          <p className="text-xs text-muted-foreground">
-                            {step.status === 'approved' ? 'Approved' : 'Rejected'} on {new Date(step.date).toLocaleDateString()}
-                          </p>
-                        )}
-                        {step.status === 'pending' && (
-                          <p className="text-xs text-yellow-600">Pending approval</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </CardContent>
             </Card>

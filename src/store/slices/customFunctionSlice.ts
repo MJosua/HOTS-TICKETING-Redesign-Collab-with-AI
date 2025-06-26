@@ -188,7 +188,6 @@ export const fetchGeneratedDocuments = createAsyncThunk(
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
       
-      console.log('Generated documents response:', response.data);
       
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch generated documents');

@@ -62,6 +62,8 @@ const MyTickets = () => {
     );
   };
 
+
+
   const TableView = () => (
     <Card className="border-border shadow-sm">
       <CardContent className="p-0">
@@ -77,31 +79,38 @@ const MyTickets = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTickets.map((ticket) => (
-                <TableRow
-                  key={ticket.id}
-                  className="hover:bg-muted/30 cursor-pointer transition-colors"
-                  onClick={() => handleRowClick(ticket.id)}
-                >
-                  <TableCell className="font-medium text-primary">
-                    {renderHighlightedText(ticket.id)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {renderHighlightedText(ticket.type)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`${getPriorityColor(ticket.priority)} border`}>
-                      {renderHighlightedText(ticket.priority)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <ProgressionBar steps={ticket.approvalSteps} />
-                  </TableCell>
-                  <TableCell className="font-medium text-foreground">
-                    {renderHighlightedText(ticket.amount)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredTickets.map((ticket) => {
+                const sortedApprovalSteps = [...ticket.approvalSteps].sort(
+                  (a, b) => a.approval_order - b.approval_order
+                );
+
+                return (
+                  <TableRow
+                    key={ticket.id}
+                    className="hover:bg-muted/30 cursor-pointer transition-colors"
+                    onClick={() => handleRowClick(ticket.id)}
+                  >
+                    <TableCell className="font-medium text-primary">
+                      {renderHighlightedText(ticket.id)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {renderHighlightedText(ticket.type)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getPriorityColor(ticket.priority)} border`}>
+                        {renderHighlightedText(ticket.priority)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <ProgressionBar steps={sortedApprovalSteps} />
+                    </TableCell>
+                    <TableCell className="font-medium text-foreground">
+                      {renderHighlightedText(ticket.amount)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+
             </TableBody>
           </Table>
         </div>

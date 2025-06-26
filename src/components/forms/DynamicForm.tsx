@@ -55,8 +55,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     return regularFields + rowGroupFields;
   }, [config.fields, rowGroups, structuredRowCounts]);
 
-    return regularFields + rowGroupFields;
-  }, [config.fields, config.rowGroups, structuredRowCounts]);
+    
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];

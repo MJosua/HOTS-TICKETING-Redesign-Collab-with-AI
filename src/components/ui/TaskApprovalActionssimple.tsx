@@ -18,7 +18,7 @@ interface TaskApprovalActionsProps {
   assignedToId?: string | number;
 }
 
-const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
+const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
   ticketId,
   approvalOrder,
   canApprove,
@@ -35,27 +35,27 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
 
   // Check if current user can approve this ticket
   const assignedToIdNumber = typeof assignedToId === 'string' ? parseInt(assignedToId) : assignedToId;
-  const userCanApprove = canApprove;
+  const userCanApprove = canApprove ;
 
-  // console.log("currentUserId", currentUserId);
-  // console.log("assignedToId", assignedToId);
-  // console.log("assignedToIdNumber", assignedToIdNumber);
+  console.log("currentUserId", currentUserId);
+  console.log("assignedToId", assignedToId);
+  console.log("assignedToIdNumber", assignedToIdNumber);
 
-  // console.log('=== TASK APPROVAL ACTIONS COMPONENT ===');
-  // console.log('ticketId:', ticketId);
-  // console.log('approvalOrder:', approvalOrder);
-  // console.log('canApprove:', canApprove);
-  // console.log('currentStatus:', currentStatus);
-  // console.log('currentUserId:', currentUserId);
-  // console.log('assignedToId:', assignedToId);
-  // console.log('userCanApprove calculation:');
-  // console.log('  canApprove:', canApprove);
-  // console.log('  currentStatus === 0:', currentStatus === 0);
-  // console.log('  currentUserId truthy:', !!currentUserId);
-  // console.log('  assignedToIdNumber truthy:', !!assignedToIdNumber);
-  // console.log('  IDs match:', currentUserId === assignedToIdNumber);
-  // console.log('userCanApprove result:', userCanApprove);
-  // console.log('=== END TASK APPROVAL ACTIONS COMPONENT ===');
+  console.log('=== TASK APPROVAL ACTIONS COMPONENT ===');
+  console.log('ticketId:', ticketId);
+  console.log('approvalOrder:', approvalOrder);
+  console.log('canApprove:', canApprove);
+  console.log('currentStatus:', currentStatus);
+  console.log('currentUserId:', currentUserId);
+  console.log('assignedToId:', assignedToId);
+  console.log('userCanApprove calculation:');
+  console.log('  canApprove:', canApprove);
+  console.log('  currentStatus === 0:', currentStatus === 0);
+  console.log('  currentUserId truthy:', !!currentUserId);
+  console.log('  assignedToIdNumber truthy:', !!assignedToIdNumber);
+  console.log('  IDs match:', currentUserId === assignedToIdNumber);
+  console.log('userCanApprove result:', userCanApprove);
+  console.log('=== END TASK APPROVAL ACTIONS COMPONENT ===');
 
   if (!userCanApprove) {
     console.log('TaskApprovalActions: Not rendering because userCanApprove is false');
@@ -76,7 +76,7 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
       });
 
       // Refresh the task list
-      dispatch(fetchTaskList());
+      dispatch(fetchTaskList(1));
       setComment('');
       setShowCommentBox(false);
     } catch (error) {
@@ -129,17 +129,12 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
   };
 
   return (
-    <Card className="border-orange-200 bg-orange-50">
-      <CardContent className="p-4">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-orange-800">
-            <MessageSquare className="w-4 h-4" />
-            <span className="font-medium">Action Required</span>
-          </div>
-
-          <div className="flex gap-2">
+    <Card className='w-full h-full  items-center justify-center'>
+      <CardContent >
+        <div className="w-full  bg-primaryspace-y-1  justify-center items-center">
+          <div className="flex gap-3 mt-5">
             <Button
-              onClick={() => setShowCommentBox(!showCommentBox)}
+              onClick={() => setShowCommentBox(!showCommentBox, setShowRejectBox(false))}
               disabled={isSubmitting}
               className="bg-primary hover:bg-primary/90"
             >
@@ -148,9 +143,9 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
             </Button>
 
             <Button
-              onClick={() => setShowRejectBox(!showRejectBox)}
+              onClick={() => setShowRejectBox(!showRejectBox, setShowCommentBox(false))}
               disabled={isSubmitting}
-              className='text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50'
+              className="text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50"
               variant="outline"
             >
               <X className="w-4 h-4 mr-2" />
@@ -224,6 +219,7 @@ const TaskApprovalActions: React.FC<TaskApprovalActionsProps> = ({
       </CardContent>
     </Card>
   );
+
 };
 
-export default TaskApprovalActions;
+export default TaskApprovalActionsSimple
