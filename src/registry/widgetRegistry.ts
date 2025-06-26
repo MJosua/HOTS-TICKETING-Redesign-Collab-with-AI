@@ -21,15 +21,6 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     dataRequirements: ["stockData"],
     category: "Inventory"
   },
-  approval_progress: {
-    id: "approval_progress",
-    name: "Approval Progress",
-    description: "Show approval step progress bar",
-    componentPath: "widgets/ApprovalProgress",
-    applicableTo: ["ticket_detail"],
-    dataRequirements: ["approvalData"],
-    category: "Workflow"
-  },
   team_workload: {
     id: "team_workload",
     name: "Team Workload Chart",
