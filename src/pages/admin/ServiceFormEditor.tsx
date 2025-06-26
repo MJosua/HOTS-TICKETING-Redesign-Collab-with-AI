@@ -503,12 +503,12 @@ const ServiceFormEditor = () => {
                     />
                   </TabsContent>
 
-                  <TabsContent value="rowGroups" className="mt-4">
+                  {/* <TabsContent value="rowGroups" className="mt-4">
                     <RowGroupEditor
                       rowGroups={config.rowGroups || []}
                       onUpdate={(rowGroups) => setConfig({ ...config, rowGroups })}
                     />
-                  </TabsContent>
+                  </TabsContent> */}
                 </Tabs>
               </CardContent>
             </Card>
