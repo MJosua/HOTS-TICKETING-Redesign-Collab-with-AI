@@ -24,6 +24,7 @@ import ExcelPreview from '@/components/ExcelPreview';
 import TaskApprovalActionsSimple from '@/components/ui/TaskApprovalActionssimple';
 import { WidgetConfig } from '@/types/widgetTypes';
 import { getWidgetPresetById } from '@/models/widgets';
+import { getWidgetById } from '@/registry/widgetRegistry';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -38,17 +39,39 @@ const TicketDetail = () => {
   const { user } = useAppSelector(state => state.auth);
 
   // Get assigned widgets for this ticket/service (sample data for now)
+  // const assignedWidgets: WidgetConfig[] = useMemo(() => {
+  //   if (!ticketDetail) return [];
+
+  //   // Sample widget assignment - in real implementation, fetch from API based on service_id
+  //   const sampleWidgetIds = ['approval_progress'];
+
+  //   return sampleWidgetIds
+  //     .map(id => getWidgetPresetById(id))
+  //     .filter((widget): widget is WidgetConfig => widget !== undefined)
+  //     .filter(widget => widget.applicableTo.includes('ticket_detail'));
+  // }, [ticketDetail]);
+
+
+  // Get assigned widgets for this ticket/service (sample data for now)
+
+
   const assignedWidgets: WidgetConfig[] = useMemo(() => {
-    if (!ticketDetail) return [];
-    
-    // Sample widget assignment - in real implementation, fetch from API based on service_id
-    const sampleWidgetIds = ['approval_progress'];
-    
-    return sampleWidgetIds
-      .map(id => getWidgetPresetById(id))
-      .filter((widget): widget is WidgetConfig => widget !== undefined)
+    if (!ticketDetail || !ticketDetail.service_id) return [];
+
+    let ids: string[] = [];
+
+    ids = Array.isArray(ticketDetail.widget)
+      ? ticketDetail.widget
+      : ticketDetail.widget
+        ? [ticketDetail.widget]
+        : [];
+    return ids
+      .map(getWidgetById)
+      .filter((widget): widget is WidgetConfig => !!widget)
       .filter(widget => widget.applicableTo.includes('ticket_detail'));
   }, [ticketDetail]);
+
+  console.log("assignedWidgets", assignedWidgets)
 
   useEffect(() => {
     if (id) {

@@ -25,9 +25,9 @@ import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
 const ServiceCatalogAdmin = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteModal, setDeleteModal] = useState<{ 
-    isOpen: boolean; 
-    serviceId: string; 
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    serviceId: string;
     serviceName: string;
     value?: any;
   }>({
@@ -36,7 +36,7 @@ const ServiceCatalogAdmin = () => {
     serviceName: '',
     value: null
   });
-  
+
   // Widget management state
   const [widgetModal, setWidgetModal] = useState<{
     isOpen: boolean;
@@ -49,7 +49,7 @@ const ServiceCatalogAdmin = () => {
     serviceName: '',
     currentWidgets: []
   });
-  
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
 
@@ -201,12 +201,17 @@ const ServiceCatalogAdmin = () => {
   // Widget management handlers
   const handleWidgetConfig = (formId: string) => {
     const service = serviceCatalog.find(s => s.service_id.toString() === formId);
+    console.log("service", service)
     if (service) {
       setWidgetModal({
         isOpen: true,
         serviceId: formId,
         serviceName: service.service_name,
-        currentWidgets: service.widget || [] // Get widgets from database
+        currentWidgets: Array.isArray(service.widget)
+          ? service.widget
+          : typeof service.widget === 'string'
+            ? JSON.parse(service.widget || '[]')
+            : [] // Get widgets from database
       });
     }
   };
@@ -214,8 +219,8 @@ const ServiceCatalogAdmin = () => {
   const handleWidgetSave = async (assignment: ServiceWidgetAssignment) => {
     try {
       // Save widget assignment to database
-      const response = await axios.post(
-        `${API_URL}/hots_settings/service/${assignment.service_id}/widgets`,
+      const response = await axios.put(
+        `${API_URL}/hots_settings/update/widget/${assignment.service_id}`,
         { widget_ids: assignment.widget_ids },
         {
           headers: {
@@ -228,7 +233,7 @@ const ServiceCatalogAdmin = () => {
         // Update local state
         fetchData();
         setWidgetModal({ isOpen: false, serviceId: '', serviceName: '', currentWidgets: [] });
-        
+
         toast({
           title: "Success",
           description: "Widget configuration saved successfully",
@@ -236,7 +241,14 @@ const ServiceCatalogAdmin = () => {
           duration: 3000
         });
       } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to save widget configuration",
+          variant: "destructive",
+          duration: 5000
+        });
         throw new Error(response.data.message || 'Failed to save widget configuration');
+
       }
     } catch (error: any) {
       console.error('Widget save error:', error);

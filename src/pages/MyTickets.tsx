@@ -75,7 +75,6 @@ const MyTickets = () => {
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Type</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Priority</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Progress</TableHead>
-                <TableHead className="text-xs font-medium text-muted-foreground uppercase">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -103,9 +102,6 @@ const MyTickets = () => {
                     </TableCell>
                     <TableCell>
                       <ProgressionBar steps={sortedApprovalSteps} />
-                    </TableCell>
-                    <TableCell className="font-medium text-foreground">
-                      {renderHighlightedText(ticket.amount)}
                     </TableCell>
                   </TableRow>
                 );
@@ -155,9 +151,6 @@ const MyTickets = () => {
               <Badge className={`${getStatusColor(ticket.status)} border text-xs`}>
                 {renderHighlightedText(ticket.status)}
               </Badge>
-              <span className="text-sm font-medium text-foreground">
-                {renderHighlightedText(ticket.amount)}
-              </span>
             </div>
           </CardContent>
         </Card>

@@ -201,6 +201,20 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           />
         );
 
+      case 'time':
+        return (
+          <Input
+            type="time"
+            {...form.register(fieldKey, {
+              required: isRequired ? `${cleanLabel} is required` : false
+            })}
+            onChange={(e) => {
+              form.setValue(fieldKey, e.target.value);
+              onValueChange?.(e.target.value);
+            }}
+          />
+        );
+
       case 'file':
         return (
           <div className="space-y-2">

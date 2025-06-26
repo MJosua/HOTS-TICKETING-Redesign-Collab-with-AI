@@ -50,7 +50,7 @@ export const ServiceWidgetManager: React.FC<ServiceWidgetManagerProps> = ({
     };
 
     onSave(assignment);
-    
+
     toast({
       title: "Success",
       description: `Widgets updated for ${serviceName}`,
@@ -58,9 +58,11 @@ export const ServiceWidgetManager: React.FC<ServiceWidgetManagerProps> = ({
     });
   };
 
+ 
+
   const renderWidgetCard = (widget: WidgetConfig) => {
     const isSelected = selectedWidgets.includes(widget.id);
-    
+    console.log("isSelected",isSelected)
     return (
       <Card key={widget.id} className={`transition-all ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
         <CardHeader className="pb-3">
@@ -69,7 +71,7 @@ export const ServiceWidgetManager: React.FC<ServiceWidgetManagerProps> = ({
               <Checkbox
                 id={widget.id}
                 checked={isSelected}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   handleWidgetToggle(widget.id, checked as boolean)
                 }
               />
@@ -174,8 +176,8 @@ export const ServiceWidgetManager: React.FC<ServiceWidgetManagerProps> = ({
           <span className="text-sm font-medium text-blue-800">Selected Widgets Summary</span>
         </div>
         <p className="text-sm text-blue-700">
-          {selectedWidgets.length === 0 ? 'No widgets selected' : 
-           `${selectedWidgets.length} widget${selectedWidgets.length === 1 ? '' : 's'} selected`}
+          {selectedWidgets.length === 0 ? 'No widgets selected' :
+            `${selectedWidgets.length} widget${selectedWidgets.length === 1 ? '' : 's'} selected`}
         </p>
         {selectedWidgets.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">

@@ -44,13 +44,20 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const serviceWidgetIds = useAppSelector(state => 
     serviceId ? selectServiceWidgets(state, parseInt(serviceId)) : []
   );
-
+  console.log("serviceWidgetIds", serviceWidgetIds);
   // Get widget configurations from registry
   const assignedWidgets: WidgetConfig[] = useMemo(() => {
-    return serviceWidgetIds
-      .map(id => getWidgetById(id))
-      .filter((widget): widget is WidgetConfig => widget !== undefined)
+    const ids = Array.isArray(serviceWidgetIds)
+      ? serviceWidgetIds
+      : serviceWidgetIds
+      ? [serviceWidgetIds]
+      : [];
+  
+    return ids
+      .map(getWidgetById)
+      .filter((widget): widget is WidgetConfig => !!widget)
       .filter(widget => widget.applicableTo.includes('form'));
+
   }, [serviceWidgetIds]);
 
   const handleUpdateRowGroup = (groupIndex: number, updatedRows: RowData[]) => {

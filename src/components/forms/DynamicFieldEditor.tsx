@@ -398,22 +398,23 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <Label>Field Type</Label>
-            <Select value={field.type} onValueChange={(value: FormField['type']) => updateField({ type: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="textarea">Textarea</SelectItem>
-                <SelectItem value="select">Select</SelectItem>
-                <SelectItem value="radio">Radio</SelectItem>
-                <SelectItem value="checkbox">Checkbox</SelectItem>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="file">File</SelectItem>
-                <SelectItem value="toggle">Toggle</SelectItem>
-                <SelectItem value="number">Number</SelectItem>
-              </SelectContent>
-            </Select>
+<Select value={field.type} onValueChange={(value: FormField['type']) => updateField({ type: value })}>
+  <SelectTrigger>
+    <SelectValue />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="text">Text</SelectItem>
+    <SelectItem value="textarea">Textarea</SelectItem>
+    <SelectItem value="select">Select</SelectItem>
+    <SelectItem value="radio">Radio</SelectItem>
+    <SelectItem value="checkbox">Checkbox</SelectItem>
+    <SelectItem value="date">Date</SelectItem>
+    <SelectItem value="time">Time</SelectItem>
+    <SelectItem value="file">File</SelectItem>
+    <SelectItem value="toggle">Toggle</SelectItem>
+    <SelectItem value="number">Number</SelectItem>
+  </SelectContent>
+</Select>
           </div>
 
           <div>
