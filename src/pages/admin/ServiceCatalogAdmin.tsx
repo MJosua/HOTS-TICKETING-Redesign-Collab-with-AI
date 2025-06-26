@@ -206,29 +206,43 @@ const ServiceCatalogAdmin = () => {
         isOpen: true,
         serviceId: formId,
         serviceName: service.service_name,
-        currentWidgets: [] // In real implementation, fetch from API
+        currentWidgets: service.widget || [] // Get widgets from database
       });
     }
   };
 
   const handleWidgetSave = async (assignment: ServiceWidgetAssignment) => {
     try {
-      // In real implementation, save to API
-      console.log('Saving widget assignment:', assignment);
-      
-      // For now, just close the modal and show success
-      setWidgetModal({ isOpen: false, serviceId: '', serviceName: '', currentWidgets: [] });
-      
-      toast({
-        title: "Success",
-        description: "Widget configuration saved successfully",
-        variant: "default",
-        duration: 3000
-      });
-    } catch (error) {
+      // Save widget assignment to database
+      const response = await axios.post(
+        `${API_URL}/hots_settings/service/${assignment.service_id}/widgets`,
+        { widget_ids: assignment.widget_ids },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Update local state
+        fetchData();
+        setWidgetModal({ isOpen: false, serviceId: '', serviceName: '', currentWidgets: [] });
+        
+        toast({
+          title: "Success",
+          description: "Widget configuration saved successfully",
+          variant: "default",
+          duration: 3000
+        });
+      } else {
+        throw new Error(response.data.message || 'Failed to save widget configuration');
+      }
+    } catch (error: any) {
+      console.error('Widget save error:', error);
       toast({
         title: "Error",
-        description: "Failed to save widget configuration",
+        description: error.message || "Failed to save widget configuration",
         variant: "destructive",
         duration: 5000
       });

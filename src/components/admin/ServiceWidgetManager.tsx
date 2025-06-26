@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Save, Eye, Settings } from 'lucide-react';
-import { widgetPresets, getWidgetCategories } from '@/models/widgets';
-import { ServiceWidgetAssignment, WidgetPreset } from '@/types/widgetTypes';
+import { getAllWidgets, getWidgetsByContext, getWidgetCategories } from '@/registry/widgetRegistry';
+import { ServiceWidgetAssignment, WidgetConfig } from '@/types/widgetTypes';
 import { useToast } from '@/hooks/use-toast';
 
 interface ServiceWidgetManagerProps {
@@ -31,6 +31,7 @@ export const ServiceWidgetManager: React.FC<ServiceWidgetManagerProps> = ({
   const { toast } = useToast();
 
   const categories = getWidgetCategories();
+  const allWidgets = getAllWidgets();
 
   const handleWidgetToggle = (widgetId: string, checked: boolean) => {
     setSelectedWidgets(prev => {
@@ -57,13 +58,7 @@ export const ServiceWidgetManager: React.FC<ServiceWidgetManagerProps> = ({
     });
   };
 
-  const getWidgetsByContext = (context: 'form' | 'ticket_detail') => {
-    return widgetPresets.filter(widget => 
-      widget.applicableTo.includes(context)
-    );
-  };
-
-  const renderWidgetCard = (widget: WidgetPreset) => {
+  const renderWidgetCard = (widget: WidgetConfig) => {
     const isSelected = selectedWidgets.includes(widget.id);
     
     return (
@@ -163,7 +158,7 @@ export const ServiceWidgetManager: React.FC<ServiceWidgetManagerProps> = ({
             <div key={category}>
               <h3 className="text-lg font-medium mb-3">{category}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {widgetPresets
+                {allWidgets
                   .filter(widget => widget.category === category)
                   .map(renderWidgetCard)
                 }
@@ -185,7 +180,7 @@ export const ServiceWidgetManager: React.FC<ServiceWidgetManagerProps> = ({
         {selectedWidgets.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {selectedWidgets.map(widgetId => {
-              const widget = widgetPresets.find(w => w.id === widgetId);
+              const widget = allWidgets.find(w => w.id === widgetId);
               return widget ? (
                 <Badge key={widgetId} variant="default" className="text-xs">
                   {widget.name}

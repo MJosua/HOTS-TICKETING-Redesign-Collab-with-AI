@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,10 +11,11 @@ import { StructuredRowGroup } from './StructuredRowGroup';
 import WidgetRenderer from '@/components/widgets/WidgetRenderer';
 import { FormConfig, FormField, RowGroup, FormSection, RowData } from '@/types/formTypes';
 import { WidgetConfig } from '@/types/widgetTypes';
-import { widgetPresets, getWidgetPresetById } from '@/models/widgets';
+import { getWidgetById } from '@/registry/widgetRegistry';
 import { mapFormDataToTicketColumns, getMaxFormFields } from '@/utils/formFieldMapping';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { createTicket, uploadFiles } from '@/store/slices/ticketsSlice';
+import { selectServiceWidgets } from '@/store/slices/catalogSlice';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -40,16 +40,18 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const maxFields = useMemo(() => getMaxFormFields(), []);
   const [rowGroups, setRowGroups] = useState<RowGroup[]>(() => JSON.parse(JSON.stringify(config.rowGroups || [])));
 
-  // Get assigned widgets for this service (for now using sample data)
+  // Get widgets from database for this service
+  const serviceWidgetIds = useAppSelector(state => 
+    serviceId ? selectServiceWidgets(state, parseInt(serviceId)) : []
+  );
+
+  // Get widget configurations from registry
   const assignedWidgets: WidgetConfig[] = useMemo(() => {
-    // In a real implementation, this would come from an API call based on serviceId
-    const sampleWidgetIds = ['gantt_room_schedule', 'stock_overview'];
-    
-    return sampleWidgetIds
-      .map(id => getWidgetPresetById(id))
+    return serviceWidgetIds
+      .map(id => getWidgetById(id))
       .filter((widget): widget is WidgetConfig => widget !== undefined)
       .filter(widget => widget.applicableTo.includes('form'));
-  }, [serviceId]);
+  }, [serviceWidgetIds]);
 
   const handleUpdateRowGroup = (groupIndex: number, updatedRows: RowData[]) => {
     setRowGroups(prev => {
@@ -216,7 +218,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Render assigned widgets before the form */}
+      {/* Render widgets from database configuration */}
       {assignedWidgets.map(widget => (
         <WidgetRenderer
           key={widget.id}
@@ -227,7 +229,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
             serviceId,
             currentDateRange: {
               start: new Date(),
-              end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next 7 days
+              end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
             }
           }}
         />
