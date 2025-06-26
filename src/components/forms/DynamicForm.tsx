@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -246,6 +247,23 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                   {renderFieldsInRows(config.fields)}
                 </div>
               )}
+
+              {/* Render sections if they exist */}
+              {config.sections?.map((section, sectionIndex) => (
+                <div key={`section-${sectionIndex}`} className="space-y-4">
+                  <h3 className="text-lg font-medium">{section.title}</h3>
+                  {section.description && (
+                    <p className="text-sm text-muted-foreground">{section.description}</p>
+                  )}
+                  
+                  {section.repeatable ? (
+                    <RepeatingSection section={section} form={form} />
+                  ) : (
+                    renderFieldsInRows(section.fields)
+                  )}
+                </div>
+              ))}
+
               {rowGroups.map((rowGroup, index) => (
                 <div key={`rowgroup-${index}`}>
                   {rowGroup.title && <h3 className="text-lg font-medium mb-2">{rowGroup.title}</h3>}
@@ -262,7 +280,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                     />
                   ) : (
                     <RowGroupField
-                      rowGroup={rowGroup.rowGroup}
+                      rowGroup={rowGroup.rowGroup || []}
                       form={form}
                       groupIndex={index}
                       onValueChange={(fieldKey, value) => {

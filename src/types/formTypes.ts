@@ -1,5 +1,4 @@
 
-
 export interface FormConfig {
   id?: string;
   title: string;
@@ -26,6 +25,7 @@ export interface FormSection {
   title: string;
   description?: string;
   fields: FormField[];
+  repeatable?: boolean; // Add missing repeatable property
   summary?: {
     label: string;
     type?: string;
