@@ -22,9 +22,16 @@ export interface RowData {
   [key: string]: any;
 }
 
+export interface StructuredRowData {
+  id: string;
+  firstValue: string;
+  secondValue: string;
+  thirdValue: string;
+}
+
 export interface RowGroup {
   title?: string; // Add title property
-  rowGroup: RowData[];
+  rowGroup: RowData[] | StructuredRowData[];
   isStructuredInput?: boolean; // New flag for special row group format
   maxRows?: number; // Maximum allowed rows
   structure?: {

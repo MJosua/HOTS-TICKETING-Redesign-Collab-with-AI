@@ -1,5 +1,5 @@
 
-import { FormField } from '@/types/formTypes';
+import { FormField, RowGroup } from '@/types/formTypes';
 
 export interface TicketColumnMapping {
   [key: string]: any; // cstm_col1, cstm_col2, etc.
@@ -46,7 +46,7 @@ export const mapFormDataToTicketColumns = (
 
     const { firstColumn, secondColumn, thirdColumn, combinedMapping } = group.structure;
 
-    group.rowGroup.forEach((row) => {
+    group.rowGroup.forEach((row: any) => {
       const mappings = {
         first: { value: row.firstValue, label: firstColumn?.label },
         second: { value: row.secondValue, label: secondColumn?.label },

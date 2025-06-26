@@ -207,7 +207,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             {/* Show uploaded file names */}
             {form.watch(fieldKey)?.length > 0 ? (
               <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                {Array.from(form.watch(`${fieldKey}_raw`) || []).map((file: File, i: number) => (
+                {(form.watch(`${fieldKey}_raw`) ? Array.from(form.watch(`${fieldKey}_raw`) as FileList) : []).map((file: File, i: number) => (
                   <li key={i} className="flex items-center gap-2">
                     <span className="truncate max-w-xs">{file.name}</span>
                     <span className="text-xs text-gray-400">
@@ -218,7 +218,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                       type="button"
                       className="text-red-500 text-xs"
                       onClick={() => {
-                        const rawFiles = Array.from(form.watch(`${fieldKey}_raw`) || []);
+                        const rawFiles = form.watch(`${fieldKey}_raw`) ? Array.from(form.watch(`${fieldKey}_raw`) as FileList) : [];
                         const uploadedUrls = Array.from(form.watch(fieldKey) || []);
 
                         // Remove both preview and submitted value

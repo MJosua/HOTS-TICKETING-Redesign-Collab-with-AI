@@ -36,6 +36,7 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
     job_title: '',
     is_active: true,
     is_deleted: false,
+    user_name: '', // Add missing user_name property
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -65,6 +66,7 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
         job_title: '',
         is_active: true,
         is_deleted: false,
+        user_name: '', // Add missing user_name property
       });
     }
   }, [user, mode, isOpen]);

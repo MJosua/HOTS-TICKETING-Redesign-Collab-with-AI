@@ -1,4 +1,4 @@
-// StructuredRowGroup.tsx
+
 import React, { useEffect, useMemo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RowGroup } from '@/types/formTypes';
+import { RowGroup, StructuredRowData } from '@/types/formTypes';
 import { useToast } from '@/hooks/use-toast';
 import {
   resolveSystemVariable,
@@ -26,14 +26,7 @@ interface StructuredRowGroupProps {
   maxTotalFields: number;
   currentFieldCount: number;
   onFieldCountChange: (count: number) => void;
-  onUpdateRowGroup: (groupIndex: number, updatedRows: RowData[]) => void;
-}
-
-export interface RowData {
-  id: string;
-  firstValue: string;
-  secondValue: string;
-  thirdValue: string;
+  onUpdateRowGroup: (groupIndex: number, updatedRows: StructuredRowData[]) => void;
 }
 
 export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
@@ -47,7 +40,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 }) => {
   const { toast } = useToast();
   const systemContext = useSystemVariableContext();
-  const rows = rowGroup.rowGroup || [];
+  const rows = (rowGroup.rowGroup || []) as StructuredRowData[];
 
   const structure = rowGroup.structure;
   if (!structure) return null;
@@ -65,7 +58,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 
   useEffect(() => {
     if (rows.length === 0) {
-      const defaultRow = [
+      const defaultRow: StructuredRowData[] = [
         {
           id: Date.now().toString(),
           firstValue: '',
@@ -76,7 +69,6 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       onUpdateRowGroup(groupIndex, defaultRow);
     }
   }, []);
-
 
   const addRow = () => {
     const newRowCount = rows.length + 1;
@@ -97,7 +89,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       });
       return;
     }
-    const newRows = [
+    const newRows: StructuredRowData[] = [
       ...rows,
       { id: Date.now().toString(), firstValue: '', secondValue: '', thirdValue: '' },
     ];
