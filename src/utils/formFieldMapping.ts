@@ -1,5 +1,5 @@
 
-import { FormField } from '@/types/formTypes';
+import { FormField, RowGroup, RowData } from '@/types/formTypes';
 
 export interface TicketColumnMapping {
   [key: string]: any; // cstm_col1, cstm_col2, etc.
@@ -39,14 +39,12 @@ export const mapFormDataToTicketColumns = (
   });
 
   // 🔸 Step 2: Map structured row groups
-  const keys = ['firstValue', 'secondValue', 'thirdValue'] as const;
-
   rowGroups.forEach((group) => {
     if (!group.structure || !group.rowGroup) return;
 
     const { firstColumn, secondColumn, thirdColumn, combinedMapping } = group.structure;
 
-    group.rowGroup.forEach((row) => {
+    group.rowGroup.forEach((row: RowData) => {
       const mappings = {
         first: { value: row.firstValue, label: firstColumn?.label },
         second: { value: row.secondValue, label: secondColumn?.label },
@@ -68,14 +66,10 @@ export const mapFormDataToTicketColumns = (
         mappedData[`lbl_col${counter}`] = lblVal;
         counter++;
 
-        // Add third as individual
-
-
       } else if (combinedMapping === 'second_third') {
         // Combine second + third
         const cstmVal = [mappings.second.value, mappings.third.value].filter(Boolean).join(' ');
         const lblVal = [mappings.second.label, mappings.third.label].filter(Boolean).join(' + ');
-
 
         if (mappings.first.value && mappings.first.label) {
           mappedData[`cstm_col${counter}`] = mappings.first.value;
@@ -86,9 +80,6 @@ export const mapFormDataToTicketColumns = (
         mappedData[`cstm_col${counter}`] = cstmVal;
         mappedData[`lbl_col${counter}`] = lblVal;
         counter++;
-
-        // Add first as individual
-
 
       } else {
         // No combination: map all individually
@@ -103,7 +94,6 @@ export const mapFormDataToTicketColumns = (
       }
     });
   });
-
 
   return mappedData;
 };

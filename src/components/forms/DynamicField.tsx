@@ -207,7 +207,10 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             {/* Show uploaded file names */}
             {form.watch(fieldKey)?.length > 0 ? (
               <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                {console.log("Preview files:", Array.from(form.watch(`${fieldKey}_raw`) || []))}
+                {(() => {
+                  console.log("Preview files:", Array.from(form.watch(`${fieldKey}_raw`) || []));
+                  return null;
+                })()}
 
                 {Array.from(form.watch(`${fieldKey}_raw`) || []).map((file: File, i: number) => (
                   <li key={i} className="flex items-center gap-2">

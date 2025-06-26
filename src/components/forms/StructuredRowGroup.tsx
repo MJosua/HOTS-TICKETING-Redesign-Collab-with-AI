@@ -47,7 +47,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 }) => {
   const { toast } = useToast();
   const systemContext = useSystemVariableContext();
-  const rows = rowGroup.rowGroup || [];
+  const rows = (rowGroup.rowGroup || []) as RowData[];
 
   const structure = rowGroup.structure;
   if (!structure) return null;
@@ -65,7 +65,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 
   useEffect(() => {
     if (rows.length === 0) {
-      const defaultRow = [
+      const defaultRow: RowData[] = [
         {
           id: Date.now().toString(),
           firstValue: '',
@@ -76,7 +76,6 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       onUpdateRowGroup(groupIndex, defaultRow);
     }
   }, []);
-
 
   const addRow = () => {
     const newRowCount = rows.length + 1;
@@ -97,7 +96,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       });
       return;
     }
-    const newRows = [
+    const newRows: RowData[] = [
       ...rows,
       { id: Date.now().toString(), firstValue: '', secondValue: '', thirdValue: '' },
     ];
