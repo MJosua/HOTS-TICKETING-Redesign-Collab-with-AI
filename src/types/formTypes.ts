@@ -1,7 +1,38 @@
+export interface FormConfig {
+  id?: string;
+  title: string;
+  description?: string;
+  category: string;
+  fields?: FormField[];
+  rowGroups?: RowGroup[];
+  sections?: FormSection[];
+  submit?: {
+    label: string;
+  };
+  url?: string;
+  servis_aktif?: number;
+  approvalFlowId?: string;
+}
+
+export interface FormSection {
+  title: string;
+  description?: string;
+  fields: FormField[];
+}
+
 export interface FormField {
   label: string;
-  name: string; // New field for API data mapping
-  type: string;
+  name: string;
+  type:
+  | 'text'
+  | 'textarea'
+  | 'select'
+  | 'radio'
+  | 'checkbox'
+  | 'date'
+  | 'file'
+  | 'toggle'
+  | 'number';
   placeholder?: string;
   required?: boolean;
   options?: string[];
@@ -11,87 +42,37 @@ export interface FormField {
   maxSizeMB?: number;
   multiple?: boolean;
   default?: string;
-  uiCondition?: string;
   note?: string;
-  columnSpan?: 1 | 2 | 3 ; // New field for dynamic column spans
-  systemVariable?: string; // For template variables like ${user}
+  uiCondition?: string;
+  columnSpan?: number;
+  systemVariable?: string;
+}
+
+export interface RowData {
+  id: string;
+  firstValue: string;
+  secondValue: string;
+  thirdValue: string;
 }
 
 export interface RowGroup {
-  rowGroup: RowData[];
-  isStructuredInput?: boolean; // New flag for special row group format
-  maxRows?: number; // Maximum allowed rows
+  rowGroup?: FormField[];
+  title?: string;
+  maxRows?: number;
+  isStructuredInput?: boolean;
   structure?: {
-    firstColumn: FormField;
-    secondColumn: FormField;
-    thirdColumn: FormField;
-    combinedMapping?: 'none' | 'first_second' | 'second_third'; // Fixed to allow all values
-  };
-}
-
-export interface FormSection {
-  title: string;
-  fields?: FormField[];
-  rowGroups?: RowGroup[];
-  repeatable?: boolean;
-  addButton?: string;
-  summary?: {
-    label: string;
-    type: string;
-    calculated: boolean;
-  };
-}
-
-export interface ApprovalStep {
-  order: number;
-  type: 'role' | 'specific_user' | 'superior';
-  value: string | number;
-  description: string;
-}
-
-export interface WorkflowStepExecution {
-  id: number;
-  workflow_id: number;
-  step_order: number;
-  assigned_user_id: number;
-  status: string;
-  action_date: string;
-  action_by_user_id?: number;
-  comments?: string;
-  rejection_reason?: string;
-}
-
-export interface WorkflowGroup {
-  id: string;
-  name: string;
-  description: string;
-  category_ids: number[];
-  is_active: boolean;
-}
-
-export interface ApprovalFlow {
-  steps: string[];
-  mode: 'sequential' | 'parallel';
-  m_workflow_groups?: string; // Link to workflow group
-}
-
-export interface FormConfig {
-  id?: string;
-  url: string;
-  title: string;
-  description?: string;
-  category?: string;
-  fields?: FormField[];
-  rowGroups?: RowGroup[];
-  sections?: FormSection[];
-  approval?: ApprovalFlow;
-  apiEndpoint?: string;
-  m_workflow_groups?: string; // New field to link forms to workflow groups
-  servis_aktif?: number; // Add this property
-  active?: number; // Add this property
-  submit?: {
-    label: string;
-    type: string;
-    action: string;
+    firstColumn: {
+      label: string;
+      placeholder: string;
+    };
+    secondColumn: {
+      label: string;
+      placeholder: string;
+    };
+    thirdColumn: {
+      label: string;
+      placeholder: string;
+      options?: string[];
+    };
   };
 }

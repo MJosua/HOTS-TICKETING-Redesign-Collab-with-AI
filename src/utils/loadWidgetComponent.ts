@@ -1,5 +1,5 @@
 
-import { lazy, ComponentType } from 'react';
+import React, { lazy, ComponentType } from 'react';
 import { WidgetProps } from '@/types/widgetTypes';
 
 // Dynamic widget loader with error handling
