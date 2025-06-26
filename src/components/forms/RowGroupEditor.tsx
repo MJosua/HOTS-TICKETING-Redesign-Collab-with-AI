@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
-import { FormField, RowGroup, RowData } from '@/types/formTypes';
+import { FormField, RowGroup, RowData, StructuredRowData } from '@/types/formTypes';
 
 interface RowGroupEditorProps {
   rowGroups: RowGroup[];
@@ -56,6 +56,7 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
       const newRowData: RowData = {
         [`new_field_${groupIndex}_${fieldNumber}`]: ''
       };
+      // Ensure we're working with RowData array for non-structured groups
       (currentRowGroup.rowGroup as RowData[]).push(newRowData);
       onUpdate(updated);
     }
@@ -67,7 +68,7 @@ export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpd
     
     // Only remove from non-structured row groups
     if (!currentRowGroup.isStructuredInput && currentRowGroup.rowGroup.length > 1) {
-      currentRowGroup.rowGroup = currentRowGroup.rowGroup.filter((_, i) => i !== fieldIndex);
+      currentRowGroup.rowGroup = (currentRowGroup.rowGroup as RowData[]).filter((_, i) => i !== fieldIndex);
       onUpdate(updated);
     }
   };
