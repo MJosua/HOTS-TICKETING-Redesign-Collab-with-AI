@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import RejectModal from "@/components/modals/RejectModal";
 import { FilePreview } from "@/components/ui/FilePreview";
 import TaskApprovalActions from "@/components/ui/TaskApprovalActions";
+import WidgetRenderer from "@/components/widgets/WidgetRenderer";
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { fetchTicketDetail, approveTicket, rejectTicket, clearTicketDetail } from '@/store/slices/ticketsSlice';
 import { fetchGeneratedDocuments, fetchFunctionLogs } from '@/store/slices/customFunctionSlice';
@@ -21,6 +22,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Eye, FileText } from 'lucide-react';
 import ExcelPreview from '@/components/ExcelPreview';
 import TaskApprovalActionsSimple from '@/components/ui/TaskApprovalActionssimple';
+import { WidgetConfig } from '@/types/widgetTypes';
+import { getWidgetPresetById } from '@/models/widgets';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -33,6 +36,20 @@ const TicketDetail = () => {
   const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
   const { generatedDocuments, functionLogs, isLoading: isLoadingCustomFunction } = useAppSelector(state => state.customFunction);
   const { user } = useAppSelector(state => state.auth);
+
+  // Get assigned widgets for this ticket/service (sample data for now)
+  const assignedWidgets: WidgetConfig[] = useMemo(() => {
+    if (!ticketDetail) return [];
+    
+    // Sample widget assignment - in real implementation, fetch from API based on service_id
+    const sampleWidgetIds = ['approval_progress'];
+    
+    return sampleWidgetIds
+      .map(id => getWidgetPresetById(id))
+      .filter((widget): widget is WidgetConfig => widget !== undefined)
+      .filter(widget => widget.applicableTo.includes('ticket_detail'));
+  }, [ticketDetail]);
+
   useEffect(() => {
     if (id) {
       dispatch(fetchTicketDetail(id));
@@ -45,7 +62,6 @@ const TicketDetail = () => {
     };
   }, [dispatch, id]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
 
   const handleApprove = async () => {
     if (!ticketDetail || !id) return;
@@ -64,7 +80,6 @@ const TicketDetail = () => {
         variant: "default",
       });
 
-      // Refresh ticket data
       dispatch(fetchTicketDetail(id));
     } catch (error: any) {
       toast({
@@ -93,7 +108,6 @@ const TicketDetail = () => {
         variant: "default",
       });
 
-      // Refresh ticket data
       dispatch(fetchTicketDetail(id));
     } catch (error: any) {
       toast({
@@ -106,7 +120,6 @@ const TicketDetail = () => {
 
   const handleSendMessage = () => {
     if (chatMessage.trim()) {
-      // TODO: Implement chat message sending
       console.log('Sending message:', chatMessage);
       setChatMessage('');
     }
@@ -120,7 +133,6 @@ const TicketDetail = () => {
       default: return "bg-gray-100 text-gray-800";
     }
   };
-
 
   const formatApprovalSteps = () => {
     if (!ticketDetail?.list_approval) return [];
@@ -163,9 +175,10 @@ const TicketDetail = () => {
       approver =>
         approver.approval_order === ticketDetail.current_step &&
         approver.approver_id === user.user_id &&
-        approver.approval_status === 0 // optional: only if approval is still open
+        approver.approval_status === 0
     );
   };
+
   const handleFileDownload = (filePath: string, fileName: string) => {
     const downloadUrl = `${API_URL}/hots_ticket/download/file/${filePath}`;
     const link = document.createElement('a');
@@ -173,7 +186,6 @@ const TicketDetail = () => {
     link.download = fileName;
     link.target = '_blank';
 
-    // Add authorization header by creating a fetch request
     fetch(downloadUrl, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`
@@ -206,7 +218,6 @@ const TicketDetail = () => {
     link.download = fileName;
     link.target = '_blank';
 
-    // Add authorization header by creating a fetch request
     fetch(downloadUrl, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`
@@ -233,21 +244,16 @@ const TicketDetail = () => {
 
   const extractFirstUrl = (rawValue: string | string[]): string => {
     try {
-      // If it's an actual array, return first element
       if (Array.isArray(rawValue)) return rawValue[0];
 
-      // If it's a JSON string array, like '["/uploads/file.jpg"]'
       const parsed = JSON.parse(rawValue);
       if (Array.isArray(parsed)) return parsed[0];
     } catch (err) {
       console.warn("Failed to parse file URL:", err);
     }
 
-    // Otherwise, return the string as-is
     return typeof rawValue === 'string' ? rawValue : '';
   };
-
-
 
   const renderPreview = (filename: string | string[], fileUrl: string | string[]) => {
     const safeUrl = extractFirstUrl(fileUrl);
@@ -279,7 +285,6 @@ const TicketDetail = () => {
       </a>
     );
   };
-
 
   if (isLoadingDetail) {
     return (
@@ -320,7 +325,6 @@ const TicketDetail = () => {
   const getFileExtension = (filename: string) =>
     filename.split('.').pop()?.toLowerCase() || '';
 
-  // Get current approver for TaskApprovalActions
   const currentApprover = ticketDetail.list_approval?.find(
     approver => approver.approval_order === ticketDetail.current_step
   );
@@ -328,7 +332,6 @@ const TicketDetail = () => {
   return (
     <AppLayout>
       <div className="space-y-6 relative z-0">
-        {/* Header with higher z-index */}
         <div className="sticky top-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -341,17 +344,11 @@ const TicketDetail = () => {
                 <p className="text-muted-foreground">{ticketDetail?.service_name}</p>
               </div>
             </div>
-
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Add TaskApprovalActions card */}
-
-
-            {/* Request Information */}
             <Card className="bg-card shadow-sm border">
               <CardHeader className="bg-muted/50 border-b">
                 <CardTitle className="text-lg">Request Information</CardTitle>
@@ -393,6 +390,19 @@ const TicketDetail = () => {
               </CardContent>
             </Card>
 
+            {/* Render assigned widgets after request information */}
+            {assignedWidgets.map(widget => (
+              <WidgetRenderer
+                key={widget.id}
+                config={widget}
+                data={{
+                  ticketData: ticketDetail,
+                  userData: user,
+                  serviceId: ticketDetail.service_id?.toString(),
+                }}
+              />
+            ))}
+
             {/* Custom Form Data Table */}
             {customFormData.length > 0 && (
               <Card className="bg-card shadow-sm border">
@@ -412,10 +422,6 @@ const TicketDetail = () => {
                         <TableRow key={index}>
                           <TableCell className="font-medium">{field.label}</TableCell>
                           <TableCell>
-
-
-                          </TableCell>
-                          <TableCell>
                             {typeof field.value === 'string' && field.value.includes('/files/hots/it_support/') ? (
                               <div className="flex items-center space-x-2">
                                 <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
@@ -433,18 +439,12 @@ const TicketDetail = () => {
                                     </div>
                                   </DialogContent>
                                 </Dialog>
-
-
                               </div>
-
                             ) : (
                               field.value
                             )}
-
                           </TableCell>
-
                           {typeof field.value === 'string' && field.value.includes('/files/hots/it_support/') && (
-
                             <TableCell>
                               <Button
                                 variant="outline"
@@ -487,7 +487,6 @@ const TicketDetail = () => {
               </Card>
             )}
 
-
             {/* Generated Documents */}
             {(isLoadingCustomFunction || (generatedDocuments && generatedDocuments.length > 0)) && (
               <Card className="bg-card shadow-sm border">
@@ -529,18 +528,15 @@ const TicketDetail = () => {
             )}
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Approval Progress */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Approval Progress</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  
                   {canUserApprove() && (
-                    <div className="flex items-center justify-center w-full space-y-2">testse
+                    <div className="flex items-center justify-center w-full space-y-2">
                       <TaskApprovalActionsSimple
                         ticketId={ticketDetail.ticket_id.toString()}
                         approvalOrder={ticketDetail.current_step || 1}
@@ -552,8 +548,6 @@ const TicketDetail = () => {
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-
-
                     <span>Progress</span>
                     <span>{approvedCount}/{approvalSteps.length} approved</span>
                   </div>
@@ -589,7 +583,6 @@ const TicketDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Chat Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Discussion</CardTitle>

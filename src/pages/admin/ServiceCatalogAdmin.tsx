@@ -1,17 +1,21 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useNavigate } from 'react-router-dom';
 import { FormConfig } from '@/types/formTypes';
+import { ServiceWidgetAssignment } from '@/types/widgetTypes';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { FormSkeleton } from '@/components/ui/FormSkeleton';
 import { ServiceCatalogHeader } from '@/components/admin/ServiceCatalogHeader';
 import { ServiceCatalogSearch } from '@/components/admin/ServiceCatalogSearch';
 import { ServiceCatalogTable } from '@/components/admin/ServiceCatalogTable';
 import { DeleteServiceDialog } from '@/components/admin/DeleteServiceDialog';
+import { ServiceWidgetManager } from '@/components/admin/ServiceWidgetManager';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, Plus, Settings } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +36,20 @@ const ServiceCatalogAdmin = () => {
     serviceName: '',
     value: null
   });
+  
+  // Widget management state
+  const [widgetModal, setWidgetModal] = useState<{
+    isOpen: boolean;
+    serviceId: string;
+    serviceName: string;
+    currentWidgets: string[];
+  }>({
+    isOpen: false,
+    serviceId: '',
+    serviceName: '',
+    currentWidgets: []
+  });
+  
   const [isDeleting, setIsDeleting] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
 
@@ -49,13 +67,10 @@ const ServiceCatalogAdmin = () => {
   // Fetch real data from API on component mount
   useEffect(() => {
     fetchData();
-    // Also fetch workflow groups for the table display
     dispatch(fetchWorkflowGroups());
   }, [dispatch]);
 
-  // Convert service catalog data to FormConfig format for display
   const forms: FormConfig[] = serviceCatalog.map(service => {
-    // Try to parse form_json if it exists
     if (service.form_json) {
       try {
         const parsedConfig = JSON.parse(service.form_json);
@@ -69,7 +84,6 @@ const ServiceCatalogAdmin = () => {
         console.error(`Failed to parse form_json for service ${service.service_id}:`, error);
       }
     }
-    // Fallback to default form structure if form_json is not available or invalid
     return {
       id: service.service_id.toString(),
       title: service.service_name,
@@ -123,7 +137,7 @@ const ServiceCatalogAdmin = () => {
     try {
       const response = await axios.post(
         `${API_URL}/hots_settings/toggle/service/${deleteModal.serviceId}/${deleteModal.value}`,
-        {}, // no body needed if route uses only params
+        {},
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('tokek')}`,
@@ -138,7 +152,6 @@ const ServiceCatalogAdmin = () => {
         duration: 3000
       });
 
-      // Refresh the catalog data
       fetchData();
 
     } catch (error: any) {
@@ -183,6 +196,47 @@ const ServiceCatalogAdmin = () => {
 
   const handleCreate = () => {
     navigate('/admin/service-catalog/create');
+  };
+
+  // Widget management handlers
+  const handleWidgetConfig = (formId: string) => {
+    const service = serviceCatalog.find(s => s.service_id.toString() === formId);
+    if (service) {
+      setWidgetModal({
+        isOpen: true,
+        serviceId: formId,
+        serviceName: service.service_name,
+        currentWidgets: [] // In real implementation, fetch from API
+      });
+    }
+  };
+
+  const handleWidgetSave = async (assignment: ServiceWidgetAssignment) => {
+    try {
+      // In real implementation, save to API
+      console.log('Saving widget assignment:', assignment);
+      
+      // For now, just close the modal and show success
+      setWidgetModal({ isOpen: false, serviceId: '', serviceName: '', currentWidgets: [] });
+      
+      toast({
+        title: "Success",
+        description: "Widget configuration saved successfully",
+        variant: "default",
+        duration: 3000
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save widget configuration",
+        variant: "destructive",
+        duration: 5000
+      });
+    }
+  };
+
+  const handleWidgetCancel = () => {
+    setWidgetModal({ isOpen: false, serviceId: '', serviceName: '', currentWidgets: [] });
   };
 
   if (isLoading) {
@@ -260,6 +314,7 @@ const ServiceCatalogAdmin = () => {
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
           onReload={handleReload}
+          onWidgetConfig={handleWidgetConfig}
           isDeleting={isDeleting}
           isReloading={isReloading}
         />
@@ -271,6 +326,23 @@ const ServiceCatalogAdmin = () => {
           onConfirm={handleDeleteConfirm}
           onCancel={handleDeleteCancel}
         />
+
+        <Dialog open={widgetModal.isOpen} onOpenChange={() => handleWidgetCancel()}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>Service Widget Configuration</DialogTitle>
+            </DialogHeader>
+            {widgetModal.isOpen && (
+              <ServiceWidgetManager
+                serviceId={widgetModal.serviceId}
+                serviceName={widgetModal.serviceName}
+                currentWidgets={widgetModal.currentWidgets}
+                onSave={handleWidgetSave}
+                onClose={handleWidgetCancel}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

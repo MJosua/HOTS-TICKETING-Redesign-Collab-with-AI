@@ -8,9 +8,12 @@ import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { StructuredRowGroup } from './StructuredRowGroup';
+import WidgetRenderer from '@/components/widgets/WidgetRenderer';
 import { FormConfig, FormField, RowGroup, FormSection } from '@/types/formTypes';
+import { WidgetConfig } from '@/types/widgetTypes';
+import { widgetPresets, getWidgetPresetById } from '@/models/widgets';
 import { mapFormDataToTicketColumns, getMaxFormFields } from '@/utils/formFieldMapping';
-import { useAppDispatch } from '@/hooks/useAppSelector';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { createTicket, uploadFiles } from '@/store/slices/ticketsSlice';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -30,9 +33,23 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [structuredRowCounts, setStructuredRowCounts] = useState<Record<number, number>>({});
+  
+  const { user } = useAppSelector(state => state.auth);
 
   const maxFields = useMemo(() => getMaxFormFields(), []);
   const [rowGroups, setRowGroups] = useState<RowGroup[]>(() => JSON.parse(JSON.stringify(config.rowGroups || [])));
+
+  // Get assigned widgets for this service (for now using sample data)
+  const assignedWidgets: WidgetConfig[] = useMemo(() => {
+    // In a real implementation, this would come from an API call based on serviceId
+    const sampleWidgetIds = ['gantt_room_schedule', 'stock_overview'];
+    
+    return sampleWidgetIds
+      .map(id => getWidgetPresetById(id))
+      .filter((widget): widget is WidgetConfig => widget !== undefined)
+      .filter(widget => widget.applicableTo.includes('form'));
+  }, [serviceId]);
+
   const handleUpdateRowGroup = (groupIndex: number, updatedRows: any[]) => {
     setRowGroups(prev => {
       const updated = [...prev];
@@ -54,8 +71,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     }, 0);
     return regularFields + rowGroupFields;
   }, [config.fields, rowGroups, structuredRowCounts]);
-
-    
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];
@@ -81,15 +96,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     }
   };
   
-
   const handleSubmit = async (data: any) => {
-
     if (!serviceId) {
       const mappedData = mapFormDataToTicketColumns(
         data,
         config.fields || [],
         rowGroups,
-
       );
 
       toast({
@@ -193,63 +205,82 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   };
 
   return (
-    <Card className="max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>{config.title}</CardTitle>
-        {config.description && (
-          <p className="text-sm text-muted-foreground">{config.description}</p>
-        )}
-        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
-          <span className="text-blue-800">
-            <strong>Form Fields:</strong> {currentFieldCount} of {maxFields} used
-          </span>
-          {currentFieldCount >= maxFields && (
-            <span className="text-red-600 font-medium">⚠️ Field limit reached</span>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Render assigned widgets before the form */}
+      {assignedWidgets.map(widget => (
+        <WidgetRenderer
+          key={widget.id}
+          config={widget}
+          data={{
+            formData: watchedValues,
+            userData: user,
+            serviceId,
+            currentDateRange: {
+              start: new Date(),
+              end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next 7 days
+            }
+          }}
+        />
+      ))}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{config.title}</CardTitle>
+          {config.description && (
+            <p className="text-sm text-muted-foreground">{config.description}</p>
           )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {config.fields && (
-              <div className="space-y-4">
-                {renderFieldsInRows(config.fields)}
-              </div>
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
+            <span className="text-blue-800">
+              <strong>Form Fields:</strong> {currentFieldCount} of {maxFields} used
+            </span>
+            {currentFieldCount >= maxFields && (
+              <span className="text-red-600 font-medium">⚠️ Field limit reached</span>
             )}
-            {rowGroups.map((rowGroup, index) => (
-              <div key={`rowgroup-${index}`}>
-                {rowGroup.title && <h3 className="text-lg font-medium mb-2">{rowGroup.title}</h3>}
-                {rowGroup.isStructuredInput ? (
-                  <StructuredRowGroup
-                    key={index}
-                    rowGroup={rowGroup}
-                    groupIndex={index}
-                    form={form}
-                    maxTotalFields={50}
-                    currentFieldCount={currentFieldCount}
-                    onFieldCountChange={(count) => setStructuredRowCounts(prev => ({ ...prev, [index]: count }))}
-                    onUpdateRowGroup={handleUpdateRowGroup}
-                  />
-                ) : (
-                  <RowGroupField
-                    rowGroup={rowGroup.rowGroup}
-                    form={form}
-                    groupIndex={index}
-                    onValueChange={(fieldKey, value) => {
-                      setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-                    }}
-                  />
-                )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              {config.fields && (
+                <div className="space-y-4">
+                  {renderFieldsInRows(config.fields)}
+                </div>
+              )}
+              {rowGroups.map((rowGroup, index) => (
+                <div key={`rowgroup-${index}`}>
+                  {rowGroup.title && <h3 className="text-lg font-medium mb-2">{rowGroup.title}</h3>}
+                  {rowGroup.isStructuredInput ? (
+                    <StructuredRowGroup
+                      key={index}
+                      rowGroup={rowGroup}
+                      groupIndex={index}
+                      form={form}
+                      maxTotalFields={50}
+                      currentFieldCount={currentFieldCount}
+                      onFieldCountChange={(count) => setStructuredRowCounts(prev => ({ ...prev, [index]: count }))}
+                      onUpdateRowGroup={handleUpdateRowGroup}
+                    />
+                  ) : (
+                    <RowGroupField
+                      rowGroup={rowGroup.rowGroup}
+                      form={form}
+                      groupIndex={index}
+                      onValueChange={(fieldKey, value) => {
+                        setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+              <div className="flex justify-end pt-6">
+                <Button type="submit" disabled={isSubmitting} className="min-w-32">
+                  {isSubmitting ? 'Submitting...' : (config.submit?.label || 'Submit')}
+                </Button>
               </div>
-            ))}
-            <div className="flex justify-end pt-6">
-              <Button type="submit" disabled={isSubmitting} className="min-w-32">
-                {isSubmitting ? 'Submitting...' : (config.submit?.label || 'Submit')}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
