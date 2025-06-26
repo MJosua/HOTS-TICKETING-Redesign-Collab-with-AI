@@ -1,9 +1,10 @@
 
+
 export interface FormConfig {
   id?: string;
   title: string;
   description?: string;
-  category: string;
+  category?: string; // Make category optional
   fields?: FormField[];
   rowGroups?: RowGroup[];
   sections?: FormSection[];
@@ -25,10 +26,14 @@ export interface FormSection {
   title: string;
   description?: string;
   fields: FormField[];
-  summary?: string;
+  summary?: {
+    label: string;
+    type?: string;
+    calculated?: boolean;
+  };
   addButton?: {
     label: string;
-  };
+  } | string;
 }
 
 export interface FormField {

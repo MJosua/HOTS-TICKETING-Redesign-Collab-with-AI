@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,7 @@ const FormBuilder = () => {
   const assetRequestFormV1: FormConfig = {
     url: "/asset-request",
     title: "Asset Request Form",
+    category: "IT", // Add missing category
     fields: [
       {
         name: "requestedBy",
@@ -101,6 +101,7 @@ const FormBuilder = () => {
   const sampleRequestFormV1: FormConfig = {
     url: "/sample-request-enhanced",
     title: "Enhanced Sample Request Form",
+    category: "General", // Add missing category
     fields: [
       {
         label: "Request By",
@@ -172,6 +173,7 @@ const FormBuilder = () => {
   const assetRequestFormV2: FormConfig = {
     url: "/asset-request-v2",
     title: "Asset Request Form V2",
+    category: "IT", // Add missing category
     fields: [
       {
         name: "requestedBy",
@@ -246,6 +248,7 @@ const FormBuilder = () => {
   const sampleRequestFormV2: FormConfig = {
     url: "/sample-request-form-v2",
     title: "Sample Request Form V2",
+    category: "General", // Add missing category
     sections: [
       {
         title: "Basic Information",
@@ -346,7 +349,9 @@ const FormBuilder = () => {
             columnSpan: 1
           }
         ],
-        addButton: "Add Item",
+        addButton: {
+          label: "Add Item"
+        },
         summary: {
           label: "Total Items",
           type: "number",
@@ -369,15 +374,14 @@ const FormBuilder = () => {
       }
     ],
     submit: {
-      label: "Submit",
-      type: "button",
-      action: "/submit-sample-request"
+      label: "Submit"
     }
   };
 
   const itSupportForm: FormConfig = {
     url: "/it-support",
     title: "IT Support Request",
+    category: "IT", // Add missing category
     fields: [
       {
         name: "requestorName",
@@ -446,6 +450,7 @@ const FormBuilder = () => {
   const leaveRequestForm: FormConfig = {
     url: "/leave-request",
     title: "Leave Request Form",
+    category: "HR", // Add missing category
     fields: [
       {
         name: "employeeName",

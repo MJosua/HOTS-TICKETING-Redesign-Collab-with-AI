@@ -110,7 +110,7 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
           className="flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          {section.addButton || 'Add Item'}
+          {typeof section.addButton === 'string' ? section.addButton : section.addButton?.label || 'Add Item'}
         </Button>
 
         {section.summary?.calculated && (

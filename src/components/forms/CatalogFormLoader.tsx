@@ -18,6 +18,7 @@ const getDefaultFormConfig = (serviceName: string, servicePath: string): FormCon
   url: `/${servicePath}`,
   title: serviceName,
   description: "Please provide the following information for your request.",
+  category: "General", // Add missing category
   fields: [
     {
       label: "Subject*",
