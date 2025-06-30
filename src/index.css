@@ -105,17 +105,24 @@
   color: hsl(var(--accent-foreground));
 }
 
-/* Pastel colors for icons and titles */
-.icon-pastel-blue { color: #7dd3fc; }
-.icon-pastel-green { color: #86efac; }
-.icon-pastel-purple { color: #c4b5fd; }
-.icon-pastel-pink { color: #fbb6ce; }
-.icon-pastel-orange { color: #fed7aa; }
-.icon-pastel-yellow { color: #fde68a; }
+/* Pastel colors for icons and titles - Fixed color definitions */
+.icon-pastel-blue { color: #7dd3fc !important; }
+.icon-pastel-green { color: #86efac !important; }
+.icon-pastel-purple { color: #c4b5fd !important; }
+.icon-pastel-pink { color: #fbb6ce !important; }
+.icon-pastel-orange { color: #fed7aa !important; }
+.icon-pastel-yellow { color: #fde68a !important; }
 
-.bg-pastel-blue { background-color: #dbeafe; color: #1e40af; }
-.bg-pastel-green { background-color: #dcfce7; color: #166534; }
-.bg-pastel-purple { background-color: #e9d5ff; color: #7c3aed; }
-.bg-pastel-pink { background-color: #fce7f3; color: #be185d; }
-.bg-pastel-orange { background-color: #fed7aa; color: #c2410c; }
-.bg-pastel-yellow { background-color: #fef3c7; color: #d97706; }
+.bg-pastel-blue { background-color: #dbeafe !important; color: #1e40af !important; }
+.bg-pastel-green { background-color: #dcfce7 !important; color: #166534 !important; }
+.bg-pastel-purple { background-color: #e9d5ff !important; color: #7c3aed !important; }
+.bg-pastel-pink { background-color: #fce7f3 !important; color: #be185d !important; }
+.bg-pastel-orange { background-color: #fed7aa !important; color: #c2410c !important; }
+.bg-pastel-yellow { background-color: #fef3c7 !important; color: #d97706 !important; }
+
+/* Ensure text colors are proper gray instead of black */
+.text-gray-800 { color: #374151 !important; }
+.text-gray-700 { color: #4b5563 !important; }
+.text-gray-600 { color: #6b7280 !important; }
+.text-gray-500 { color: #9ca3af !important; }
+.text-gray-900 { color: #111827 !important; }
