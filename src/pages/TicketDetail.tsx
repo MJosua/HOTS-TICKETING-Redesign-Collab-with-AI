@@ -38,33 +38,20 @@ const TicketDetail = () => {
   const { generatedDocuments, functionLogs, isLoading: isLoadingCustomFunction } = useAppSelector(state => state.customFunction);
   const { user } = useAppSelector(state => state.auth);
 
-  // Get assigned widgets for this ticket/service (sample data for now)
-  // const assignedWidgets: WidgetConfig[] = useMemo(() => {
-  //   if (!ticketDetail) return [];
-
-  //   // Sample widget assignment - in real implementation, fetch from API based on service_id
-  //   const sampleWidgetIds = ['approval_progress'];
-
-  //   return sampleWidgetIds
-  //     .map(id => getWidgetPresetById(id))
-  //     .filter((widget): widget is WidgetConfig => widget !== undefined)
-  //     .filter(widget => widget.applicableTo.includes('ticket_detail'));
-  // }, [ticketDetail]);
-
-
-  // Get assigned widgets for this ticket/service (sample data for now)
-
-
+  // Get assigned widgets for this ticket/service
   const assignedWidgets: WidgetConfig[] = useMemo(() => {
     if (!ticketDetail || !ticketDetail.service_id) return [];
 
     let ids: string[] = [];
 
-    ids = Array.isArray(ticketDetail.widget)
-      ? ticketDetail.widget
-      : ticketDetail.widget
-        ? [ticketDetail.widget]
+    // Handle widget property safely
+    const widgetData = (ticketDetail as any).widget;
+    ids = Array.isArray(widgetData)
+      ? widgetData
+      : widgetData
+        ? [widgetData]
         : [];
+        
     return ids
       .map(getWidgetById)
       .filter((widget): widget is WidgetConfig => !!widget)
@@ -348,7 +335,7 @@ const TicketDetail = () => {
   const getFileExtension = (filename: string) =>
     filename.split('.').pop()?.toLowerCase() || '';
 
-  const currentApprover = ticketDetail.list_approval?.find(
+  const currentApprover = ticketDetail?.list_approval?.find(
     approver => approver.approval_order === ticketDetail.current_step
   );
 
@@ -421,7 +408,7 @@ const TicketDetail = () => {
                 data={{
                   ticketData: ticketDetail,
                   userData: user,
-                  serviceId: ticketDetail.service_id?.toString(),
+                  serviceId: ticketDetail?.service_id?.toString(),
                 }}
               />
             ))}
@@ -566,7 +553,7 @@ const TicketDetail = () => {
                         canApprove={canUserApprove()}
                         currentStatus={currentApprover?.approval_status || 0}
                         currentUserId={user?.user_id}
-                        assignedToId={currentApprover}
+                        assignedToId={currentApprover?.approver_id}
                       />
                     </div>
                   )}
@@ -653,9 +640,9 @@ const TicketDetail = () => {
         isOpen={isRejectModalOpen}
         onClose={() => setIsRejectModalOpen(false)}
         onReject={handleReject}
-        taskId={ticketDetail.ticket_id.toString()}
+        taskId={ticketDetail?.ticket_id.toString() || ''}
       />
-    </AppLayout >
+    </AppLayout>
   );
 };
 

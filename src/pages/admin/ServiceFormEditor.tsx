@@ -114,8 +114,13 @@ const ServiceFormEditor = () => {
   const handleSave = async () => {
     setIsLoading(true);
 
+    // Calculate total field count properly
+    const individualFieldCount = config.fields?.length || 0;
+    const sectionFieldCount = config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0;
+    const totalFieldCount = individualFieldCount + sectionFieldCount;
+
     // Validate field count before saving
-    if (!validateFormFieldCount((config.fields || []) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0))) {
+    if (!validateFormFieldCount(totalFieldCount)) {
       toast({
         title: "Error",
         description: `Form cannot have more than ${getMaxFormFields()} fields due to database limitations`,
@@ -387,19 +392,19 @@ const ServiceFormEditor = () => {
 
           <TabsContent value="structure" className="space-y-6">
             {/* Field count warning */}
-            {((config.fields?.length || 0) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0)) > 0 && (
+            {totalFieldCount > 0 && (
               <Card className="border-blue-200 bg-blue-50">
                 <CardContent className="pt-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-blue-800">
-                        <strong>Database Mapping:</strong> {(config.fields?.length || 0) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0)} of {getMaxFormFields()} fields used
+                        <strong>Database Mapping:</strong> {totalFieldCount} of {getMaxFormFields()} fields used
                       </p>
                       <p className="text-xs text-blue-600 mt-1">
                         Fields will be mapped to database columns automatically
                       </p>
                     </div>
-                    {((config.fields?.length || 0) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0)) >= getMaxFormFields() && (
+                    {totalFieldCount >= getMaxFormFields() && (
                       <div className="text-red-600 text-sm font-medium">
                         ⚠️ Maximum field limit reached
                       </div>
