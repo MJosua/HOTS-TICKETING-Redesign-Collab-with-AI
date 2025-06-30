@@ -2,80 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
-
 @layer base {
   :root {
-    --background: 37.75% 0.208 265.42;
-    /* #00549c */
-    --foreground: 230 86% 12%;
-    /* #01063D */
+    /* Background & Foreground */
+    --background: 0 0% 98%; /* #FAFAFA */
+    --foreground: 230 15% 15%; /* #262B33 — soft dark */
 
-    --card: 32.3% 0.14 264;
-    /* #F3F1EC */
-    --card-foreground: 32.33% 0.14 265.38;
-    /* #1A2A6C */
+    /* Card & Popover */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 230 15% 15%;
 
     --popover: 0 0% 100%;
-    /* #fff */
-    --popover-foreground: 230 86% 12%;
-    /* #01063D */
+    --popover-foreground: 230 15% 15%;
 
-    --primary: 208 100% 31%; /* HSL without commas for Tailwind compatibility */
-  --primary-foreground: 0 0% 100%;
-    /* white text on dark background */
+    /* Primary Colors (Buttons, Links) */
+    --primary: 210 100% 40%; /* #1D4ED8 — soft blue */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 93%;
-    /* #EDEDED */
-    --secondary-foreground: 206 75% 14%;
-    /* #011B2F */
+    --secondary: 240 20% 95%; /* #F4F4F9 — very light gray-blue */
+    --secondary-foreground: 230 20% 20%;
 
-    --muted: 0 0% 93%;
-    /* #EDEDED */
-    --muted-foreground: 206 75% 14%;
-    /* #011B2F */
+    --muted: 240 10% 94%; /* #F0F0F5 */
+    --muted-foreground: 230 15% 30%;
 
-    --accent: 0 0% 88%;
-    /* #E0E0E0 - changed from yellow to gray */
-    --accent-foreground: 230 86% 12%;
-    /* #01063D */
+    --accent: 240 10% 92%; /* #E8E8F0 */
+    --accent-foreground: 230 20% 20%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 88%;
-    /* #E0E0E0 */
-    --input: 0 0% 88%;
-    /* #E0E0E0 */
-    --ring: 230 86% 12%;
-    /* #01063D - changed from blue to dark */
+    /* Border, Input, Ring */
+    --border: 240 10% 90%; /* #E4E4EC */
+    --input: 240 10% 90%;
+    --ring: 210 100% 40%;
 
+    /* Radius */
     --radius: 0.5rem;
 
-    --sidebar-background: 89.06% 0.074 253.53;
-    /* #EDEDED */
-    --sidebar-foreground: 230 86% 12%;
-    /* #01063D */
-    --sidebar-primary: 230 86% 12%;
-    /* #01063D - changed from yellow */
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 230 15% 15%;
+    --sidebar-primary: 210 100% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    /* white */
-    --sidebar-accent: 0 0% 88%;
-    /* #E0E0E0 - changed from yellow */
-    --sidebar-accent-foreground: 230 86% 12%;
-    /* #01063D */
-    --sidebar-border: 0 0% 88%;
-    /* #E0E0E0 */
-    --sidebar-ring: 230 86% 12%;
-    /* #01063D */
+    --sidebar-accent: 240 10% 92%;
+    --sidebar-accent-foreground: 230 15% 15%;
+    --sidebar-border: 240 10% 90%;
+    --sidebar-ring: 210 100% 40%;
 
-    /* Custom colors for buttons and specific elements */
-    --button-primary: 230 86% 12%;
-    /* #01063D - changed from yellow to dark */
-    --hover-gray: 0 0% 88%;
-    /* #E0E0E0 */
-    --text-link: 230 93% 42%;
-    /* #0817ba */
+    /* Custom Buttons & Highlights */
+    --button-primary: 210 100% 40%;
+    --hover-gray: 0 0% 90%;
+    --text-link: 230 80% 50%; /* Slightly brighter blue */
   }
 
   .dark {
@@ -106,6 +83,7 @@
     --border: 217 33% 17%;
     --input: 217 33% 17%;
     --ring: 213 27% 84%;
+
     --sidebar-background: 220 9% 7%;
     --sidebar-foreground: 220 14% 96%;
     --sidebar-primary: 230 86% 12%;
