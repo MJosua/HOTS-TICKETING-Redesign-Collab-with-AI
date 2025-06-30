@@ -19,7 +19,7 @@ import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
-import { getMaxFormFields, validateFormFieldCount } from '@/utils/formFieldMapping';
+import { getMaxFormFields } from '@/utils/formFieldMapping';
 
 const ServiceFormEditor = () => {
   const { id } = useParams();
@@ -119,7 +119,7 @@ const ServiceFormEditor = () => {
     setIsLoading(true);
 
     // Validate field count before saving
-    if (!validateFormFieldCount(totalFieldCount)) {
+    if (totalFieldCount > getMaxFormFields()) {
       toast({
         title: "Error",
         description: `Form cannot have more than ${getMaxFormFields()} fields due to database limitations`,
