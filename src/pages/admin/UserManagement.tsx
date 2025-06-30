@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { UserFilters } from '@/components/filters/UserFilters';
+import UserFilters from '@/components/filters/UserFilters';
 import { UserModal } from '@/components/modals/UserModal';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
@@ -13,13 +13,13 @@ import {
   fetchDepartments,
   fetchRoles,
   fetchTeams,
-  toggleUserStatus,
-  deleteUser
+  updateUser,
+  deleteUser,
+  UserType
 } from '@/store/slices/userManagementSlice';
-import { UserType } from '@/types/userTypes';
 import { highlightSearchTerm, searchInObject } from '@/utils/searchUtils';
 import { Plus, Edit, Trash2, Eye, EyeOff, Search } from 'lucide-react';
-import { UserStatusBadge } from '@/components/ui/UserStatusBadge';
+import UserStatusBadge from '@/components/ui/UserStatusBadge';
 import { useToast } from '@/hooks/use-toast';
 
 const UserManagement = () => {
@@ -66,7 +66,14 @@ const UserManagement = () => {
 
   const handleToggleStatus = async (userId: number) => {
     try {
-      await dispatch(toggleUserStatus(userId)).unwrap();
+      const user = users.find(u => u.user_id === userId);
+      if (!user) return;
+
+      await dispatch(updateUser({
+        id: userId,
+        data: { is_active: !user.is_active }
+      })).unwrap();
+
       toast({
         title: "Success",
         description: "User status updated successfully",
@@ -98,6 +105,12 @@ const UserManagement = () => {
         });
       }
     }
+  };
+
+  const handleSaveUser = async (userData: UserType) => {
+    // Implementation for saving user
+    console.log('Saving user:', userData);
+    setIsModalOpen(false);
   };
 
   const renderHighlightedText = (text: string) => {
@@ -160,19 +173,7 @@ const UserManagement = () => {
                   className="pl-10"
                 />
               </div>
-              <UserFilters
-                selectedRole={selectedRole}
-                selectedDepartment={selectedDepartment}
-                selectedTeam={selectedTeam}
-                selectedStatus={selectedStatus}
-                onRoleChange={setSelectedRole}
-                onDepartmentChange={setSelectedDepartment}
-                onTeamChange={setSelectedTeam}
-                onStatusChange={setSelectedStatus}
-                roles={roles}
-                departments={departments}
-                teams={teams}
-              />
+              <UserFilters />
             </div>
           </CardContent>
         </Card>
@@ -217,7 +218,7 @@ const UserManagement = () => {
                         </Badge>
                       </td>
                       <td className="p-2">
-                        {renderHighlightedText(user.department_name || 'N/A')}
+                        {renderHighlightedText(user.team_name || 'N/A')}
                       </td>
                       <td className="p-2">
                         {renderHighlightedText(user.team_name || 'N/A')}
@@ -266,10 +267,10 @@ const UserManagement = () => {
         <UserModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveUser}
           user={editingUser}
           departments={departments}
           roles={roles}
-          teams={teams}
         />
       </div>
     </AppLayout>

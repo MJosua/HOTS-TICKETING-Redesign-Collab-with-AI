@@ -58,7 +58,7 @@ const TicketDetail = () => {
       .filter(widget => widget.applicableTo.includes('ticket_detail'));
   }, [ticketDetail]);
 
-  console.log("assignedWidgets", assignedWidgets)
+  console.log("assignedWidgets", assignedWidgets);
 
   useEffect(() => {
     if (id) {
@@ -285,7 +285,6 @@ const TicketDetail = () => {
 
     if (ext === 'xlsx' || ext === 'xls') {
       return <ExcelPreview url={`${API_URL}${safeUrl.replace(/\\/g, '/')}`} />
-
     }
 
     return (
@@ -518,7 +517,10 @@ const TicketDetail = () => {
                     </div>
                   ) : generatedDocuments && generatedDocuments.length > 0 ? (
                     <div className="space-y-3">
-                      {console.log("generatedDocuments", generatedDocuments)}
+                      {(() => {
+                        console.log("generatedDocuments", generatedDocuments);
+                        return null;
+                      })()}
                       {generatedDocuments.map((document) => (
                         <FilePreview
                           generated={true}

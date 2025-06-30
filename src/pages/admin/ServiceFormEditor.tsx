@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +45,8 @@ const ServiceFormEditor = () => {
   const [activeTab, setActiveTab] = useState('basic');
 
   // Calculate total field count properly
-  const totalFieldCount = (config.fields?.length || 0) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0);
+  const totalFieldCount = (config.fields?.length || 0) + 
+    (config.sections?.reduce((acc: number, section: FormSection) => acc + (section.fields?.length || 0), 0) || 0);
 
   // Fetch workflow groups on component mount
   useEffect(() => {
