@@ -16,7 +16,7 @@ const UserGuide = () => {
             <HelpCircle className="w-6 h-6 text-green-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">User Guide & Help</h1>
+            <h1 className="text-3xl font-bold">FAQ & Update</h1>
             <p className="text-muted-foreground">Everything you need to know about using HOTS</p>
           </div>
         </div>
