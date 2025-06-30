@@ -266,7 +266,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 </div>
               )}
 
-              {/* Render sections if they exist */}
+              Render sections if they exist
               {config.sections?.map((section, sectionIndex) => (
                 <div key={`section-${sectionIndex}`} className="space-y-4">
                   <h3 className="text-lg font-medium">{section.title}</h3>
