@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -452,7 +451,7 @@ const TicketDetail = () => {
                                 </Dialog>
                               </div>
                             ) : (
-                              field.value
+                              <span>{field.value}</span>
                             )}
                           </TableCell>
                           {typeof field.value === 'string' && field.value.includes('/files/hots/it_support/') && (
