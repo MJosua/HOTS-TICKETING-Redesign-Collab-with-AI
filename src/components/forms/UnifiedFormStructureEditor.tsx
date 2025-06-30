@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, GripVertical, Edit3, Folder, FileText, Grid3x3 } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Edit3, Folder, FileText, Grid3x3, ArrowDown } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { FormField, RowGroup } from '@/types/formTypes';
 import { FieldEditor } from './FieldEditor';
@@ -125,27 +125,85 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     onUpdate(updatedItems);
   };
 
+  const addFieldToSection = (sectionId: string) => {
+    const newField: FormField = {
+      label: 'New Field',
+      name: `field_${Date.now()}`,
+      type: 'text',
+      required: false,
+      columnSpan: 1
+    };
+
+    const updatedItems = items.map(item => {
+      if (item.id === sectionId && item.type === 'section') {
+        const sectionData = item.data as SectionData;
+        return {
+          ...item,
+          data: {
+            ...sectionData,
+            fields: [...sectionData.fields, newField]
+          }
+        };
+      }
+      return item;
+    });
+    onUpdate(updatedItems);
+  };
+
   const onDragEnd = (result: any) => {
     if (!result.destination) return;
 
     const sourceIndex = result.source.index;
     const destinationIndex = result.destination.index;
+    const sourceDroppableId = result.source.droppableId;
+    const destinationDroppableId = result.destination.droppableId;
 
-    if (sourceIndex === destinationIndex) return;
+    if (sourceIndex === destinationIndex && sourceDroppableId === destinationDroppableId) return;
 
-    const newItems = Array.from(items);
-    const [reorderedItem] = newItems.splice(sourceIndex, 1);
-    newItems.splice(destinationIndex, 0, reorderedItem);
-    
-    // Update order numbers
-    const reorderedWithOrder = newItems.map((item, index) => ({
-      ...item,
-      order: index
-    }));
-    
-    // Update both preview and actual items
-    setPreviewItems(reorderedWithOrder);
-    onUpdate(reorderedWithOrder);
+    // Handle moving items within main structure
+    if (sourceDroppableId === 'form-structure' && destinationDroppableId === 'form-structure') {
+      const newItems = Array.from(items);
+      const [reorderedItem] = newItems.splice(sourceIndex, 1);
+      newItems.splice(destinationIndex, 0, reorderedItem);
+      
+      const reorderedWithOrder = newItems.map((item, index) => ({
+        ...item,
+        order: index
+      }));
+      
+      setPreviewItems(reorderedWithOrder);
+      onUpdate(reorderedWithOrder);
+    }
+
+    // Handle moving fields to sections
+    if (sourceDroppableId === 'form-structure' && destinationDroppableId.startsWith('section-')) {
+      const sectionId = destinationDroppableId.replace('section-', '');
+      const itemToMove = items[sourceIndex];
+      
+      if (itemToMove.type === 'field') {
+        const fieldData = itemToMove.data as FormField;
+        
+        // Remove field from main structure
+        const newItems = items.filter((_, index) => index !== sourceIndex);
+        
+        // Add field to section
+        const updatedItems = newItems.map(item => {
+          if (item.id === sectionId && item.type === 'section') {
+            const sectionData = item.data as SectionData;
+            return {
+              ...item,
+              data: {
+                ...sectionData,
+                fields: [...sectionData.fields, fieldData]
+              }
+            };
+          }
+          return item;
+        });
+        
+        onUpdate(updatedItems);
+      }
+    }
   };
 
   const onPreviewDragEnd = (result: any) => {
@@ -160,7 +218,6 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     const [reorderedItem] = newPreviewItems.splice(sourceIndex, 1);
     newPreviewItems.splice(destinationIndex, 0, reorderedItem);
     
-    // Update order numbers
     const reorderedWithOrder = newPreviewItems.map((item, index) => ({
       ...item,
       order: index
@@ -205,89 +262,93 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
         <DragDropContext onDragEnd={onPreviewDragEnd}>
           <Droppable droppableId="preview-structure">
             {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                {previewItems.map((item, index) => {
-                  const currentFieldCounter = fieldCounter;
-                  
-                  if (item.type === 'field') {
-                    const field = item.data as FormField;
-                    const cstmCol = `cstm_col${fieldCounter}`;
-                    const lblCol = `lbl_col${fieldCounter}`;
-                    fieldCounter++;
+              <div {...provided.droppableProps} ref={provided.innerRef}>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {previewItems.map((item, index) => {
+                    const currentFieldCounter = fieldCounter;
                     
-                    return (
-                      <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs cursor-move hover:shadow-md transition-shadow grid ${
-                              field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
-                            } grid-cols-${field.columnSpan || 1}`}
-                          >
-                            <div className="font-medium text-gray-700">{field.label}</div>
-                            <div className="text-blue-600 mt-1">{cstmCol} → {lblCol}</div>
-                            <div className="text-xs text-gray-500">Span: {field.columnSpan || 1} column{(field.columnSpan || 1) > 1 ? 's' : ''}</div>
-                          </div>
-                        )}
-                      </Draggable>
-                    );
-                  } else if (item.type === 'section') {
-                    const section = item.data as SectionData;
-                    return (
-                      <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="p-3 bg-green-100 border border-green-300 rounded cursor-move hover:shadow-md transition-shadow col-span-3"
-                          >
-                            <div className="font-medium text-sm mb-2 text-gray-700">📁 {section.title}</div>
-                            <div className="text-xs text-green-600">Section (spans 3 columns)</div>
-                            <div className="space-y-1 mt-2">
-                              {section.fields.map((field, fieldIndex) => {
-                                const cstmCol = `cstm_col${fieldCounter}`;
-                                const lblCol = `lbl_col${fieldCounter}`;
-                                fieldCounter++;
-                                return (
-                                  <div key={fieldIndex} className="p-1 bg-green-200 rounded text-xs">
-                                    <span className="font-medium text-gray-700">{field.label}</span>
-                                    <span className="text-green-700 ml-2">{cstmCol} → {lblCol}</span>
-                                  </div>
-                                );
-                              })}
+                    if (item.type === 'field') {
+                      const field = item.data as FormField;
+                      const cstmCol = `cstm_col${fieldCounter}`;
+                      const lblCol = `lbl_col${fieldCounter}`;
+                      fieldCounter++;
+                      
+                      return (
+                        <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs cursor-move hover:shadow-md transition-shadow ${
+                                field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
+                              }`}
+                            >
+                              <div className="font-medium text-gray-700">{field.label}</div>
+                              <div className="text-blue-600 mt-1">{cstmCol} → {lblCol}</div>
+                              <div className="text-xs text-gray-500">Span: {field.columnSpan || 1} column{(field.columnSpan || 1) > 1 ? 's' : ''}</div>
                             </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    );
-                  } else if (item.type === 'rowgroup') {
-                    const rowGroup = item.data as RowGroup;
-                    const cstmCol = `cstm_col${fieldCounter}`;
-                    const lblCol = `lbl_col${fieldCounter}`;
-                    fieldCounter++;
-                    
-                    return (
-                      <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="p-2 bg-purple-100 border border-purple-300 rounded text-xs cursor-move hover:shadow-md transition-shadow"
-                          >
-                            <div className="font-medium text-gray-700">🗂️ {rowGroup.title || 'Row Group'}</div>
-                            <div className="text-purple-600 mt-1">{cstmCol} → {lblCol} (Dynamic Rows)</div>
-                            <div className="text-xs text-gray-500">Max rows: {rowGroup.maxRows || 5}</div>
-                          </div>
-                        )}
-                      </Draggable>
-                    );
-                  }
-                  return null;
-                })}
+                          )}
+                        </Draggable>
+                      );
+                    } else if (item.type === 'section') {
+                      const section = item.data as SectionData;
+                      return (
+                        <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="col-span-3 p-3 bg-green-100 border border-green-300 rounded cursor-move hover:shadow-md transition-shadow"
+                            >
+                              <div className="font-medium text-sm mb-2 text-gray-700">📁 {section.title}</div>
+                              <div className="text-xs text-green-600">Section (spans 3 columns)</div>
+                              <div className="grid grid-cols-3 gap-1 mt-2">
+                                {section.fields.map((field, fieldIndex) => {
+                                  const cstmCol = `cstm_col${fieldCounter}`;
+                                  const lblCol = `lbl_col${fieldCounter}`;
+                                  fieldCounter++;
+                                  return (
+                                    <div key={fieldIndex} className={`p-1 bg-green-200 rounded text-xs ${
+                                      field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
+                                    }`}>
+                                      <span className="font-medium text-gray-700">{field.label}</span>
+                                      <div className="text-green-700">{cstmCol} → {lblCol}</div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    } else if (item.type === 'rowgroup') {
+                      const rowGroup = item.data as RowGroup;
+                      const cstmCol = `cstm_col${fieldCounter}`;
+                      const lblCol = `lbl_col${fieldCounter}`;
+                      fieldCounter++;
+                      
+                      return (
+                        <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="col-span-3 p-2 bg-purple-100 border border-purple-300 rounded text-xs cursor-move hover:shadow-md transition-shadow"
+                            >
+                              <div className="font-medium text-gray-700">🗂️ {rowGroup.title || 'Row Group'}</div>
+                              <div className="text-purple-600 mt-1">{cstmCol} → {lblCol} (Dynamic Rows)</div>
+                              <div className="text-xs text-gray-500">Max rows: {rowGroup.maxRows || 5}</div>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
                 {provided.placeholder}
               </div>
             )}
@@ -343,11 +404,23 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                             <div className="flex items-center gap-2">
                               {getItemIcon(item.type)}
                               <span className="text-sm font-medium capitalize text-gray-700">
-                                {item.type} {index + 1}
+                                {item.type === 'field' ? (item.data as FormField).label : 
+                                 item.type === 'section' ? (item.data as SectionData).title :
+                                 (item.data as RowGroup).title || 'Row Group'}
                               </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
+                            {item.type === 'section' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addFieldToSection(item.id)}
+                              >
+                                <Plus className="w-4 h-4 mr-1" />
+                                Add Field
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
@@ -365,6 +438,29 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                           </div>
                         </div>
                       </CardHeader>
+                      
+                      {/* Section fields display */}
+                      {item.type === 'section' && (item.data as SectionData).fields.length > 0 && (
+                        <CardContent className="pt-0 pb-3">
+                          <Droppable droppableId={`section-${item.id}`}>
+                            {(provided) => (
+                              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                                <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                  <ArrowDown className="w-3 h-3" />
+                                  Section Fields (drag fields here)
+                                </div>
+                                {(item.data as SectionData).fields.map((field, fieldIndex) => (
+                                  <div key={fieldIndex} className="p-2 bg-white border rounded text-sm">
+                                    <span className="font-medium">{field.label}</span>
+                                    <span className="text-gray-500 ml-2">({field.type})</span>
+                                  </div>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </CardContent>
+                      )}
                       
                       {editingItem === item.id && (
                         <CardContent>

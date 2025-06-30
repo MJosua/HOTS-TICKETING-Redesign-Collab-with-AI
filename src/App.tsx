@@ -44,7 +44,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
-        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
           <Router>
             <div className="min-h-screen bg-background">
               <Routes>
@@ -59,6 +59,7 @@ function App() {
                 <Route path="/task-list" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
                 <Route path="/user-guide" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
                 <Route path="/help-center" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
+                <Route path="/faq" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
                 
                 {/* Admin routes */}
                 <Route path="/admin/service-catalog" element={<ProtectedRoute><ServiceCatalogAdmin /></ProtectedRoute>} />
@@ -67,6 +68,7 @@ function App() {
                 <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
                 <Route path="/admin/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
                 <Route path="/admin/departments" element={<ProtectedRoute><DepartmentManagement /></ProtectedRoute>} />
+                <Route path="/admin/divisions" element={<ProtectedRoute><DepartmentManagement /></ProtectedRoute>} />
                 <Route path="/admin/settings" element={<ProtectedRoute><SystemSettings /></ProtectedRoute>} />
                 <Route path="/admin/custom-functions" element={<ProtectedRoute><CustomFunctionManagement /></ProtectedRoute>} />
                 <Route path="/admin/function-logs" element={<ProtectedRoute><FunctionLogsManagement /></ProtectedRoute>} />
