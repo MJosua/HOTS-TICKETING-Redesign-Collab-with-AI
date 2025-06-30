@@ -38,40 +38,27 @@ const TicketDetail = () => {
   const { generatedDocuments, functionLogs, isLoading: isLoadingCustomFunction } = useAppSelector(state => state.customFunction);
   const { user } = useAppSelector(state => state.auth);
 
-  // Get assigned widgets for this ticket/service (sample data for now)
-  // const assignedWidgets: WidgetConfig[] = useMemo(() => {
-  //   if (!ticketDetail) return [];
-
-  //   // Sample widget assignment - in real implementation, fetch from API based on service_id
-  //   const sampleWidgetIds = ['approval_progress'];
-
-  //   return sampleWidgetIds
-  //     .map(id => getWidgetPresetById(id))
-  //     .filter((widget): widget is WidgetConfig => widget !== undefined)
-  //     .filter(widget => widget.applicableTo.includes('ticket_detail'));
-  // }, [ticketDetail]);
-
-
-  // Get assigned widgets for this ticket/service (sample data for now)
-
-
+  // Get assigned widgets for this ticket/service
   const assignedWidgets: WidgetConfig[] = useMemo(() => {
     if (!ticketDetail || !ticketDetail.service_id) return [];
 
     let ids: string[] = [];
 
-    ids = Array.isArray(ticketDetail.widget)
-      ? ticketDetail.widget
-      : ticketDetail.widget
-        ? [ticketDetail.widget]
-        : [];
+    // Handle widget property safely - check if it exists
+    const widgetData = (ticketDetail as any).widget;
+    if (widgetData) {
+      ids = Array.isArray(widgetData)
+        ? widgetData
+        : [widgetData];
+    }
+        
     return ids
       .map(getWidgetById)
       .filter((widget): widget is WidgetConfig => !!widget)
       .filter(widget => widget.applicableTo.includes('ticket_detail'));
   }, [ticketDetail]);
 
-  console.log("assignedWidgets", assignedWidgets)
+  console.log("assignedWidgets", assignedWidgets);
 
   useEffect(() => {
     if (id) {
@@ -298,7 +285,6 @@ const TicketDetail = () => {
 
     if (ext === 'xlsx' || ext === 'xls') {
       return <ExcelPreview url={`${API_URL}${safeUrl.replace(/\\/g, '/')}`} />
-
     }
 
     return (
@@ -348,7 +334,7 @@ const TicketDetail = () => {
   const getFileExtension = (filename: string) =>
     filename.split('.').pop()?.toLowerCase() || '';
 
-  const currentApprover = ticketDetail.list_approval?.find(
+  const currentApprover = ticketDetail?.list_approval?.find(
     approver => approver.approval_order === ticketDetail.current_step
   );
 
@@ -421,7 +407,7 @@ const TicketDetail = () => {
                 data={{
                   ticketData: ticketDetail,
                   userData: user,
-                  serviceId: ticketDetail.service_id?.toString(),
+                  serviceId: ticketDetail?.service_id?.toString(),
                 }}
               />
             ))}
@@ -464,7 +450,7 @@ const TicketDetail = () => {
                                 </Dialog>
                               </div>
                             ) : (
-                              field.value
+                              <span>{field.value}</span>
                             )}
                           </TableCell>
                           {typeof field.value === 'string' && field.value.includes('/files/hots/it_support/') && (
@@ -531,7 +517,10 @@ const TicketDetail = () => {
                     </div>
                   ) : generatedDocuments && generatedDocuments.length > 0 ? (
                     <div className="space-y-3">
-                      {console.log("generatedDocuments", generatedDocuments)}
+                      {(() => {
+                        console.log("generatedDocuments", generatedDocuments);
+                        return null;
+                      })()}
                       {generatedDocuments.map((document) => (
                         <FilePreview
                           generated={true}
@@ -566,7 +555,7 @@ const TicketDetail = () => {
                         canApprove={canUserApprove()}
                         currentStatus={currentApprover?.approval_status || 0}
                         currentUserId={user?.user_id}
-                        assignedToId={currentApprover}
+                        assignedToId={currentApprover?.approver_id}
                       />
                     </div>
                   )}
@@ -653,9 +642,9 @@ const TicketDetail = () => {
         isOpen={isRejectModalOpen}
         onClose={() => setIsRejectModalOpen(false)}
         onReject={handleReject}
-        taskId={ticketDetail.ticket_id.toString()}
+        taskId={ticketDetail?.ticket_id.toString() || ''}
       />
-    </AppLayout >
+    </AppLayout>
   );
 };
 

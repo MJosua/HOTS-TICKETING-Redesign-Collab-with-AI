@@ -1,13 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
-import { FormField, RowGroup } from '@/types/formTypes';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Trash2, GripVertical, Edit3 } from 'lucide-react';
+import { RowGroup } from '@/types/formTypes';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 interface RowGroupEditorProps {
   rowGroups: RowGroup[];
@@ -15,277 +16,284 @@ interface RowGroupEditorProps {
 }
 
 export const RowGroupEditor: React.FC<RowGroupEditorProps> = ({ rowGroups, onUpdate }) => {
+  const [editingGroup, setEditingGroup] = useState<number | null>(null);
+
   const addRowGroup = () => {
     const newRowGroup: RowGroup = {
-      rowGroup: [
-        { 
-          label: 'New Field 1', 
-          name: 'new_field_1', 
-          type: 'text', 
-          required: false 
-        } as FormField,
-        { 
-          label: 'New Field 2', 
-          name: 'new_field_2', 
-          type: 'text', 
-          required: false 
-        } as FormField
-      ] as FormField[]
+      title: 'New Row Group',
+      isStructuredInput: true,
+      maxRows: 5,
+      rowGroup: [],
+      structure: {
+        firstColumn: {
+          label: 'Item',
+          placeholder: 'Enter item name',
+          type: 'text'
+        },
+        secondColumn: {
+          label: 'Quantity',
+          placeholder: 'Enter quantity',
+          type: 'number'
+        },
+        thirdColumn: {
+          label: 'Notes',
+          placeholder: 'Enter notes',
+          type: 'text'
+        },
+        combinedMapping: 'none'
+      }
     };
     onUpdate([...rowGroups, newRowGroup]);
   };
 
+  const updateRowGroup = (index: number, updatedGroup: RowGroup) => {
+    const newGroups = [...rowGroups];
+    newGroups[index] = updatedGroup;
+    onUpdate(newGroups);
+  };
+
   const removeRowGroup = (index: number) => {
-    const updated = rowGroups.filter((_, i) => i !== index);
-    onUpdate(updated);
+    const newGroups = rowGroups.filter((_, i) => i !== index);
+    onUpdate(newGroups);
   };
 
-  const moveRowGroup = (index: number, direction: 'up' | 'down') => {
-    const newRowGroups = [...rowGroups];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    
-    if (newIndex >= 0 && newIndex < newRowGroups.length) {
-      [newRowGroups[index], newRowGroups[newIndex]] = [newRowGroups[newIndex], newRowGroups[index]];
-      onUpdate(newRowGroups);
-    }
-  };
+  const onDragEnd = (result: any) => {
+    if (!result.destination) return;
 
-  const updateRowGroup = (groupIndex: number, updatedGroup: RowGroup) => {
-    const updated = [...rowGroups];
-    updated[groupIndex] = updatedGroup;
-    onUpdate(updated);
-  };
-
-  const addFieldToRow = (groupIndex: number) => {
-    const updated = [...rowGroups];
-    const currentRowGroup = updated[groupIndex].rowGroup;
-    
-    // Only allow adding fields to FormField arrays (legacy row groups)
-    if (Array.isArray(currentRowGroup) && (currentRowGroup.length === 0 || 'label' in currentRowGroup[0])) {
-      const formFields = currentRowGroup as FormField[];
-      if (formFields.length < 3) {
-        const fieldNumber = formFields.length + 1;
-        const newField: FormField = {
-          label: `New Field ${fieldNumber}`,
-          name: `new_field_${groupIndex}_${fieldNumber}`,
-          type: 'text',
-          required: false
-        };
-        updated[groupIndex].rowGroup = [...formFields, newField];
-        onUpdate(updated);
-      }
-    }
-  };
-
-  const removeFieldFromRow = (groupIndex: number, fieldIndex: number) => {
-    const updated = [...rowGroups];
-    const currentRowGroup = updated[groupIndex].rowGroup;
-    
-    if (Array.isArray(currentRowGroup) && currentRowGroup.length > 1 && (currentRowGroup.length === 0 || 'label' in currentRowGroup[0])) {
-      const formFields = currentRowGroup as FormField[];
-      updated[groupIndex].rowGroup = formFields.filter((_, i) => i !== fieldIndex);
-      onUpdate(updated);
-    }
-  };
-
-  const updateFieldInRow = (groupIndex: number, fieldIndex: number, updatedField: FormField) => {
-    const updated = [...rowGroups];
-    const currentRowGroup = updated[groupIndex].rowGroup;
-    
-    if (Array.isArray(currentRowGroup) && (currentRowGroup.length === 0 || 'label' in currentRowGroup[0])) {
-      const formFields = [...(currentRowGroup as FormField[])];
-      formFields[fieldIndex] = updatedField;
-      updated[groupIndex].rowGroup = formFields;
-      onUpdate(updated);
-    }
-  };
-
-  // Helper function to check if a row group is legacy (contains FormField[])
-  const isLegacyRowGroup = (rowGroup: RowGroup): rowGroup is RowGroup & { rowGroup: FormField[] } => {
-    return !rowGroup.isStructuredInput && 
-           Array.isArray(rowGroup.rowGroup) && 
-           (rowGroup.rowGroup.length === 0 || 'label' in rowGroup.rowGroup[0]);
+    const newGroups = Array.from(rowGroups);
+    const [reorderedGroup] = newGroups.splice(result.source.index, 1);
+    newGroups.splice(result.destination.index, 0, reorderedGroup);
+    onUpdate(newGroups);
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Legacy Row Groups</h3>
-        <Button size="sm" onClick={addRowGroup}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Legacy Row Group
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Row Groups</h3>
+        <Button onClick={addRowGroup} className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Add Row Group
         </Button>
       </div>
 
-      {rowGroups.map((rowGroup, groupIndex) => {
-        // Only render legacy row groups that contain FormField arrays
-        if (!isLegacyRowGroup(rowGroup)) return null;
-        
-        const formFields = rowGroup.rowGroup;
-        
-        return (
-          <Card key={groupIndex} className="border-l-4 border-blue-500">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <GripVertical className="w-4 h-4 text-muted-foreground" />
-                  Legacy Row Group {groupIndex + 1}
-                </CardTitle>
-                <div className="flex gap-1">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => moveRowGroup(groupIndex, 'up')} 
-                    disabled={groupIndex === 0}
-                  >
-                    <ArrowUp className="w-3 h-3" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => moveRowGroup(groupIndex, 'down')} 
-                    disabled={groupIndex === rowGroups.length - 1}
-                  >
-                    <ArrowDown className="w-3 h-3" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => addFieldToRow(groupIndex)}
-                    disabled={formFields.length >= 3}
-                  >
-                    <Plus className="w-3 h-3" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => removeRowGroup(groupIndex)}>
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {formFields.map((field, fieldIndex) => (
-                  <FieldInRowEditor
-                    key={fieldIndex}
-                    field={field}
-                    onUpdate={(updatedField) => updateFieldInRow(groupIndex, fieldIndex, updatedField)}
-                    onRemove={() => removeFieldFromRow(groupIndex, fieldIndex)}
-                    canRemove={formFields.length > 1}
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="rowgroups">
+          {(provided) => (
+            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+              {rowGroups.map((group, index) => (
+                <Draggable key={`rowgroup-${index}`} draggableId={`rowgroup-${index}`} index={index}>
+                  {(provided) => (
+                    <Card
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      className="border-2 border-dashed border-gray-200 hover:border-blue-300"
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div {...provided.dragHandleProps} className="cursor-move">
+                              <GripVertical className="w-4 h-4 text-gray-400" />
+                            </div>
+                            <CardTitle className="text-sm">
+                              {editingGroup === index ? (
+                                <Input
+                                  value={group.title || ''}
+                                  onChange={(e) => updateRowGroup(index, { ...group, title: e.target.value })}
+                                  onBlur={() => setEditingGroup(null)}
+                                  onKeyDown={(e) => e.key === 'Enter' && setEditingGroup(null)}
+                                  autoFocus
+                                />
+                              ) : (
+                                <span
+                                  onClick={() => setEditingGroup(index)}
+                                  className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded"
+                                >
+                                  {group.title || 'Untitled Row Group'}
+                                </span>
+                              )}
+                            </CardTitle>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingGroup(index)}
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeRowGroup(index)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4">
+                        {editingGroup === index && (
+                          <div className="space-y-4 p-4 bg-gray-50 rounded">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>Max Rows</Label>
+                                <Input
+                                  type="number"
+                                  value={group.maxRows || 5}
+                                  onChange={(e) => updateRowGroup(index, { ...group, maxRows: parseInt(e.target.value) })}
+                                  min="1"
+                                />
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  checked={group.isStructuredInput || false}
+                                  onCheckedChange={(checked) => updateRowGroup(index, { ...group, isStructuredInput: checked })}
+                                />
+                                <Label>Structured Input</Label>
+                              </div>
+                            </div>
 
-      {rowGroups.filter(rg => isLegacyRowGroup(rg)).length === 0 && (
-        <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-          <p className="text-muted-foreground mb-4">No legacy row groups created yet</p>
+                            {group.isStructuredInput && group.structure && (
+                              <div className="space-y-4">
+                                <h4 className="text-sm font-medium">Column Configuration</h4>
+                                
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div>
+                                    <Label>First Column</Label>
+                                    <Input
+                                      value={group.structure.firstColumn.label}
+                                      onChange={(e) => updateRowGroup(index, {
+                                        ...group,
+                                        structure: {
+                                          ...group.structure!,
+                                          firstColumn: { ...group.structure!.firstColumn, label: e.target.value }
+                                        }
+                                      })}
+                                      placeholder="Column label"
+                                    />
+                                    <Input
+                                      value={group.structure.firstColumn.placeholder}
+                                      onChange={(e) => updateRowGroup(index, {
+                                        ...group,
+                                        structure: {
+                                          ...group.structure!,
+                                          firstColumn: { ...group.structure!.firstColumn, placeholder: e.target.value }
+                                        }
+                                      })}
+                                      placeholder="Placeholder text"
+                                      className="mt-2"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label>Second Column</Label>
+                                    <Input
+                                      value={group.structure.secondColumn.label}
+                                      onChange={(e) => updateRowGroup(index, {
+                                        ...group,
+                                        structure: {
+                                          ...group.structure!,
+                                          secondColumn: { ...group.structure!.secondColumn, label: e.target.value }
+                                        }
+                                      })}
+                                      placeholder="Column label"
+                                    />
+                                    <Input
+                                      value={group.structure.secondColumn.placeholder}
+                                      onChange={(e) => updateRowGroup(index, {
+                                        ...group,
+                                        structure: {
+                                          ...group.structure!,
+                                          secondColumn: { ...group.structure!.secondColumn, placeholder: e.target.value }
+                                        }
+                                      })}
+                                      placeholder="Placeholder text"
+                                      className="mt-2"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label>Third Column</Label>
+                                    <Input
+                                      value={group.structure.thirdColumn.label}
+                                      onChange={(e) => updateRowGroup(index, {
+                                        ...group,
+                                        structure: {
+                                          ...group.structure!,
+                                          thirdColumn: { ...group.structure!.thirdColumn, label: e.target.value }
+                                        }
+                                      })}
+                                      placeholder="Column label"
+                                    />
+                                    <Input
+                                      value={group.structure.thirdColumn.placeholder}
+                                      onChange={(e) => updateRowGroup(index, {
+                                        ...group,
+                                        structure: {
+                                          ...group.structure!,
+                                          thirdColumn: { ...group.structure!.thirdColumn, placeholder: e.target.value }
+                                        }
+                                      })}
+                                      placeholder="Placeholder text"
+                                      className="mt-2"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <Label>Column Mapping</Label>
+                                  <Select
+                                    value={group.structure.combinedMapping || 'none'}
+                                    onValueChange={(value: 'first_second' | 'second_third' | 'none') => 
+                                      updateRowGroup(index, {
+                                        ...group,
+                                        structure: { ...group.structure!, combinedMapping: value }
+                                      })
+                                    }
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">Map all columns separately</SelectItem>
+                                      <SelectItem value="first_second">Combine first + second columns</SelectItem>
+                                      <SelectItem value="second_third">Combine second + third columns</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="text-sm text-gray-600">
+                          <p><strong>Type:</strong> {group.isStructuredInput ? 'Structured Input' : 'Legacy Row Group'}</p>
+                          <p><strong>Max Rows:</strong> {group.maxRows || 5}</p>
+                          {group.structure && (
+                            <p><strong>Columns:</strong> {group.structure.firstColumn.label} | {group.structure.secondColumn.label} | {group.structure.thirdColumn.label}</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+
+      {rowGroups.length === 0 && (
+        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+          <p className="text-gray-500 mb-4">No row groups created yet</p>
           <Button onClick={addRowGroup}>
             <Plus className="w-4 h-4 mr-2" />
-            Create First Legacy Row Group
+            Create First Row Group
           </Button>
         </div>
       )}
     </div>
-  );
-};
-
-interface FieldInRowEditorProps {
-  field: FormField;
-  onUpdate: (field: FormField) => void;
-  onRemove: () => void;
-  canRemove: boolean;
-}
-
-const FieldInRowEditor: React.FC<FieldInRowEditorProps> = ({ field, onUpdate, onRemove, canRemove }) => {
-  const updateField = (updates: Partial<FormField>) => {
-    onUpdate({ ...field, ...updates });
-  };
-
-  const generateFieldName = (label: string) => {
-    return label.toLowerCase().replace(/[^a-z0-9]/g, '_');
-  };
-
-  const handleLabelChange = (label: string) => {
-    const suggestedName = generateFieldName(label);
-    updateField({ 
-      label, 
-      name: field.name || suggestedName 
-    });
-  };
-
-  return (
-    <Card className="p-3 border border-muted">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Input
-            value={field.label}
-            onChange={(e) => handleLabelChange(e.target.value)}
-            placeholder="Field Label"
-            className="text-sm font-medium"
-          />
-          {canRemove && (
-            <Button size="sm" variant="ghost" onClick={onRemove}>
-              <Trash2 className="w-3 h-3" />
-            </Button>
-          )}
-        </div>
-
-        <Input
-          value={field.name}
-          onChange={(e) => updateField({ name: e.target.value })}
-          placeholder="field_name"
-          className="text-xs"
-        />
-
-        <div className="grid grid-cols-2 gap-2">
-          <Select value={field.type} onValueChange={(value: FormField['type']) => updateField({ type: value })}>
-            <SelectTrigger className="text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="text">Text</SelectItem>
-              <SelectItem value="textarea">Textarea</SelectItem>
-              <SelectItem value="select">Select</SelectItem>
-              <SelectItem value="radio">Radio</SelectItem>
-              <SelectItem value="checkbox">Checkbox</SelectItem>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="file">File</SelectItem>
-              <SelectItem value="toggle">Toggle</SelectItem>
-              <SelectItem value="number">Number</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-1">
-            <input
-              type="checkbox"
-              checked={field.required}
-              onChange={(e) => updateField({ required: e.target.checked })}
-              className="scale-75"
-            />
-            <Label className="text-xs">Required</Label>
-          </div>
-        </div>
-
-        <Input
-          value={field.placeholder || ''}
-          onChange={(e) => updateField({ placeholder: e.target.value })}
-          placeholder="Placeholder text"
-          className="text-xs"
-        />
-
-        {(field.type === 'select' || field.type === 'radio') && (
-          <Textarea
-            value={field.options?.join('\n') || ''}
-            onChange={(e) => updateField({ options: e.target.value.split('\n').filter(o => o.trim()) })}
-            placeholder="Options (one per line)"
-            rows={2}
-            className="text-xs"
-          />
-        )}
-      </div>
-    </Card>
   );
 };

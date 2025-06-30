@@ -8,18 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Save, ArrowUp, ArrowDown, ArrowLeft } from 'lucide-react';
-import { FormConfig, FormField, RowGroup } from '@/types/formTypes';
+import { ArrowLeft, Save, Eye } from 'lucide-react';
+import { FormConfig, FormField, FormSection, RowGroup } from '@/types/formTypes';
 import { DynamicForm } from '@/components/forms/DynamicForm';
-import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
 import { DynamicFieldEditor } from '@/components/forms/DynamicFieldEditor';
+import { SectionEditor } from '@/components/forms/SectionEditor';
+import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
-import { getMaxFormFields, validateFormFieldCount } from '@/utils/formFieldMapping';
+import { getMaxFormFields } from '@/utils/formFieldMapping';
+import { UnifiedFormStructureEditor, FormStructureItem } from '@/components/forms/UnifiedFormStructureEditor';
 
 const ServiceFormEditor = () => {
   const { id } = useParams();
@@ -36,12 +38,29 @@ const ServiceFormEditor = () => {
     category: '',
     apiEndpoint: '',
     fields: [],
+    sections: [],
     rowGroups: []
   });
 
   const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic');
+
+  const [formStructure, setFormStructure] = useState<FormStructureItem[]>([]);
+
+  // Calculate total field count properly
+  const totalFieldCount = formStructure.reduce((acc, item) => {
+    if (item.type === 'field') {
+      return acc + 1;
+    } else if (item.type === 'section') {
+      const sectionData = item.data as any;
+      return acc + (sectionData.fields?.length || 0);
+    } else if (item.type === 'rowgroup') {
+      return acc + 1; // Row groups count as 1 field mapping
+    }
+    return acc;
+  }, 0);
 
   // Fetch workflow groups on component mount
   useEffect(() => {
@@ -50,15 +69,12 @@ const ServiceFormEditor = () => {
 
   useEffect(() => {
     if (isEdit && id && serviceCatalog.length > 0) {
-      // Find the service by ID
       const serviceData = serviceCatalog.find(service => service.service_id.toString() === id);
 
       if (serviceData) {
-        // Get category name from category_id
         const category = categoryList.find(cat => cat.category_id === serviceData.category_id);
         const categoryName = category?.category_name || '';
 
-        // Parse form_json if it exists, otherwise create default structure
         let parsedConfig: FormConfig = {
           id: serviceData.service_id.toString(),
           title: serviceData.service_name,
@@ -67,40 +83,32 @@ const ServiceFormEditor = () => {
           description: serviceData.service_description,
           apiEndpoint: `/api/${serviceData.nav_link}`,
           fields: [],
+          sections: [],
+          rowGroups: [],
           servis_aktif: Number(serviceData.active) ?? 0,
-          active: Number(serviceData.active) ?? 0,
-          rowGroups: []
+          active: Number(serviceData.active) ?? 0
         };
 
-        // Try to parse existing form_json
         if (serviceData.form_json) {
           try {
             const jsonConfig = JSON.parse(serviceData.form_json);
             parsedConfig = {
-              servis_aktif: Number(serviceData.active) ?? 0,
-              active: Number(serviceData.active) ?? 0,
               ...parsedConfig,
               ...jsonConfig,
-              // Override with database values
               id: serviceData.service_id.toString(),
-              category: categoryName, // Always use category from database
+              category: categoryName,
             };
           } catch (error) {
             console.error('Failed to parse form_json:', error);
-            // Use default structure if JSON is invalid
           }
         }
 
         setConfig(parsedConfig);
-        // Set workflow group from service data if available
         if (serviceData.m_workflow_groups) {
           setSelectedWorkflowGroup(serviceData.m_workflow_groups);
         }
-      } else {
-        console.warn('Service not found for ID:', id);
       }
     } else if (!isEdit) {
-      // For new services, set default workflow group (direct superior)
       const defaultWorkflow = workflowGroups.find(wg => wg.name?.toLowerCase().includes('direct superior') || wg.name?.toLowerCase().includes('default'));
       if (defaultWorkflow) {
         setSelectedWorkflowGroup(defaultWorkflow.id);
@@ -108,13 +116,91 @@ const ServiceFormEditor = () => {
     }
   }, [isEdit, id, serviceCatalog, categoryList, workflowGroups]);
 
-  const { toast } = useToast()
+  const { toast } = useToast();
+
+  // Convert legacy structure to unified structure
+  useEffect(() => {
+    const unifiedItems: FormStructureItem[] = [];
+    let counter = 0;
+
+    // Convert existing fields
+    config.fields?.forEach((field, index) => {
+      unifiedItems.push({
+        id: `field-${counter}`,
+        type: 'field',
+        order: counter,
+        data: field
+      });
+      counter++;
+    });
+
+    // Convert existing sections
+    config.sections?.forEach((section, index) => {
+      unifiedItems.push({
+        id: `section-${counter}`,
+        type: 'section',
+        order: counter,
+        data: {
+          title: section.title,
+          description: section.description,
+          fields: section.fields,
+          collapsible: false,
+          defaultOpen: true
+        }
+      });
+      counter++;
+    });
+
+    // Convert existing row groups
+    config.rowGroups?.forEach((rowGroup, index) => {
+      unifiedItems.push({
+        id: `rowgroup-${counter}`,
+        type: 'rowgroup',
+        order: counter,
+        data: rowGroup
+      });
+      counter++;
+    });
+
+    setFormStructure(unifiedItems);
+  }, [config.fields, config.sections, config.rowGroups]);
+
+  const handleStructureUpdate = (items: FormStructureItem[]) => {
+    setFormStructure(items);
+    
+    // Convert back to legacy format for saving
+    const fields: FormField[] = [];
+    const sections: FormSection[] = [];
+    const rowGroups: RowGroup[] = [];
+
+    items.forEach(item => {
+      if (item.type === 'field') {
+        fields.push(item.data as FormField);
+      } else if (item.type === 'section') {
+        const sectionData = item.data as any;
+        sections.push({
+          title: sectionData.title,
+          description: sectionData.description,
+          fields: sectionData.fields,
+          repeatable: false
+        });
+      } else if (item.type === 'rowgroup') {
+        rowGroups.push(item.data as RowGroup);
+      }
+    });
+
+    setConfig({
+      ...config,
+      fields,
+      sections,
+      rowGroups
+    });
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
 
-    // Validate field count before saving
-    if (!validateFormFieldCount(config.fields || [])) {
+    if (totalFieldCount > getMaxFormFields()) {
       toast({
         title: "Error",
         description: `Form cannot have more than ${getMaxFormFields()} fields due to database limitations`,
@@ -125,38 +211,29 @@ const ServiceFormEditor = () => {
       return;
     }
 
-    console.log('Current config before saving:', config);
-    console.log('Selected workflow group:', selectedWorkflowGroup);
-
     try {
-      // Find category_id from category name
       const selectedCategory = categoryList.find(c => c.category_name === config.category);
 
-      // Build full service catalog object
       const payload = {
-        ...(isEdit && { service_id: parseInt(id!) }), // Include service_id for update
+        ...(isEdit && { service_id: parseInt(id!) }),
         service_name: config.title,
         category_id: selectedCategory?.category_id || null,
         service_description: config.description,
-        approval_level: 1, // Default approval level
-        image_url: "", // you can add this from an image uploader
-        nav_link: config.url.replace(/^\/+/, ''), // remove leading slash
+        approval_level: 1,
+        image_url: "",
+        nav_link: config.url.replace(/^\/+/, ''),
         active: 1,
-        team_id: null, // or set from admin UI later
+        team_id: null,
         api_endpoint: config.apiEndpoint,
-        form_json: config, // Send the full config object - API will stringify it
-        m_workflow_groups: selectedWorkflowGroup // Use selected workflow group
+        form_json: config,
+        m_workflow_groups: selectedWorkflowGroup
       };
-
-      console.log('Saving payload:', payload);
 
       const response = await axios.post(`${API_URL}/hots_settings/insertupdate/service_catalog`, payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
         }
       });
-
-      console.log("SAVE SUCCESS:", response.data);
 
       toast({
         title: "Success",
@@ -180,27 +257,6 @@ const ServiceFormEditor = () => {
     }
   };
 
-  const generateFormJSON = () => {
-    // Clean up the config for JSON serialization
-    const cleanConfig = {
-      ...config,
-      fields: config.fields?.map(field => ({
-        ...field,
-        // Remove any undefined values that might break JSON
-        ...(field.options && { options: field.options }),
-        ...(field.placeholder && { placeholder: field.placeholder }),
-        ...(field.value && { value: field.value }),
-        ...(field.default && { default: field.default }),
-        ...(field.readonly && { readonly: field.readonly }),
-        ...(field.uiCondition && { uiCondition: field.uiCondition }),
-        ...(field.accept && { accept: field.accept }),
-        ...(field.note && { note: field.note })
-      }))
-    };
-
-    return JSON.stringify(cleanConfig, null, 2);
-  };
-
   const getCategoryIcon = (categoryName: string) => {
     const iconMap: { [key: string]: string } = {
       'Hardware': '💻',
@@ -221,66 +277,6 @@ const ServiceFormEditor = () => {
       'Marketing': 'bg-pink-100 text-pink-800'
     };
     return colorMap[categoryName] || 'bg-gray-100 text-gray-800';
-  };
-
-  const addField = () => {
-    const newField: FormField = {
-      label: 'New Field',
-      name: `new_field_${Date.now()}`,
-      type: 'text',
-      required: false,
-      columnSpan: 1
-    };
-    setConfig({
-      ...config,
-      fields: [...(config.fields || []), newField]
-    });
-  };
-
-  const updateField = (index: number, updatedField: FormField) => {
-    const newFields = [...(config.fields || [])];
-    newFields[index] = updatedField;
-    setConfig({ ...config, fields: newFields });
-  };
-
-  const removeField = (index: number) => {
-    const newFields = config.fields?.filter((_, i) => i !== index) || [];
-    setConfig({ ...config, fields: newFields });
-  };
-
-  const moveField = (index: number, direction: 'up' | 'down') => {
-    const newFields = [...(config.fields || [])];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-
-    if (newIndex >= 0 && newIndex < newFields.length) {
-      [newFields[index], newFields[newIndex]] = [newFields[newIndex], newFields[index]];
-      setConfig({ ...config, fields: newFields });
-    }
-  };
-
-  const addApprovalStep = () => {
-    const newSteps = [...(config.approval?.steps || []), 'New Approver'];
-    setConfig({
-      ...config,
-      approval: { ...config.approval!, steps: newSteps }
-    });
-  };
-
-  const updateApprovalStep = (index: number, value: string) => {
-    const newSteps = [...(config.approval?.steps || [])];
-    newSteps[index] = value;
-    setConfig({
-      ...config,
-      approval: { ...config.approval!, steps: newSteps }
-    });
-  };
-
-  const removeApprovalStep = (index: number) => {
-    const newSteps = config.approval?.steps.filter((_, i) => i !== index) || [];
-    setConfig({
-      ...config,
-      approval: { ...config.approval!, steps: newSteps }
-    });
   };
 
   if (previewMode) {
@@ -336,6 +332,7 @@ const ServiceFormEditor = () => {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setPreviewMode(true)}>
+              <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>
             <Button onClick={handleSave} disabled={isLoading}>
@@ -345,175 +342,165 @@ const ServiceFormEditor = () => {
           </div>
         </div>
 
-        {/* Field count warning */}
-        {config.fields && config.fields.length > 0 && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-800">
-                    <strong>Database Mapping:</strong> {config.fields.length} of {getMaxFormFields()} fields used
-                  </p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    Fields will be mapped to cstm_col1-{config.fields.length} and lbl_col1-{config.fields.length}
-                  </p>
-                </div>
-                {config.fields.length >= getMaxFormFields() && (
-                  <div className="text-red-600 text-sm font-medium">
-                    ⚠️ Maximum field limit reached
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="basic">Basic Configuration</TabsTrigger>
+            <TabsTrigger value="structure">Form Structure</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="basic" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">Form Title</Label>
+                    <Input
+                      id="title"
+                      value={config.title}
+                      onChange={(e) => setConfig({ ...config, title: e.target.value })}
+                      placeholder="e.g., IT Support Request"
+                    />
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Form Configuration */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Form Title</Label>
-                  <Input
-                    id="title"
-                    value={config.title}
-                    onChange={(e) => setConfig({ ...config, title: e.target.value })}
-                    placeholder="e.g., IT Support Request"
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="url">URL Path</Label>
+                    <Input
+                      id="url"
+                      value={config.url}
+                      onChange={(e) => setConfig({ ...config, url: e.target.value })}
+                      placeholder="e.g., /it-support"
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="url">URL Path</Label>
-                  <Input
-                    id="url"
-                    value={config.url}
-                    onChange={(e) => setConfig({ ...config, url: e.target.value })}
-                    placeholder="e.g., /it-support"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select value={config.category} onValueChange={(value) => setConfig({ ...config, category: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryList.map((category) => (
-                        <SelectItem key={category.category_id} value={category.category_name}>
-                          <span className="mr-2">{getCategoryIcon(category.category_name)}</span>
-                          {category.category_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={config.description}
-                    onChange={(e) => setConfig({ ...config, description: e.target.value })}
-                    placeholder="Brief description of the form"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="apiEndpoint">API Endpoint</Label>
-                  <Input
-                    id="apiEndpoint"
-                    value={config.apiEndpoint}
-                    onChange={(e) => setConfig({ ...config, apiEndpoint: e.target.value })}
-                    placeholder="e.g., /api/it-support"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Workflow Assignment</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="workflowGroup">Workflow Group</Label>
-                  <Select
-                    value={selectedWorkflowGroup?.toString() || ''}
-                    onValueChange={(value) => setSelectedWorkflowGroup(parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select workflow group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {workflowGroups
-                        .filter(wg => wg.is_active)
-                        .map((workflowGroup) => (
-                          <SelectItem key={workflowGroup.id} value={workflowGroup.id.toString()}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{workflowGroup.name}</span>
-                              <span className="text-sm text-gray-500">{workflowGroup.description}</span>
-                            </div>
+                  <div>
+                    <Label htmlFor="category">Category</Label>
+                    <Select value={config.category} onValueChange={(value) => setConfig({ ...config, category: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categoryList.map((category) => (
+                          <SelectItem key={category.category_id} value={category.category_name}>
+                            <span className="mr-2">{getCategoryIcon(category.category_name)}</span>
+                            {category.category_name}
                           </SelectItem>
                         ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Select the workflow group that will handle the approval process for this service.
-                  </p>
-                </div>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {selectedWorkflowGroup && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>Selected Workflow:</strong> {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.name}
-                    </p>
-                    <p className="text-sm text-blue-600 mt-1">
-                      {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.description}
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={config.description}
+                      onChange={(e) => setConfig({ ...config, description: e.target.value })}
+                      placeholder="Brief description of the form"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="apiEndpoint">API Endpoint</Label>
+                    <Input
+                      id="apiEndpoint"
+                      value={config.apiEndpoint}
+                      onChange={(e) => setConfig({ ...config, apiEndpoint: e.target.value })}
+                      placeholder="e.g., /api/it-support"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Workflow Assignment</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="workflowGroup">Workflow Group</Label>
+                    <Select
+                      value={selectedWorkflowGroup?.toString() || ''}
+                      onValueChange={(value) => setSelectedWorkflowGroup(parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select workflow group" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workflowGroups
+                          .filter(wg => wg.is_active)
+                          .map((workflowGroup) => (
+                            <SelectItem key={workflowGroup.id} value={workflowGroup.id.toString()}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{workflowGroup.name}</span>
+                                <span className="text-sm text-gray-500">{workflowGroup.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Select the workflow group that will handle the approval process for this service.
                     </p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Form Fields */}
-          <div>
+                  {selectedWorkflowGroup && (
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>Selected Workflow:</strong> {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.name}
+                      </p>
+                      <p className="text-sm text-blue-600 mt-1">
+                        {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.description}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="structure" className="space-y-6">
+            {/* Field count warning */}
+            {totalFieldCount > 0 && (
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-blue-800">
+                        <strong>Database Mapping:</strong> {totalFieldCount} of {getMaxFormFields()} fields used
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Fields will be mapped to database columns automatically
+                      </p>
+                    </div>
+                    {totalFieldCount >= getMaxFormFields() && (
+                      <div className="text-red-600 text-sm font-medium">
+                        ⚠️ Maximum field limit reached
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
-                <CardTitle>Form Structure</CardTitle>
+                <CardTitle>Unified Form Structure</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Drag and drop to reorder fields, sections, and row groups. Each element can be configured individually.
+                </p>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="fields" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="fields">Dynamic Fields</TabsTrigger>
-                    <TabsTrigger value="rowGroups">Legacy Row Groups</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="fields" className="space-y-4 mt-4">
-                    <DynamicFieldEditor
-                      fields={config.fields || []}
-                      onUpdate={(fields) => setConfig({ ...config, fields })}
-                      rowGroups={config.rowGroups || []}
-                      onUpdateRowGroups={(rowGroups) => setConfig({ ...config, rowGroups })}
-                    />
-                  </TabsContent>
-
-                  {/* <TabsContent value="rowGroups" className="mt-4">
-                    <RowGroupEditor
-                      rowGroups={config.rowGroups || []}
-                      onUpdate={(rowGroups) => setConfig({ ...config, rowGroups })}
-                    />
-                  </TabsContent> */}
-                </Tabs>
+                <UnifiedFormStructureEditor
+                  items={formStructure}
+                  onUpdate={handleStructureUpdate}
+                />
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

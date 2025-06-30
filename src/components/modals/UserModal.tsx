@@ -1,280 +1,173 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import axios from 'axios';
-import { API_URL } from '@/config/sourceConfig';
-import { useToast } from '@/hooks/use-toast';
-import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchRoles, fetchJobTitles, fetchSuperiors, UserType } from '@/store/slices/userManagementSlice';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+
+interface UserType {
+  user_id?: number;
+  user_name: string;
+  firstname: string;
+  lastname: string;
+  uid: string;
+  email: string;
+  role_id: number;
+  role_name?: string;
+  department_id: number;
+  team_name?: string;
+  job_title: string;
+  is_active: boolean;
+  is_deleted: boolean;
+}
 
 interface UserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: UserType | null;
-  mode: 'add' | 'edit';
   onSave: (user: UserType) => void;
+  user?: UserType | null;
+  roles: Array<{ role_id: number; role_name: string }>;
+  departments: Array<{ department_id: number; department_name: string }>;
 }
 
-const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
-  const dispatch = useAppDispatch();
-  const { users, roles, jobTitles, superiors, departments, teams } = useAppSelector(state => state.userManagement);
-
-  const [formData, setFormData] = useState<UserType>({
-    user_id: 0,
-    firstname: '',
-    lastname: '',
-    uid: '',
-    email: '',
-    role_id: 0,
-    role_name: '',
-    department_id: 0,
-    team_name: '',
-    job_title: '',
-    is_active: true,
-    is_deleted: false,
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (isOpen) {
-      dispatch(fetchRoles());
-      dispatch(fetchJobTitles());
-      dispatch(fetchSuperiors());
-    }
-  }, [isOpen, dispatch]);
+export const UserModal: React.FC<UserModalProps> = ({
+  isOpen,
+  onClose,
+  onSave,
+  user,
+  roles,
+  departments
+}) => {
+  const [formData, setFormData] = useState<UserType>(() => ({
+    user_name: user?.user_name || '',
+    firstname: user?.firstname || '',
+    lastname: user?.lastname || '',
+    uid: user?.uid || '',
+    email: user?.email || '',
+    role_id: user?.role_id || 1,
+    role_name: user?.role_name || '',
+    department_id: user?.department_id || 1,
+    team_name: user?.team_name || '',
+    job_title: user?.job_title || '',
+    is_active: user?.is_active ?? true,
+    is_deleted: user?.is_deleted ?? false,
+  }));
 
   useEffect(() => {
-    if (user && mode === 'edit') {
-      setFormData(user);
-    } else {
+    if (user) {
       setFormData({
-        user_id: 0,
-        firstname: '',
-        lastname: '',
-        uid: '',
-        email: '',
-        role_id: 0,
-        role_name: '',
-        department_id: 0,
-        team_name: '',
-        job_title: '',
-        is_active: true,
-        is_deleted: false,
+        user_id: user.user_id,
+        user_name: user.user_name,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        uid: user.uid,
+        email: user.email,
+        role_id: user.role_id,
+        role_name: user.role_name || '',
+        department_id: user.department_id,
+        team_name: user.team_name || '',
+        job_title: user.job_title,
+        is_active: user.is_active,
+        is_deleted: user.is_deleted,
       });
     }
-  }, [user, mode, isOpen]);
+  }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const token = localStorage.getItem('tokek');
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-
-      if (mode === 'add') {
-        const response = await axios.post(`${API_URL}/hots_settings/post/user`, formData, { headers });
-
-        if (response.data.success) {
-          toast({
-            title: "Success",
-            description: "User created successfully",
-          });
-          onSave(formData);
-          onClose();
-        } else {
-          throw new Error(response.data.message || 'Failed to create user');
-        }
-      } else {
-        const response = await axios.put(`${API_URL}/hots_settings/update/user/${user?.user_id}`, formData, { headers });
-
-        if (response.data.success) {
-          toast({
-            title: "Success",
-            description: "User updated successfully",
-          });
-          onSave(formData);
-          onClose();
-        } else {
-          throw new Error(response.data.message || 'Failed to update user');
-        }
-      }
-    } catch (error: any) {
-      console.error('Error saving user:', error);
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || error.message || 'Failed to save user',
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleChange = (field: keyof UserType, value: string | number) => {
-    setFormData(prev => {
-      const newData = { ...prev, [field]: value };
-
-      // Auto-populate role_name when role_id changes
-      if (field === 'role_id') {
-        const selectedRole = roles.find(r => r.role_id === value);
-        if (selectedRole) {
-          newData.role_name = selectedRole.role_name;
-        }
-      }
-
-      // Auto-populate job_title when jobtitle_id changes
-      if (field === 'jobtitle_id') {
-        const selectedJobTitle = jobTitles.find(j => j.jobtitle_id === value);
-        if (selectedJobTitle) {
-          newData.job_title = selectedJobTitle.job_title || selectedJobTitle.jobtitle_name;
-        }
-      }
-
-      return newData;
-    });
-  };
-
-  const getDepartmentName = (departmentId: number) => {
-    const department = departments.find(d => d.department_id === departmentId);
-    return department ? department.department_name : 'Unknown Department';
+    onSave(formData);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {mode === 'add' ? 'Add New User' : 'Edit User'}
-          </DialogTitle>
+          <DialogTitle>{user ? 'Edit User' : 'Add New User'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
+            <div>
               <Label htmlFor="firstname">First Name</Label>
               <Input
                 id="firstname"
                 value={formData.firstname}
-                onChange={(e) => handleChange('firstname', e.target.value)}
-                placeholder="Enter first name"
+                onChange={(e) => setFormData({ ...formData, firstname: e.target.value })}
                 required
               />
             </div>
-
-            <div className="grid gap-2">
+            <div>
               <Label htmlFor="lastname">Last Name</Label>
               <Input
                 id="lastname"
                 value={formData.lastname}
-                onChange={(e) => handleChange('lastname', e.target.value)}
-                placeholder="Enter last name"
+                onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
                 required
               />
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="uid">User ID</Label>
+          <div>
+            <Label htmlFor="user_name">Username</Label>
             <Input
-              id="uid"
-              value={formData.uid}
-              onChange={(e) => handleChange('uid', e.target.value)}
-              placeholder="Enter user ID"
+              id="user_name"
+              value={formData.user_name}
+              onChange={(e) => setFormData({ ...formData, user_name: e.target.value })}
               required
             />
           </div>
 
-          <div className="grid gap-2">
+          <div>
+            <Label htmlFor="uid">Employee ID</Label>
+            <Input
+              id="uid"
+              value={formData.uid}
+              onChange={(e) => setFormData({ ...formData, uid: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              placeholder="Enter email address"
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
             />
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="department_id">Department</Label>
-            <Select
-              value={formData.department_id?.toString() || ""}
-              onValueChange={(value) => handleChange('department_id', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments && departments.length > 0 ? (
-                  departments.map((dept) => (
-                    <SelectItem
-                      key={dept.department_id}
-                      value={dept.department_id.toString()}
-                    >
-                      {dept.department_shortname}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <>
-                    <SelectItem value="1">HR</SelectItem>
-                    <SelectItem value="2">IT</SelectItem>
-                    <SelectItem value="3">Finance</SelectItem>
-                    <SelectItem value="4">Marketing</SelectItem>
-                    <SelectItem value="5">Operations</SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
+          <div>
+            <Label htmlFor="job_title">Job Title</Label>
+            <Input
+              id="job_title"
+              value={formData.job_title}
+              onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
+            />
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="jobtitle_id">Job Title</Label>
+          <div>
+            <Label htmlFor="role">Role</Label>
             <Select
-              value={formData.jobtitle_id?.toString() || ""}
-              onValueChange={(value) => handleChange("jobtitle_id", parseInt(value))}
+              value={formData.role_id.toString()}
+              onValueChange={(value) => {
+                const roleId = parseInt(value);
+                const role = roles.find(r => r.role_id === roleId);
+                setFormData({
+                  ...formData,
+                  role_id: roleId,
+                  role_name: role?.role_name || ''
+                });
+              }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select job title" />
-              </SelectTrigger>
-              <SelectContent>
-                {jobTitles
-                  .filter(j => j.department_id === formData.department_id)
-                  .map((job) => (
-                    <SelectItem
-                      key={job.jobtitle_id}
-                      value={job.jobtitle_id.toString()}
-                    >
-                      {job.job_title || job.jobtitle_name}
-                    </SelectItem>
-                  ))
-                }
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="role_id">Role</Label>
-            <Select
-              value={formData.role_id ? formData.role_id.toString() : ""}
-              onValueChange={(value) => handleChange('role_id', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {roles.map((role) => (
-                  <SelectItem
-                    key={role.role_id}
-                    value={role.role_id != null ? role.role_id.toString() : `role-${Math.random()}`}
-                  >
+                  <SelectItem key={role.role_id} value={role.role_id.toString()}>
                     {role.role_name}
                   </SelectItem>
                 ))}
@@ -282,35 +175,48 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
             </Select>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="superior_id">Superior</Label>
+          <div>
+            <Label htmlFor="department">Department</Label>
             <Select
-              value={formData.superior_id ? formData.superior_id.toString() : "no_superior"}
-              onValueChange={(value) => handleChange('superior_id', value === "no_superior" ? undefined : parseInt(value))}
+              value={formData.department_id.toString()}
+              onValueChange={(value) => {
+                const deptId = parseInt(value);
+                const dept = departments.find(d => d.department_id === deptId);
+                setFormData({
+                  ...formData,
+                  department_id: deptId,
+                  team_name: dept?.department_name || ''
+                });
+              }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select superior" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no_superior">No Superior</SelectItem>
-                {users.map((user) => (
-                  <SelectItem
-                    key={user.user_id}
-                    value={user.user_id != null ? user.user_id.toString() : `superior-${Math.random()}`}
-                  >
-                    {user.firstname} {user.lastname} ({user.role_name})
+                {departments.map((dept) => (
+                  <SelectItem key={dept.department_id} value={dept.department_id.toString()}>
+                    {dept.department_name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_active"
+              checked={formData.is_active}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+            />
+            <Label htmlFor="is_active">Active</Label>
+          </div>
+
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Saving...' : mode === 'add' ? 'Add User' : 'Save Changes'}
+            <Button type="submit">
+              {user ? 'Update' : 'Create'} User
             </Button>
           </div>
         </form>
@@ -318,5 +224,3 @@ const UserModal = ({ isOpen, onClose, user, mode, onSave }: UserModalProps) => {
     </Dialog>
   );
 };
-
-export default UserModal;

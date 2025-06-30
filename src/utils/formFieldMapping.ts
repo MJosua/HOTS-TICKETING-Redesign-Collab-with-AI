@@ -130,7 +130,8 @@ export const getMaxFormFields = (): number => {
 
 /**
  * Validates that form doesn't exceed maximum field limit
+ * @param fieldCount - Total number of fields
  */
-export const validateFormFieldCount = (fields: FormField[]): boolean => {
-  return fields.length <= getMaxFormFields();
+export const validateFormFieldCount = (fieldCount: number): boolean => {
+  return fieldCount <= getMaxFormFields();
 };
