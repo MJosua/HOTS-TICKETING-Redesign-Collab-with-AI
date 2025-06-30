@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import {
   FormControl,
@@ -32,6 +32,7 @@ interface FormField {
   default?: string;
   note?: string;
   systemVariable?: string;
+  suggestions?: string[];
 }
 
 interface DynamicFieldProps {
@@ -41,6 +42,118 @@ interface DynamicFieldProps {
   onValueChange?: (value: any) => void;
   onFileUpload?: (files: FileList | null) => Promise<number[]>;
 }
+
+const SuggestionInsertInput: React.FC<{
+  suggestions: string[];
+  placeholder?: string;
+  readOnly?: boolean;
+  defaultValue?: string;
+  onChange: (value: string) => void;
+}> = ({ suggestions, placeholder, readOnly, defaultValue, onChange }) => {
+  const [inputValue, setInputValue] = useState(defaultValue || '');
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setInputValue(defaultValue || '');
+  }, [defaultValue]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    onChange(value);
+
+    if (value.length > 0) {
+      const filtered = suggestions.filter(suggestion =>
+        suggestion.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredSuggestions(filtered);
+      setShowSuggestions(true);
+      setActiveIndex(-1);
+    } else {
+      setShowSuggestions(false);
+      setFilteredSuggestions([]);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev + 1) % filteredSuggestions.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev - 1 + filteredSuggestions.length) % filteredSuggestions.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeIndex >= 0 && activeIndex < filteredSuggestions.length) {
+        const selected = filteredSuggestions[activeIndex];
+        setInputValue(selected);
+        onChange(selected);
+        setShowSuggestions(false);
+        setActiveIndex(-1);
+        if (inputRef.current) {
+          inputRef.current.blur();
+        }
+      }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      setActiveIndex(-1);
+    }
+  };
+
+  const handleSuggestionClick = (index: number) => {
+    const selected = filteredSuggestions[index];
+    setInputValue(selected);
+    onChange(selected);
+    setShowSuggestions(false);
+    setActiveIndex(-1);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const handleBlur = () => {
+    // Delay hiding suggestions to allow click event to register
+    setTimeout(() => {
+      setShowSuggestions(false);
+      setActiveIndex(-1);
+    }, 150);
+  };
+
+  return (
+    <div className="relative w-full">
+      <Input
+        ref={inputRef}
+        type="text"
+        placeholder={placeholder}
+        readOnly={readOnly}
+        value={inputValue}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        autoComplete="off"
+      />
+      {showSuggestions && filteredSuggestions.length > 0 && (
+        <ul className="absolute z-10 w-full max-h-48 overflow-auto rounded border border-gray-300 bg-white shadow-md">
+          {filteredSuggestions.map((suggestion, index) => (
+            <li
+              key={index}
+              className={`cursor-pointer px-3 py-1 hover:bg-gray-200 ${index === activeIndex ? 'bg-gray-300 font-semibold' : ''
+                }`}
+              onMouseDown={() => handleSuggestionClick(index)}
+            >
+              {suggestion}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 export const DynamicField: React.FC<DynamicFieldProps> = ({
   field,
@@ -137,6 +250,24 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           </Select>
         );
 
+      case 'suggestion-insert':
+        // Implement suggestion insert input with dropdown and arrow key navigation
+        return (
+          <SuggestionInsertInput
+            suggestions={resolvedOptions || []}
+            placeholder={field.placeholder}
+            readOnly={field.readonly}
+            defaultValue={resolvedDefault}
+            onChange={(value: string) => {
+              form.setValue(fieldKey, value);
+              onValueChange?.(value);
+            }}
+            {...form.register(fieldKey, {
+              required: isRequired ? `${cleanLabel} is required` : false
+            })}
+          />
+        );
+        
       case 'radio':
         return (
           <RadioGroup
@@ -350,4 +481,4 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       )}
     />
   );
-};
+}

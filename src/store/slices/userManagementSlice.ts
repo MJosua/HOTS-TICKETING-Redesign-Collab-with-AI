@@ -369,7 +369,7 @@ export const fetchDepartments = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    // console.log("departments fetch", response.data.data);
+    console.log("departments fetch", response.data.data);
     return response.data.data;
   }
 );

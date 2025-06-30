@@ -17,11 +17,11 @@ interface DynamicFieldEditorProps {
   onUpdateRowGroups?: (rowGroups: RowGroup[]) => void;
 }
 
-export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({ 
-  fields, 
-  onUpdate, 
-  rowGroups = [], 
-  onUpdateRowGroups 
+export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({
+  fields,
+  onUpdate,
+  rowGroups = [],
+  onUpdateRowGroups
 }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -49,7 +49,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({
 
   const addRowGroup = () => {
     if (!onUpdateRowGroups) return;
-    
+
     const newRowGroup: RowGroup = {
       isStructuredInput: true,
       maxRows: 10,
@@ -157,7 +157,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({
                 return (
                   <div
                     key={fieldIndex}
-                    className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs col-span-${field.columnSpan || 3 }`}
+                    className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs col-span-${field.columnSpan || 3}`}
                   >
                     <div className="font-medium text-center">{field.label}</div>
                     <div className="text-center text-blue-600 mt-1">
@@ -398,23 +398,24 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <Label>Field Type</Label>
-<Select value={field.type} onValueChange={(value: FormField['type']) => updateField({ type: value })}>
-  <SelectTrigger>
-    <SelectValue />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="text">Text</SelectItem>
-    <SelectItem value="textarea">Textarea</SelectItem>
-    <SelectItem value="select">Select</SelectItem>
-    <SelectItem value="radio">Radio</SelectItem>
-    <SelectItem value="checkbox">Checkbox</SelectItem>
-    <SelectItem value="date">Date</SelectItem>
-    <SelectItem value="time">Time</SelectItem>
-    <SelectItem value="file">File</SelectItem>
-    <SelectItem value="toggle">Toggle</SelectItem>
-    <SelectItem value="number">Number</SelectItem>
-  </SelectContent>
-</Select>
+            <Select value={field.type} onValueChange={(value: FormField['type']) => updateField({ type: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="text">Text</SelectItem>
+                <SelectItem value="textarea">Textarea</SelectItem>
+                <SelectItem value="select">Select</SelectItem>
+                <SelectItem value="radio">Radio</SelectItem>
+                <SelectItem value="checkbox">Checkbox</SelectItem>
+                <SelectItem value="date">Date</SelectItem>
+                <SelectItem value="time">Time</SelectItem>
+                <SelectItem value="file">File</SelectItem>
+                <SelectItem value="toggle">Toggle</SelectItem>
+                <SelectItem value="number">Number</SelectItem>
+                <SelectItem value="suggestion-insert">Suggestion Insert</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -468,6 +469,20 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             <p className="text-xs text-gray-500 mt-1">
               You can use system variables like ${'{departments}'} for dynamic options
             </p>
+          </div>
+        )}
+        {field.type === 'suggestion-insert' && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Label>Suggestions</Label>
+              <SystemVariableHelper />
+            </div>
+            <Textarea
+              value={field.suggestions?.join('\n') || ''}
+              onChange={(e) => updateField({ suggestions: e.target.value.split('\n').filter(o => o.trim()) })}
+              placeholder="Enter suggestions (one per line)"
+              rows={3}
+            />
           </div>
         )}
         <div className="flex items-center gap-2 pt-6">
@@ -560,7 +575,7 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
 
         <div className="space-y-3">
           <h5 className="text-sm font-medium">Column Structure</h5>
-          
+
           {/* First Column */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 p-3 bg-gray-50 rounded">
             <div>
@@ -670,43 +685,43 @@ const RowGroupEditor: React.FC<RowGroupEditorProps> = ({
           </div>
 
           {/* Options for select fields */}
-          {(rowGroup.structure?.firstColumn?.type === 'select' || 
-            rowGroup.structure?.secondColumn?.type === 'select' || 
+          {(rowGroup.structure?.firstColumn?.type === 'select' ||
+            rowGroup.structure?.secondColumn?.type === 'select' ||
             rowGroup.structure?.thirdColumn?.type === 'select') && (
-            <div className="space-y-2">
-              <Label className="text-xs">Select Options (for select type columns)</Label>
-              {rowGroup.structure?.firstColumn?.type === 'select' && (
-                <Textarea
-                  placeholder="First column options (one per line)"
-                  value={rowGroup.structure?.firstColumn?.options?.join('\n') || ''}
-                  onChange={(e) => updateStructureColumn('firstColumn', { 
-                    options: e.target.value.split('\n').filter(o => o.trim()) 
-                  })}
-                  rows={2}
-                />
-              )}
-              {rowGroup.structure?.secondColumn?.type === 'select' && (
-                <Textarea
-                  placeholder="Second column options (one per line)"
-                  value={rowGroup.structure?.secondColumn?.options?.join('\n') || ''}
-                  onChange={(e) => updateStructureColumn('secondColumn', { 
-                    options: e.target.value.split('\n').filter(o => o.trim()) 
-                  })}
-                  rows={2}
-                />
-              )}
-              {rowGroup.structure?.thirdColumn?.type === 'select' && (
-                <Textarea
-                  placeholder="Third column options (one per line)"
-                  value={rowGroup.structure?.thirdColumn?.options?.join('\n') || ''}
-                  onChange={(e) => updateStructureColumn('thirdColumn', { 
-                    options: e.target.value.split('\n').filter(o => o.trim()) 
-                  })}
-                  rows={2}
-                />
-              )}
-            </div>
-          )}
+              <div className="space-y-2">
+                <Label className="text-xs">Select Options (for select type columns)</Label>
+                {rowGroup.structure?.firstColumn?.type === 'select' && (
+                  <Textarea
+                    placeholder="First column options (one per line)"
+                    value={rowGroup.structure?.firstColumn?.options?.join('\n') || ''}
+                    onChange={(e) => updateStructureColumn('firstColumn', {
+                      options: e.target.value.split('\n').filter(o => o.trim())
+                    })}
+                    rows={2}
+                  />
+                )}
+                {rowGroup.structure?.secondColumn?.type === 'select' && (
+                  <Textarea
+                    placeholder="Second column options (one per line)"
+                    value={rowGroup.structure?.secondColumn?.options?.join('\n') || ''}
+                    onChange={(e) => updateStructureColumn('secondColumn', {
+                      options: e.target.value.split('\n').filter(o => o.trim())
+                    })}
+                    rows={2}
+                  />
+                )}
+                {rowGroup.structure?.thirdColumn?.type === 'select' && (
+                  <Textarea
+                    placeholder="Third column options (one per line)"
+                    value={rowGroup.structure?.thirdColumn?.options?.join('\n') || ''}
+                    onChange={(e) => updateStructureColumn('thirdColumn', {
+                      options: e.target.value.split('\n').filter(o => o.trim())
+                    })}
+                    rows={2}
+                  />
+                )}
+              </div>
+            )}
         </div>
       </div>
     </Card>

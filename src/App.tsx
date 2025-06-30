@@ -57,9 +57,9 @@ function App() {
                 <Route path="/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
                 <Route path="/ticket/:id" element={<ProtectedRoute><TicketDetail /></ProtectedRoute>} />
                 <Route path="/task-list" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
-                <Route path="/user-guide" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
+                <Route path="/help/user-guide" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
                 <Route path="/help-center" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
-                <Route path="/faq" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
+                <Route path="/help/faq" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
                 
                 {/* Admin routes */}
                 <Route path="/admin/service-catalog" element={<ProtectedRoute><ServiceCatalogAdmin /></ProtectedRoute>} />

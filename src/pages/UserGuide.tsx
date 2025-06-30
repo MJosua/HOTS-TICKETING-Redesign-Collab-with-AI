@@ -22,12 +22,9 @@ const UserGuide = () => {
         </div>
 
         <Tabs defaultValue="faq" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="faq">FAQ</TabsTrigger>
-            <TabsTrigger value="tickets">Tickets</TabsTrigger>
-            <TabsTrigger value="approval">Approval</TabsTrigger>
             <TabsTrigger value="updates">Updates</TabsTrigger>
-            <TabsTrigger value="guide">Quick Guide</TabsTrigger>
           </TabsList>
 
           <TabsContent value="faq" className="space-y-6">
@@ -85,103 +82,7 @@ const UserGuide = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="tickets" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Working with Tickets
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h4 className="font-semibold mb-3">Creating a Ticket</h4>
-                  <ol className="list-decimal pl-6 space-y-2">
-                    <li>Navigate to Service Catalog</li>
-                    <li>Choose the appropriate service category</li>
-                    <li>Fill all required fields (marked with *)</li>
-                    <li>Attach any necessary files</li>
-                    <li>Review your information and submit</li>
-                  </ol>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">Ticket Details Page</h4>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li><strong>Status Timeline:</strong> See request progress</li>
-                    <li><strong>Comments:</strong> Communicate with support team</li>
-                    <li><strong>Attachments:</strong> View uploaded files</li>
-                    <li><strong>Approval Flow:</strong> Track approval status</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">Communication</h4>
-                  <p>Use the comments section to:</p>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Provide additional information</li>
-                    <li>Ask questions about your request</li>
-                    <li>Respond to support team queries</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="approval" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckSquare className="w-5 h-5" />
-                  Approval Process Guide
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h4 className="font-semibold mb-3">Understanding Approvals</h4>
-                  <p>Some requests require approval from managers or department heads before processing. The approval workflow is automatic based on:</p>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Request type and value</li>
-                    <li>Your department and role</li>
-                    <li>Company policies</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">For Approvers</h4>
-                  <ol className="list-decimal pl-6 space-y-2">
-                    <li>Check your Task List regularly for pending approvals</li>
-                    <li>Click on requests to review full details</li>
-                    <li>Consider business impact and policy compliance</li>
-                    <li>Approve or reject with clear comments</li>
-                    <li>Escalate complex decisions if needed</li>
-                  </ol>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">Approval Statuses</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-3 border rounded-lg">
-                      <Badge variant="secondary" className="mb-2">Pending</Badge>
-                      <p className="text-sm">Waiting for approver action</p>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <Badge variant="default" className="mb-2">Approved</Badge>
-                      <p className="text-sm">Request approved, processing continues</p>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <Badge variant="destructive" className="mb-2">Rejected</Badge>
-                      <p className="text-sm">Request denied, see comments for reason</p>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <Badge variant="outline" className="mb-2">Escalated</Badge>
-                      <p className="text-sm">Sent to higher authority</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
 
           <TabsContent value="updates" className="space-y-6">
             <Card>
@@ -227,68 +128,6 @@ const UserGuide = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="guide" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Start Guide</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      Submit Request
-                    </h4>
-                    <ol className="text-sm space-y-1">
-                      <li>1. Go to Service Catalog</li>
-                      <li>2. Select service type</li>
-                      <li>3. Fill required fields</li>
-                      <li>4. Submit request</li>
-                    </ol>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <CheckSquare className="w-4 h-4" />
-                      Handle Approvals
-                    </h4>
-                    <ol className="text-sm space-y-1">
-                      <li>1. Check Task List</li>
-                      <li>2. Review request details</li>
-                      <li>3. Approve or reject</li>
-                      <li>4. Add comments</li>
-                    </ol>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      Track Progress
-                    </h4>
-                    <ol className="text-sm space-y-1">
-                      <li>1. Visit My Tickets</li>
-                      <li>2. Click on ticket</li>
-                      <li>3. View status updates</li>
-                      <li>4. Add comments if needed</li>
-                    </ol>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <HelpCircle className="w-4 h-4" />
-                      Get Help
-                    </h4>
-                    <ol className="text-sm space-y-1">
-                      <li>1. Check this guide</li>
-                      <li>2. Contact IT support</li>
-                      <li>3. Ask your manager</li>
-                      <li>4. Submit help request</li>
-                    </ol>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>

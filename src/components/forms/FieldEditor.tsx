@@ -49,8 +49,8 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onUpdate, onCan
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <Label>Field Type</Label>
-          <Select 
-            value={localField.type} 
+          <Select
+            value={localField.type}
             onValueChange={(value: FormField['type']) => updateField({ type: value })}
           >
             <SelectTrigger>
@@ -67,6 +67,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onUpdate, onCan
               <SelectItem value="file">File</SelectItem>
               <SelectItem value="toggle">Toggle</SelectItem>
               <SelectItem value="number">Number</SelectItem>
+              <SelectItem value="suggestion-insert">suggestion-insert</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -95,7 +96,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onUpdate, onCan
         </div>
       </div>
 
-      {localField.type === 'select' && (
+      {(localField.type === 'select' || localField.type === 'suggestion-insert') && (
         <div>
           <Label>Options (one per line)</Label>
           <Textarea
@@ -105,6 +106,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onUpdate, onCan
           />
         </div>
       )}
+
 
       <div>
         <Label>Placeholder</Label>

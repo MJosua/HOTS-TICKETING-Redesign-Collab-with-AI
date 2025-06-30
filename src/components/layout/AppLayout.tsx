@@ -80,7 +80,7 @@ const helpItems = [
   },
   {
     title: "FAQ",
-    url: "/help/user-guide#faq",
+    url: "/help/faq",
     icon: HelpCircle,
   },
 ];
@@ -147,7 +147,7 @@ export function AppSidebar() {
     fetchUserProfile();
   }, []);
 
-  const handleLogout = () => { 
+  const handleLogout = () => {
     dispatch(logoutUser()).then(() => {
       toast({
         title: "Success",
@@ -159,7 +159,15 @@ export function AppSidebar() {
 
   // Check if user has admin role (role === 4)
   const isAdmin = user?.role_id?.toString() === '4';
-  
+
+
+  useEffect(() => {
+    if (location.pathname.includes('/help/')) {
+      setIsHelpOpen(true);
+    }
+  }, [location.pathname]);
+
+
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">

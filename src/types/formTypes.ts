@@ -48,7 +48,8 @@ export interface FormField {
   | 'date'
   | 'file'
   | 'toggle'
-  | 'number';
+  | 'number'
+  | 'suggestion-insert';
   placeholder?: string;
   required?: boolean;
   options?: string[];

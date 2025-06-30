@@ -382,11 +382,30 @@ const FormBuilder = () => {
     }
   };
 
+  const suggestionInsertForm: FormConfig = {
+    url: "/suggestion-insert-test",
+    title: "Suggestion Insert Test Form",
+    category: "Test",
+    fields: [
+      {
+        name: "suggestionField",
+        label: "Suggestion Insert Field",
+        type: "suggestion-insert",
+        placeholder: "Type or select a suggestion",
+        options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+        default: "Option 1",
+        required: false,
+        columnSpan: 2
+      }
+    ]
+  };
+
   const formOptions = [
     { id: 'asset-request-enhanced', name: 'Enhanced Asset Request (with Variables)', config: assetRequestFormV1 },
     { id: 'sample-request-enhanced', name: 'Enhanced Sample Request (Structured)', config: sampleRequestFormV1 },
     { id: 'it-support', name: 'IT Support Request', config: itSupportForm },
-    { id: 'leave-request', name: 'Leave Request Form', config: leaveRequestForm }
+    { id: 'leave-request', name: 'Leave Request Form', config: leaveRequestForm },
+    { id: 'suggestion-insert-test', name: 'Suggestion Insert Test Form', config: suggestionInsertForm }
   ];
 
   const handleFormSubmit = (data: any) => {
