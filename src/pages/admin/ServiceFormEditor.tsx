@@ -9,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Eye } from 'lucide-react';
-import { FormConfig, FormField, FormSection } from '@/types/formTypes';
+import { FormConfig, FormField, FormSection, RowGroup } from '@/types/formTypes';
 import { DynamicForm } from '@/components/forms/DynamicForm';
 import { DynamicFieldEditor } from '@/components/forms/DynamicFieldEditor';
 import { SectionEditor } from '@/components/forms/SectionEditor';
+import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
@@ -36,7 +37,8 @@ const ServiceFormEditor = () => {
     category: '',
     apiEndpoint: '',
     fields: [],
-    sections: []
+    sections: [],
+    rowGroups: []
   });
 
   const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<number | null>(null);
@@ -46,7 +48,13 @@ const ServiceFormEditor = () => {
 
   // Calculate total field count properly
   const totalFieldCount = (config.fields?.length || 0) + 
-    (config.sections?.reduce((acc: number, section: FormSection) => acc + (section.fields?.length || 0), 0) || 0);
+    (config.sections?.reduce((acc: number, section: FormSection) => acc + (section.fields?.length || 0), 0) || 0) +
+    (config.rowGroups?.reduce((acc: number, rg: RowGroup) => {
+      if (rg.isStructuredInput) {
+        return acc + 1; // Each structured row group counts as one field mapping
+      }
+      return acc + (Array.isArray(rg.rowGroup) ? rg.rowGroup.length : 0);
+    }, 0) || 0);
 
   // Fetch workflow groups on component mount
   useEffect(() => {
@@ -55,15 +63,12 @@ const ServiceFormEditor = () => {
 
   useEffect(() => {
     if (isEdit && id && serviceCatalog.length > 0) {
-      // Find the service by ID
       const serviceData = serviceCatalog.find(service => service.service_id.toString() === id);
 
       if (serviceData) {
-        // Get category name from category_id
         const category = categoryList.find(cat => cat.category_id === serviceData.category_id);
         const categoryName = category?.category_name || '';
 
-        // Parse form_json if it exists, otherwise create default structure
         let parsedConfig: FormConfig = {
           id: serviceData.service_id.toString(),
           title: serviceData.service_name,
@@ -72,40 +77,32 @@ const ServiceFormEditor = () => {
           description: serviceData.service_description,
           apiEndpoint: `/api/${serviceData.nav_link}`,
           fields: [],
+          sections: [],
+          rowGroups: [],
           servis_aktif: Number(serviceData.active) ?? 0,
-          active: Number(serviceData.active) ?? 0,
-          sections: []
+          active: Number(serviceData.active) ?? 0
         };
 
-        // Try to parse existing form_json
         if (serviceData.form_json) {
           try {
             const jsonConfig = JSON.parse(serviceData.form_json);
             parsedConfig = {
-              servis_aktif: Number(serviceData.active) ?? 0,
-              active: Number(serviceData.active) ?? 0,
               ...parsedConfig,
               ...jsonConfig,
-              // Override with database values
               id: serviceData.service_id.toString(),
-              category: categoryName, // Always use category from database
+              category: categoryName,
             };
           } catch (error) {
             console.error('Failed to parse form_json:', error);
-            // Use default structure if JSON is invalid
           }
         }
 
         setConfig(parsedConfig);
-        // Set workflow group from service data if available
         if (serviceData.m_workflow_groups) {
           setSelectedWorkflowGroup(serviceData.m_workflow_groups);
         }
-      } else {
-        console.warn('Service not found for ID:', id);
       }
     } else if (!isEdit) {
-      // For new services, set default workflow group (direct superior)
       const defaultWorkflow = workflowGroups.find(wg => wg.name?.toLowerCase().includes('direct superior') || wg.name?.toLowerCase().includes('default'));
       if (defaultWorkflow) {
         setSelectedWorkflowGroup(defaultWorkflow.id);
@@ -113,12 +110,11 @@ const ServiceFormEditor = () => {
     }
   }, [isEdit, id, serviceCatalog, categoryList, workflowGroups]);
 
-  const { toast } = useToast()
+  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
 
-    // Validate field count before saving
     if (totalFieldCount > getMaxFormFields()) {
       toast({
         title: "Error",
@@ -130,38 +126,29 @@ const ServiceFormEditor = () => {
       return;
     }
 
-    console.log('Current config before saving:', config);
-    console.log('Selected workflow group:', selectedWorkflowGroup);
-
     try {
-      // Find category_id from category name
       const selectedCategory = categoryList.find(c => c.category_name === config.category);
 
-      // Build full service catalog object
       const payload = {
-        ...(isEdit && { service_id: parseInt(id!) }), // Include service_id for update
+        ...(isEdit && { service_id: parseInt(id!) }),
         service_name: config.title,
         category_id: selectedCategory?.category_id || null,
         service_description: config.description,
-        approval_level: 1, // Default approval level
-        image_url: "", // you can add this from an image uploader
-        nav_link: config.url.replace(/^\/+/, ''), // remove leading slash
+        approval_level: 1,
+        image_url: "",
+        nav_link: config.url.replace(/^\/+/, ''),
         active: 1,
-        team_id: null, // or set from admin UI later
+        team_id: null,
         api_endpoint: config.apiEndpoint,
-        form_json: config, // Send the full config object - API will stringify it
-        m_workflow_groups: selectedWorkflowGroup // Use selected workflow group
+        form_json: config,
+        m_workflow_groups: selectedWorkflowGroup
       };
-
-      console.log('Saving payload:', payload);
 
       const response = await axios.post(`${API_URL}/hots_settings/insertupdate/service_catalog`, payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
         }
       });
-
-      console.log("SAVE SUCCESS:", response.data);
 
       toast({
         title: "Success",
@@ -419,9 +406,10 @@ const ServiceFormEditor = () => {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="sections" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="sections">Sections</TabsTrigger>
                     <TabsTrigger value="fields">Individual Fields</TabsTrigger>
+                    <TabsTrigger value="rowgroups">Row Groups</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="sections" className="mt-4">
@@ -435,6 +423,13 @@ const ServiceFormEditor = () => {
                     <DynamicFieldEditor
                       fields={config.fields || []}
                       onUpdate={(fields) => setConfig({ ...config, fields })}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="rowgroups" className="mt-4">
+                    <RowGroupEditor
+                      rowGroups={config.rowGroups || []}
+                      onUpdate={(rowGroups) => setConfig({ ...config, rowGroups })}
                     />
                   </TabsContent>
                 </Tabs>
