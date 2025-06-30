@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Save, ArrowUp, ArrowDown, ArrowLeft } from 'lucide-react';
-import { FormConfig, FormField, RowGroup } from '@/types/formTypes';
+import { ArrowLeft, Save, Eye } from 'lucide-react';
+import { FormConfig, FormField, FormSection } from '@/types/formTypes';
 import { DynamicForm } from '@/components/forms/DynamicForm';
-import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
 import { DynamicFieldEditor } from '@/components/forms/DynamicFieldEditor';
+import { SectionEditor } from '@/components/forms/SectionEditor';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
@@ -36,12 +36,13 @@ const ServiceFormEditor = () => {
     category: '',
     apiEndpoint: '',
     fields: [],
-    rowGroups: []
+    sections: []
   });
 
   const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic');
 
   // Fetch workflow groups on component mount
   useEffect(() => {
@@ -69,7 +70,7 @@ const ServiceFormEditor = () => {
           fields: [],
           servis_aktif: Number(serviceData.active) ?? 0,
           active: Number(serviceData.active) ?? 0,
-          rowGroups: []
+          sections: []
         };
 
         // Try to parse existing form_json
@@ -114,7 +115,7 @@ const ServiceFormEditor = () => {
     setIsLoading(true);
 
     // Validate field count before saving
-    if (!validateFormFieldCount(config.fields || [])) {
+    if (!validateFormFieldCount((config.fields || []) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0))) {
       toast({
         title: "Error",
         description: `Form cannot have more than ${getMaxFormFields()} fields due to database limitations`,
@@ -180,27 +181,6 @@ const ServiceFormEditor = () => {
     }
   };
 
-  const generateFormJSON = () => {
-    // Clean up the config for JSON serialization
-    const cleanConfig = {
-      ...config,
-      fields: config.fields?.map(field => ({
-        ...field,
-        // Remove any undefined values that might break JSON
-        ...(field.options && { options: field.options }),
-        ...(field.placeholder && { placeholder: field.placeholder }),
-        ...(field.value && { value: field.value }),
-        ...(field.default && { default: field.default }),
-        ...(field.readonly && { readonly: field.readonly }),
-        ...(field.uiCondition && { uiCondition: field.uiCondition }),
-        ...(field.accept && { accept: field.accept }),
-        ...(field.note && { note: field.note })
-      }))
-    };
-
-    return JSON.stringify(cleanConfig, null, 2);
-  };
-
   const getCategoryIcon = (categoryName: string) => {
     const iconMap: { [key: string]: string } = {
       'Hardware': '💻',
@@ -221,66 +201,6 @@ const ServiceFormEditor = () => {
       'Marketing': 'bg-pink-100 text-pink-800'
     };
     return colorMap[categoryName] || 'bg-gray-100 text-gray-800';
-  };
-
-  const addField = () => {
-    const newField: FormField = {
-      label: 'New Field',
-      name: `new_field_${Date.now()}`,
-      type: 'text',
-      required: false,
-      columnSpan: 1
-    };
-    setConfig({
-      ...config,
-      fields: [...(config.fields || []), newField]
-    });
-  };
-
-  const updateField = (index: number, updatedField: FormField) => {
-    const newFields = [...(config.fields || [])];
-    newFields[index] = updatedField;
-    setConfig({ ...config, fields: newFields });
-  };
-
-  const removeField = (index: number) => {
-    const newFields = config.fields?.filter((_, i) => i !== index) || [];
-    setConfig({ ...config, fields: newFields });
-  };
-
-  const moveField = (index: number, direction: 'up' | 'down') => {
-    const newFields = [...(config.fields || [])];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-
-    if (newIndex >= 0 && newIndex < newFields.length) {
-      [newFields[index], newFields[newIndex]] = [newFields[newIndex], newFields[index]];
-      setConfig({ ...config, fields: newFields });
-    }
-  };
-
-  const addApprovalStep = () => {
-    const newSteps = [...(config.approval?.steps || []), 'New Approver'];
-    setConfig({
-      ...config,
-      approval: { ...config.approval!, steps: newSteps }
-    });
-  };
-
-  const updateApprovalStep = (index: number, value: string) => {
-    const newSteps = [...(config.approval?.steps || [])];
-    newSteps[index] = value;
-    setConfig({
-      ...config,
-      approval: { ...config.approval!, steps: newSteps }
-    });
-  };
-
-  const removeApprovalStep = (index: number) => {
-    const newSteps = config.approval?.steps.filter((_, i) => i !== index) || [];
-    setConfig({
-      ...config,
-      approval: { ...config.approval!, steps: newSteps }
-    });
   };
 
   if (previewMode) {
@@ -336,6 +256,7 @@ const ServiceFormEditor = () => {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setPreviewMode(true)}>
+              <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>
             <Button onClick={handleSave} disabled={isLoading}>
@@ -345,175 +266,178 @@ const ServiceFormEditor = () => {
           </div>
         </div>
 
-        {/* Field count warning */}
-        {config.fields && config.fields.length > 0 && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-800">
-                    <strong>Database Mapping:</strong> {config.fields.length} of {getMaxFormFields()} fields used
-                  </p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    Fields will be mapped to cstm_col1-{config.fields.length} and lbl_col1-{config.fields.length}
-                  </p>
-                </div>
-                {config.fields.length >= getMaxFormFields() && (
-                  <div className="text-red-600 text-sm font-medium">
-                    ⚠️ Maximum field limit reached
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="basic">Basic Configuration</TabsTrigger>
+            <TabsTrigger value="structure">Form Structure</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="basic" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">Form Title</Label>
+                    <Input
+                      id="title"
+                      value={config.title}
+                      onChange={(e) => setConfig({ ...config, title: e.target.value })}
+                      placeholder="e.g., IT Support Request"
+                    />
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Form Configuration */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Form Title</Label>
-                  <Input
-                    id="title"
-                    value={config.title}
-                    onChange={(e) => setConfig({ ...config, title: e.target.value })}
-                    placeholder="e.g., IT Support Request"
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="url">URL Path</Label>
+                    <Input
+                      id="url"
+                      value={config.url}
+                      onChange={(e) => setConfig({ ...config, url: e.target.value })}
+                      placeholder="e.g., /it-support"
+                    />
+                  </div>
 
-                <div>
-                  <Label htmlFor="url">URL Path</Label>
-                  <Input
-                    id="url"
-                    value={config.url}
-                    onChange={(e) => setConfig({ ...config, url: e.target.value })}
-                    placeholder="e.g., /it-support"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select value={config.category} onValueChange={(value) => setConfig({ ...config, category: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryList.map((category) => (
-                        <SelectItem key={category.category_id} value={category.category_name}>
-                          <span className="mr-2">{getCategoryIcon(category.category_name)}</span>
-                          {category.category_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={config.description}
-                    onChange={(e) => setConfig({ ...config, description: e.target.value })}
-                    placeholder="Brief description of the form"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="apiEndpoint">API Endpoint</Label>
-                  <Input
-                    id="apiEndpoint"
-                    value={config.apiEndpoint}
-                    onChange={(e) => setConfig({ ...config, apiEndpoint: e.target.value })}
-                    placeholder="e.g., /api/it-support"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Workflow Assignment</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="workflowGroup">Workflow Group</Label>
-                  <Select
-                    value={selectedWorkflowGroup?.toString() || ''}
-                    onValueChange={(value) => setSelectedWorkflowGroup(parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select workflow group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {workflowGroups
-                        .filter(wg => wg.is_active)
-                        .map((workflowGroup) => (
-                          <SelectItem key={workflowGroup.id} value={workflowGroup.id.toString()}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{workflowGroup.name}</span>
-                              <span className="text-sm text-gray-500">{workflowGroup.description}</span>
-                            </div>
+                  <div>
+                    <Label htmlFor="category">Category</Label>
+                    <Select value={config.category} onValueChange={(value) => setConfig({ ...config, category: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categoryList.map((category) => (
+                          <SelectItem key={category.category_id} value={category.category_name}>
+                            <span className="mr-2">{getCategoryIcon(category.category_name)}</span>
+                            {category.category_name}
                           </SelectItem>
                         ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Select the workflow group that will handle the approval process for this service.
-                  </p>
-                </div>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {selectedWorkflowGroup && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>Selected Workflow:</strong> {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.name}
-                    </p>
-                    <p className="text-sm text-blue-600 mt-1">
-                      {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.description}
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={config.description}
+                      onChange={(e) => setConfig({ ...config, description: e.target.value })}
+                      placeholder="Brief description of the form"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="apiEndpoint">API Endpoint</Label>
+                    <Input
+                      id="apiEndpoint"
+                      value={config.apiEndpoint}
+                      onChange={(e) => setConfig({ ...config, apiEndpoint: e.target.value })}
+                      placeholder="e.g., /api/it-support"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Workflow Assignment</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="workflowGroup">Workflow Group</Label>
+                    <Select
+                      value={selectedWorkflowGroup?.toString() || ''}
+                      onValueChange={(value) => setSelectedWorkflowGroup(parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select workflow group" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workflowGroups
+                          .filter(wg => wg.is_active)
+                          .map((workflowGroup) => (
+                            <SelectItem key={workflowGroup.id} value={workflowGroup.id.toString()}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{workflowGroup.name}</span>
+                                <span className="text-sm text-gray-500">{workflowGroup.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Select the workflow group that will handle the approval process for this service.
                     </p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Form Fields */}
-          <div>
+                  {selectedWorkflowGroup && (
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>Selected Workflow:</strong> {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.name}
+                      </p>
+                      <p className="text-sm text-blue-600 mt-1">
+                        {workflowGroups.find(wg => wg.id === selectedWorkflowGroup)?.description}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="structure" className="space-y-6">
+            {/* Field count warning */}
+            {((config.fields?.length || 0) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0)) > 0 && (
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-blue-800">
+                        <strong>Database Mapping:</strong> {(config.fields?.length || 0) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0)} of {getMaxFormFields()} fields used
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Fields will be mapped to database columns automatically
+                      </p>
+                    </div>
+                    {((config.fields?.length || 0) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0)) >= getMaxFormFields() && (
+                      <div className="text-red-600 text-sm font-medium">
+                        ⚠️ Maximum field limit reached
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>Form Structure</CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="fields" className="w-full">
+                <Tabs defaultValue="sections" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="fields">Dynamic Fields</TabsTrigger>
-                    <TabsTrigger value="rowGroups">Legacy Row Groups</TabsTrigger>
+                    <TabsTrigger value="sections">Sections</TabsTrigger>
+                    <TabsTrigger value="fields">Individual Fields</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="fields" className="space-y-4 mt-4">
-                    <DynamicFieldEditor
-                      fields={config.fields || []}
-                      onUpdate={(fields) => setConfig({ ...config, fields })}
-                      rowGroups={config.rowGroups || []}
-                      onUpdateRowGroups={(rowGroups) => setConfig({ ...config, rowGroups })}
+                  <TabsContent value="sections" className="mt-4">
+                    <SectionEditor
+                      sections={config.sections || []}
+                      onUpdate={(sections) => setConfig({ ...config, sections })}
                     />
                   </TabsContent>
 
-                  {/* <TabsContent value="rowGroups" className="mt-4">
-                    <RowGroupEditor
-                      rowGroups={config.rowGroups || []}
-                      onUpdate={(rowGroups) => setConfig({ ...config, rowGroups })}
+                  <TabsContent value="fields" className="mt-4">
+                    <DynamicFieldEditor
+                      fields={config.fields || []}
+                      onUpdate={(fields) => setConfig({ ...config, fields })}
                     />
-                  </TabsContent> */}
+                  </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

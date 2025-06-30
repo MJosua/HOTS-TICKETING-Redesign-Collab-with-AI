@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Sidebar,
@@ -15,7 +14,7 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, Search, User, Code, FileCode } from 'lucide-react';
+import { Home, FileText, CheckSquare, List, Settings, LogOut, Monitor, Users, Search, User, Code, FileCode, HelpCircle, ChevronRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -25,6 +24,7 @@ import { useAppDispatch } from "@/hooks/useAppDispatch";
 import { logoutUser } from "@/store/slices/authSlice";
 import { useToast } from "@/hooks/use-toast";
 import { useAppSelector } from '@/hooks/useAppSelector';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 
@@ -72,6 +72,19 @@ const adminItems = [
   },
 ];
 
+const helpItems = [
+  {
+    title: "User Guide",
+    url: "/help/user-guide",
+    icon: FileText,
+  },
+  {
+    title: "FAQ",
+    url: "/help/user-guide#faq",
+    icon: HelpCircle,
+  },
+];
+
 interface AppLayoutProps {
   children: React.ReactNode;
   searchValue?: string;
@@ -83,6 +96,7 @@ export function AppSidebar() {
   const { taskCount } = useAppSelector(state => state.tickets);
   const { user } = useAppSelector(state => state.auth);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const menuItems = [
     {
@@ -145,6 +159,7 @@ export function AppSidebar() {
 
   // Check if user has admin role (role === 4)
   const isAdmin = user?.role_id?.toString() === '4';
+  
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
@@ -198,6 +213,50 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Help & Support Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider px-3 py-2">
+            Help & Support
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <Collapsible open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className="w-full justify-between">
+                      <div className="flex items-center space-x-3">
+                        <HelpCircle className="w-5 h-5 flex-shrink-0" />
+                        <span>Help Center</span>
+                      </div>
+                      <ChevronRight className={cn("w-4 h-4 transition-transform", isHelpOpen && "rotate-90")} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pl-6">
+                    <SidebarMenu>
+                      {helpItems.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild>
+                            <Link
+                              to={item.url}
+                              className={cn(
+                                "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
+                              )}
+                            >
+                              <item.icon className="w-4 h-4 flex-shrink-0" />
+                              <span>{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         {/* Only show Administration menu for users with role === 4 */}
         {isAdmin && (
           <SidebarGroup>
@@ -222,6 +281,20 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Admin Guide">
+                    <Link
+                      to="/admin/guide"
+                      className={cn(
+                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        location.pathname === "/admin/guide" && "bg-sidebar-accent text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <HelpCircle className="w-5 h-5 flex-shrink-0" />
+                      <span>Admin Guide</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
