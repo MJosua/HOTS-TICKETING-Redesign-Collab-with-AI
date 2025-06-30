@@ -157,8 +157,8 @@ const TaskList = () => {
           return task.approvalSteps.find(
             approver =>
               approver.approval_order === task.current_step &&
-              approver.approver_id === user?.user_id &&
-              approver.approval_status === 0
+              approver.name === user?.user_name &&
+              approver.status === 'pending'
           );
         };
 
@@ -224,9 +224,9 @@ const TaskList = () => {
                     ticketId={task.id}
                     approvalOrder={task.current_step || 1}
                     canApprove={canApprove}
-                    currentStatus={currentApprover?.approval_status || 0}
+                    currentStatus={currentApprover?.status === 'pending' ? 0 : 1}
                     currentUserId={user?.user_id}
-                    assignedToId={currentApprover?.approver_id}
+                    assignedToId={user?.user_id}
                   />
                 )}
               </CardContent>

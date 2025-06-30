@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,9 @@ const ServiceFormEditor = () => {
   const [previewMode, setPreviewMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
+
+  // Calculate total field count properly
+  const totalFieldCount = (config.fields?.length || 0) + (config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0);
 
   // Fetch workflow groups on component mount
   useEffect(() => {
@@ -113,11 +117,6 @@ const ServiceFormEditor = () => {
 
   const handleSave = async () => {
     setIsLoading(true);
-
-    // Calculate total field count properly
-    const individualFieldCount = config.fields?.length || 0;
-    const sectionFieldCount = config.sections?.reduce((acc, section) => acc + section.fields.length, 0) || 0;
-    const totalFieldCount = individualFieldCount + sectionFieldCount;
 
     // Validate field count before saving
     if (!validateFormFieldCount(totalFieldCount)) {

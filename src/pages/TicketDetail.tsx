@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -44,13 +45,13 @@ const TicketDetail = () => {
 
     let ids: string[] = [];
 
-    // Handle widget property safely
+    // Handle widget property safely - check if it exists
     const widgetData = (ticketDetail as any).widget;
-    ids = Array.isArray(widgetData)
-      ? widgetData
-      : widgetData
-        ? [widgetData]
-        : [];
+    if (widgetData) {
+      ids = Array.isArray(widgetData)
+        ? widgetData
+        : [widgetData];
+    }
         
     return ids
       .map(getWidgetById)
