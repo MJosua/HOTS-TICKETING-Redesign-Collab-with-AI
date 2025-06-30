@@ -47,28 +47,28 @@ const HelpCenter = () => {
       name: "Getting Started",
       description: "Basic guides to help you get up and running",
       icon: BookOpen,
-      color: "bg-blue-100 text-blue-800",
+      color: "bg-pastel-blue",
       articleCount: 12
     },
     {
       name: "Service Requests",  
       description: "Everything about creating and managing service requests",
       icon: FileText,
-      color: "bg-green-100 text-green-800",
+      color: "bg-pastel-green",
       articleCount: 18
     },
     {
       name: "Approval Workflows",
       description: "Understanding approval processes and workflows",
       icon: Users,
-      color: "bg-purple-100 text-purple-800",
+      color: "bg-pastel-purple",
       articleCount: 8
     },
     {
       name: "Troubleshooting",
       description: "Common issues and how to resolve them",
       icon: MessageCircle,
-      color: "bg-orange-100 text-orange-800",
+      color: "bg-pastel-orange",
       articleCount: 15
     }
   ];
@@ -116,7 +116,7 @@ const HelpCenter = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-6 text-center">
-              <BookOpen className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+              <BookOpen className="w-8 h-8 icon-pastel-blue mx-auto mb-3" />
               <h3 className="font-semibold mb-2">User Guide</h3>
               <p className="text-sm text-gray-600">Complete user documentation</p>
             </CardContent>
@@ -124,7 +124,7 @@ const HelpCenter = () => {
           
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-6 text-center">
-              <Video className="w-8 h-8 text-green-600 mx-auto mb-3" />
+              <Video className="w-8 h-8 icon-pastel-green mx-auto mb-3" />
               <h3 className="font-semibold mb-2">Video Tutorials</h3>
               <p className="text-sm text-gray-600">Step-by-step video guides</p>
             </CardContent>
@@ -132,7 +132,7 @@ const HelpCenter = () => {
           
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-6 text-center">
-              <FileText className="w-8 h-8 text-purple-600 mx-auto mb-3" />
+              <FileText className="w-8 h-8 icon-pastel-purple mx-auto mb-3" />
               <h3 className="font-semibold mb-2">API Documentation</h3>
               <p className="text-sm text-gray-600">Technical API references</p>
             </CardContent>
@@ -140,7 +140,7 @@ const HelpCenter = () => {
           
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-6 text-center">
-              <MessageCircle className="w-8 h-8 text-orange-600 mx-auto mb-3" />
+              <MessageCircle className="w-8 h-8 icon-pastel-orange mx-auto mb-3" />
               <h3 className="font-semibold mb-2">Contact Support</h3>
               <p className="text-sm text-gray-600">Get direct help from our team</p>
             </CardContent>
@@ -225,7 +225,7 @@ const HelpCenter = () => {
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-t-lg">
                     <div className="bg-white bg-opacity-90 rounded-full p-3">
-                      <Video className="w-6 h-6 text-blue-600" />
+                      <Video className="w-6 h-6 icon-pastel-blue" />
                     </div>
                   </div>
                   <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
@@ -244,7 +244,7 @@ const HelpCenter = () => {
         {/* Contact Support */}
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-8 text-center">
-            <MessageCircle className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+            <MessageCircle className="w-12 h-12 icon-pastel-blue mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2">Still need help?</h3>
             <p className="text-gray-600 mb-6">
               Can't find what you're looking for? Our support team is here to help you.

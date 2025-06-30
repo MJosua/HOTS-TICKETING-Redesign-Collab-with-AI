@@ -21,6 +21,7 @@ import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
 import { getMaxFormFields } from '@/utils/formFieldMapping';
+import { UnifiedFormStructureEditor, FormStructureItem } from '@/components/forms/UnifiedFormStructureEditor';
 
 const ServiceFormEditor = () => {
   const { id } = useParams();
@@ -46,15 +47,20 @@ const ServiceFormEditor = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
 
+  const [formStructure, setFormStructure] = useState<FormStructureItem[]>([]);
+
   // Calculate total field count properly
-  const totalFieldCount = (config.fields?.length || 0) + 
-    (config.sections?.reduce((acc: number, section: FormSection) => acc + (section.fields?.length || 0), 0) || 0) +
-    (config.rowGroups?.reduce((acc: number, rg: RowGroup) => {
-      if (rg.isStructuredInput) {
-        return acc + 1; // Each structured row group counts as one field mapping
-      }
-      return acc + (Array.isArray(rg.rowGroup) ? rg.rowGroup.length : 0);
-    }, 0) || 0);
+  const totalFieldCount = formStructure.reduce((acc, item) => {
+    if (item.type === 'field') {
+      return acc + 1;
+    } else if (item.type === 'section') {
+      const sectionData = item.data as any;
+      return acc + (sectionData.fields?.length || 0);
+    } else if (item.type === 'rowgroup') {
+      return acc + 1; // Row groups count as 1 field mapping
+    }
+    return acc;
+  }, 0);
 
   // Fetch workflow groups on component mount
   useEffect(() => {
@@ -111,6 +117,85 @@ const ServiceFormEditor = () => {
   }, [isEdit, id, serviceCatalog, categoryList, workflowGroups]);
 
   const { toast } = useToast();
+
+  // Convert legacy structure to unified structure
+  useEffect(() => {
+    const unifiedItems: FormStructureItem[] = [];
+    let counter = 0;
+
+    // Convert existing fields
+    config.fields?.forEach((field, index) => {
+      unifiedItems.push({
+        id: `field-${counter}`,
+        type: 'field',
+        order: counter,
+        data: field
+      });
+      counter++;
+    });
+
+    // Convert existing sections
+    config.sections?.forEach((section, index) => {
+      unifiedItems.push({
+        id: `section-${counter}`,
+        type: 'section',
+        order: counter,
+        data: {
+          title: section.title,
+          description: section.description,
+          fields: section.fields,
+          collapsible: false,
+          defaultOpen: true
+        }
+      });
+      counter++;
+    });
+
+    // Convert existing row groups
+    config.rowGroups?.forEach((rowGroup, index) => {
+      unifiedItems.push({
+        id: `rowgroup-${counter}`,
+        type: 'rowgroup',
+        order: counter,
+        data: rowGroup
+      });
+      counter++;
+    });
+
+    setFormStructure(unifiedItems);
+  }, [config.fields, config.sections, config.rowGroups]);
+
+  const handleStructureUpdate = (items: FormStructureItem[]) => {
+    setFormStructure(items);
+    
+    // Convert back to legacy format for saving
+    const fields: FormField[] = [];
+    const sections: FormSection[] = [];
+    const rowGroups: RowGroup[] = [];
+
+    items.forEach(item => {
+      if (item.type === 'field') {
+        fields.push(item.data as FormField);
+      } else if (item.type === 'section') {
+        const sectionData = item.data as any;
+        sections.push({
+          title: sectionData.title,
+          description: sectionData.description,
+          fields: sectionData.fields,
+          repeatable: false
+        });
+      } else if (item.type === 'rowgroup') {
+        rowGroups.push(item.data as RowGroup);
+      }
+    });
+
+    setConfig({
+      ...config,
+      fields,
+      sections,
+      rowGroups
+    });
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -402,37 +487,16 @@ const ServiceFormEditor = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Form Structure</CardTitle>
+                <CardTitle>Unified Form Structure</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Drag and drop to reorder fields, sections, and row groups. Each element can be configured individually.
+                </p>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="sections" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="sections">Sections</TabsTrigger>
-                    <TabsTrigger value="fields">Individual Fields</TabsTrigger>
-                    <TabsTrigger value="rowgroups">Row Groups</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="sections" className="mt-4">
-                    <SectionEditor
-                      sections={config.sections || []}
-                      onUpdate={(sections) => setConfig({ ...config, sections })}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="fields" className="mt-4">
-                    <DynamicFieldEditor
-                      fields={config.fields || []}
-                      onUpdate={(fields) => setConfig({ ...config, fields })}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="rowgroups" className="mt-4">
-                    <RowGroupEditor
-                      rowGroups={config.rowGroups || []}
-                      onUpdate={(rowGroups) => setConfig({ ...config, rowGroups })}
-                    />
-                  </TabsContent>
-                </Tabs>
+                <UnifiedFormStructureEditor
+                  items={formStructure}
+                  onUpdate={handleStructureUpdate}
+                />
               </CardContent>
             </Card>
           </TabsContent>
