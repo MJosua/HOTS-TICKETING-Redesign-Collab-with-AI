@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { store } from "./store";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
-import { TokenExpiredModalWrapper } from "@/components/modals/TokenExpiredModalWrapper";
+import TokenExpiredModalWrapper from "@/components/modals/TokenExpiredModalWrapper";
 
 // Import pages
 import Index from "./pages/Index";
@@ -32,11 +32,15 @@ import AdminGuide from "./pages/admin/AdminGuide";
 
 // Dynamic routes
 import { DynamicServiceRoutes } from "./components/routing/DynamicServiceRoutes";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 function App() {
+  const handleServiceSubmit = (data: any) => {
+    console.log("Service form submitted:", data);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
@@ -69,7 +73,7 @@ function App() {
                 <Route path="/admin/guide" element={<ProtectedRoute><AdminGuide /></ProtectedRoute>} />
                 
                 {/* Dynamic service routes */}
-                <Route path="/service/*" element={<ProtectedRoute><DynamicServiceRoutes /></ProtectedRoute>} />
+                <Route path="/service/*" element={<ProtectedRoute><DynamicServiceRoutes onSubmit={handleServiceSubmit} /></ProtectedRoute>} />
                 
                 {/* Catch all route */}
                 <Route path="*" element={<NotFound />} />
