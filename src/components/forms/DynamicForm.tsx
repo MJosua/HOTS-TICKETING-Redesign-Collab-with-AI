@@ -275,9 +275,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
             <div key={fieldKey} className={getColSpanClass(field.columnSpan || 1)}>
               <DynamicField
                 field={fieldToRender}
-                form={form}
-                fieldKey={fieldKey}
-                onValueChange={(value) => {
+                value={form.watch(fieldKey)}
+                onChange={(value) => {
+                  form.setValue(fieldKey, value);
                   console.log('Field value changed:', fieldKey, value);
                   // Update current field value
                   setWatchedValues(prev => {
@@ -302,7 +302,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                     setLocalFields(updatedFields);
                   }
                 }}
-                onFileUpload={handleFileUpload}
+                watchedValues={watchedValues}
+                error={form.formState.errors[fieldKey]?.message as string}
               />
             </div>
           );

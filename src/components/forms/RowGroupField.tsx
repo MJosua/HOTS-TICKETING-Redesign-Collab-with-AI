@@ -26,9 +26,11 @@ export const RowGroupField: React.FC<RowGroupFieldProps> = ({
           <DynamicField
             key={fieldKey}
             field={field}
-            form={form}
-            fieldKey={fieldKey}
-            onValueChange={(value) => onValueChange?.(fieldKey, value)}
+            value={form.watch(fieldKey)}
+            onChange={(value) => {
+              form.setValue(fieldKey, value);
+              onValueChange?.(fieldKey, value);
+            }}
           />
         );
       })}

@@ -88,9 +88,9 @@ export const RepeatingSection: React.FC<RepeatingSectionProps> = ({ section, for
                   <div key={`${fieldKey}-${fieldIndex}`} className={getColSpanClass(field.columnSpan || 1)}>
                     <DynamicField
                       field={field}
-                      form={form}
-                      fieldKey={fieldKey}
-                      onValueChange={(value) => {
+                      value={form.watch(fieldKey)}
+                      onChange={(value) => {
+                        form.setValue(fieldKey, value);
                         // Handle value changes if needed for calculations
                         // console.log(`Field ${fieldKey} changed to:`, value);
                       }}

@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/types/formTypes';
-import { resolveSystemVariables } from '@/utils/systemVariableResolver';
+import { resolveSystemVariable } from '@/utils/systemVariableResolver';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
 
