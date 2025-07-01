@@ -142,18 +142,99 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items }) =
         </p>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Form Layout</h4>
-            {renderLayoutPreview()}
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">
-              Database Mapping ({getAllFields().length} fields)
-            </h4>
-            {renderDatabaseMapping()}
-          </div>
-        </div>
+        <DragDropContext onDragEnd={onPreviewDragEnd}>
+          <Droppable droppableId="preview-structure">
+            {(provided) => (
+              <div {...provided.droppableProps} ref={provided.innerRef}>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {previewItems.map((item, index) => {
+                    const currentFieldCounter = fieldCounter;
+
+                    if (item.type === 'field') {
+                      const field = item.data as FormField;
+                      const cstmCol = `cstm_col${fieldCounter}`;
+                      const lblCol = `lbl_col${fieldCounter}`;
+                      fieldCounter++;
+
+                      return (
+                        <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs cursor-move hover:shadow-md transition-shadow ${field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
+                                }`}
+                            >
+                              <div className="font-medium text-gray-700">{field.label}</div>
+                              <div className="text-blue-600 mt-1">{cstmCol} → {lblCol}</div>
+                              <div className="text-xs text-gray-500">Span: {field.columnSpan || 1} column{(field.columnSpan || 1) > 1 ? 's' : ''}</div>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    } else if (item.type === 'section') {
+                      const section = item.data as SectionData;
+                      return (
+                        <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="col-span-3 p-3 bg-green-100 border border-green-300 rounded cursor-move hover:shadow-md transition-shadow"
+                            >
+                              <div className="font-medium text-sm mb-2 text-gray-700">📁 {section.title}</div>
+                              <div className="text-xs text-green-600">Section (spans 3 columns)</div>
+                              <div className="grid grid-cols-3 gap-1 mt-2">
+                                {section.fields.map((field, fieldIndex) => {
+                                  const cstmCol = `cstm_col${fieldCounter}`;
+                                  const lblCol = `lbl_col${fieldCounter}`;
+                                  fieldCounter++;
+                                  return (
+                                    <div key={fieldIndex} className={`p-1 bg-green-200 rounded text-xs ${field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
+                                      }`}>
+                                      <span className="font-medium text-gray-700">{field.label}</span>
+                                      <div className="text-green-700">{cstmCol} → {lblCol}</div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    } else if (item.type === 'rowgroup') {
+                      const rowGroup = item.data as RowGroup;
+                      const cstmCol = `cstm_col${fieldCounter}`;
+                      const lblCol = `lbl_col${fieldCounter}`;
+                      fieldCounter++;
+
+                      return (
+                        <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="col-span-3 p-2 bg-purple-100 border border-purple-300 rounded text-xs cursor-move hover:shadow-md transition-shadow"
+                            >
+                              <div className="font-medium text-gray-700">🗂️ {rowGroup.title || 'Row Group'}</div>
+                              <div className="text-purple-600 mt-1">{cstmCol} → {lblCol} (Dynamic Rows)</div>
+                              <div className="text-xs text-gray-500">Max rows: {rowGroup.maxRows || 5}</div>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       </CardContent>
     </Card>
   );
