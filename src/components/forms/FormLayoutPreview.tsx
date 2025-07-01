@@ -48,6 +48,28 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items }) =
     return allFields;
   };
 
+
+  const onPreviewDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+
+    if (sourceIndex === destinationIndex) return;
+
+    const newPreviewItems = Array.from(previewItems);
+    const [reorderedItem] = newPreviewItems.splice(sourceIndex, 1);
+    newPreviewItems.splice(destinationIndex, 0, reorderedItem);
+
+    const reorderedWithOrder = newPreviewItems.map((item, index) => ({
+      ...item,
+      order: index
+    }));
+
+    setPreviewItems(reorderedWithOrder);
+    onUpdate(reorderedWithOrder);
+  };
+  
   const renderLayoutPreview = () => {
     return (
       <div className="space-y-3">
