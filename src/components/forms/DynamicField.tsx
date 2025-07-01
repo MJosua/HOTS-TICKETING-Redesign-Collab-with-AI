@@ -16,8 +16,8 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
-import { resolveSystemVariable, useSystemVariableContext } from '@/utils/systemVariableResolver';
-
+import { resolveSystemVariable,  } from '@/utils/systemVariableResolver';
+import { useSystemVariableContext} from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
 interface FormField {
   label: string;
   type: string;

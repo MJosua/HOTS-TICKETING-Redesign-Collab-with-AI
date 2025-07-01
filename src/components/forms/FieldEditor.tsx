@@ -7,28 +7,57 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/types/formTypes';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown, RefreshCw, Info } from 'lucide-react';
+import { SYSTEM_VARIABLE_ENTRIES } from '@/utils/systemVariableDefinitions/systemVariableDefinitions'; // adjust path as needed
 
 interface FieldEditorProps {
   field: FormField;
+  fields?: FormField[]; // all fields for dependency selection
   onUpdate: (field: FormField) => void;
   onCancel: () => void;
 }
-
-export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onUpdate, onCancel }) => {
+export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], onUpdate, onCancel,  allfields = [], }) => {
   const [localField, setLocalField] = useState<FormField>(field);
 
   const updateField = (updates: Partial<FormField>) => {
     setLocalField(prev => ({ ...prev, ...updates }));
   };
-
+  console.log("allfields",allfields)
+  
   const handleSave = () => {
     onUpdate(localField);
   };
+
+  const SystemVariableHelper = () => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Info className="w-3 h-3 mr-1" />
+          System Variables
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-96 max-h-96 overflow-auto">
+        <div className="space-y-2">
+          <h4 className="font-medium">Available System Variables:</h4>
+          <div className="text-sm space-y-1">
+            {SYSTEM_VARIABLE_ENTRIES.map((entry) => (
+              <div key={entry.key}>
+                <code className="bg-muted px-1 py-0.5 rounded text-xs">{entry.key}</code>
+                <span className="ml-2 text-muted-foreground">{entry.description}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
+
           <Label>Field Label</Label>
           <Input
             value={localField.label}
@@ -42,6 +71,47 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onUpdate, onCan
             value={localField.name}
             onChange={(e) => updateField({ name: e.target.value })}
             placeholder="field_name"
+          />
+        </div>
+      </div>
+
+      {/* New UI for dependency selection */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Depends On</Label>
+          <Select
+            value={localField.dependsOn ?? "none"}
+            onValueChange={(value) =>
+              updateField({ dependsOn: value === "none" ? undefined : value })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a field" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              {fields && fields.length > 0 ? (
+                fields
+                  .filter(f => f.name !== localField.name && f.name)
+                  .map(f => (
+                    <SelectItem key={f.name} value={f.name}>
+                      {f.label} ({f.name})
+                    </SelectItem>
+                  ))
+              ) : (
+                <SelectItem value="no_fields" disabled>
+                  No fields available
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Filter Options By</Label>
+          <Input
+            value={localField.filterOptionsBy || ''}
+            onChange={(e) => updateField({ filterOptionsBy: e.target.value || undefined })}
+            placeholder="Filter key or expression"
           />
         </div>
       </div>
@@ -119,6 +189,14 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, onUpdate, onCan
 
       <div>
         <Label>Default Value</Label>
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <SystemVariableHelper />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Use system variables like ${'{user}'} for dynamic defaults
+          </p>
+        </div>
         <Input
           value={localField.default || ''}
           onChange={(e) => updateField({ default: e.target.value })}

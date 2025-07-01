@@ -1,6 +1,6 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Provider } from "react-redux";
+import { Provider, useDispatch } from "react-redux";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { store } from "./store";
 import { Toaster } from "@/components/ui/toaster";
@@ -33,10 +33,42 @@ import AdminGuide from "./pages/admin/AdminGuide";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useDynamicServiceRoutes } from "./components/routing/DynamicServiceRoutes";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { fetchDepartments } from "@/store/slices/userManagementSlice";
+import { fetchSRF } from "./store/slices/srf_slice";
+import { API_URL } from '@/config/sourceConfig';
+import axios from 'axios';
+
 
 const queryClient = new QueryClient();
 
-const AppContent = () => {
+
+const AppContentInner = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchDepartments());
+    dispatch(fetchSRF());
+  }, [dispatch]);
+
+
+  useEffect(() => {
+    const fetchSRFSKU = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/hots_settings/get_srf_sku`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('tokek')}`,
+          },
+        });
+
+        console.log("haha", response.data);
+      } catch (err: any) {
+        console.error('Failed to fetch SRF SKU:', err);
+      }
+    };
+
+    fetchSRFSKU();
+  }, []);
+
   const handleServiceSubmit = useCallback((data: any) => {
     console.log("Service form submitted:", data);
   }, []);
@@ -86,6 +118,8 @@ const AppContent = () => {
     </Router>
   );
 };
+
+const AppContent = () => <AppContentInner />;
 
 const App = () => {
   return (

@@ -16,8 +16,8 @@ import { RowGroup } from '@/types/formTypes';
 import { useToast } from '@/hooks/use-toast';
 import {
   resolveSystemVariable,
-  useSystemVariableContext,
 } from '@/utils/systemVariableResolver';
+import { useSystemVariableContext} from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
 
 interface StructuredRowGroupProps {
   rowGroup: RowGroup;

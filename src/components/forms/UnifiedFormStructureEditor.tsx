@@ -32,12 +32,47 @@ interface UnifiedFormStructureEditorProps {
   onUpdate: (items: FormStructureItem[]) => void;
 }
 
-export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProps> = ({ 
-  items, 
-  onUpdate 
+export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProps> = ({
+  items,
+  onUpdate
 }) => {
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [previewItems, setPreviewItems] = useState<FormStructureItem[]>(items);
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+
+  // Helper function to get nested property value by path string, e.g. "linkeddistributors.plant_description"
+  const getNestedProperty = (obj: any, path: string): any => {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  };
+
+  // Helper function to filter options of dependent fields based on filterOptionsBy key
+  const filterDependentFieldOptions = (field: FormField, dependsOnValue: any): string[] => {
+    if (!field.options || !field.filterOptionsBy) return field.options || [];
+
+    // Check if options are objects or strings
+    const firstOption = field.options[0];
+    let optionsArray: any[] = [];
+
+    try {
+      optionsArray = typeof firstOption === 'string' ? field.options : JSON.parse(field.options as unknown as string);
+    } catch {
+      optionsArray = field.options;
+    }
+
+    // Filter options by comparing nested property value with dependsOnValue
+    const filteredOptions = optionsArray.filter(option => {
+      if (typeof option === 'string') {
+        return option.includes(dependsOnValue);
+      } else if (typeof option === 'object' && option !== null) {
+        const propValue = getNestedProperty(option, field.filterOptionsBy!);
+        return propValue === dependsOnValue;
+      }
+      return false;
+    });
+
+    // Return filtered options as strings or JSON stringified objects
+    return filteredOptions.map(opt => (typeof opt === 'string' ? opt : JSON.stringify(opt)));
+  };
 
   // Update preview items when items prop changes
   React.useEffect(() => {
@@ -113,7 +148,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
   };
 
   const updateItem = (id: string, updatedData: any) => {
-    const updatedItems = items.map(item => 
+    const updatedItems = items.map(item =>
       item.id === id ? { ...item, data: updatedData } : item
     );
     onUpdate(updatedItems);
@@ -165,12 +200,12 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       const newItems = Array.from(items);
       const [reorderedItem] = newItems.splice(sourceIndex, 1);
       newItems.splice(destinationIndex, 0, reorderedItem);
-      
+
       const reorderedWithOrder = newItems.map((item, index) => ({
         ...item,
         order: index
       }));
-      
+
       setPreviewItems(reorderedWithOrder);
       onUpdate(reorderedWithOrder);
     }
@@ -179,13 +214,13 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     if (sourceDroppableId === 'form-structure' && destinationDroppableId.startsWith('section-')) {
       const sectionId = destinationDroppableId.replace('section-', '');
       const itemToMove = items[sourceIndex];
-      
+
       if (itemToMove.type === 'field') {
         const fieldData = itemToMove.data as FormField;
-        
+
         // Remove field from main structure
         const newItems = items.filter((_, index) => index !== sourceIndex);
-        
+
         // Add field to section
         const updatedItems = newItems.map(item => {
           if (item.id === sectionId && item.type === 'section') {
@@ -200,7 +235,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
           }
           return item;
         });
-        
+
         onUpdate(updatedItems);
       }
     }
@@ -217,12 +252,12 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     const newPreviewItems = Array.from(previewItems);
     const [reorderedItem] = newPreviewItems.splice(sourceIndex, 1);
     newPreviewItems.splice(destinationIndex, 0, reorderedItem);
-    
+
     const reorderedWithOrder = newPreviewItems.map((item, index) => ({
       ...item,
       order: index
     }));
-    
+
     setPreviewItems(reorderedWithOrder);
     onUpdate(reorderedWithOrder);
   };
@@ -255,7 +290,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
 
   const renderFormPreview = () => {
     let fieldCounter = 1;
-    
+
     return (
       <div className="mb-6 p-4 border rounded-lg bg-gray-50">
         <h4 className="text-sm font-medium mb-3 text-gray-700">Form Layout Preview & Database Mapping</h4>
@@ -266,13 +301,13 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   {previewItems.map((item, index) => {
                     const currentFieldCounter = fieldCounter;
-                    
+
                     if (item.type === 'field') {
                       const field = item.data as FormField;
                       const cstmCol = `cstm_col${fieldCounter}`;
                       const lblCol = `lbl_col${fieldCounter}`;
                       fieldCounter++;
-                      
+
                       return (
                         <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
                           {(provided) => (
@@ -280,9 +315,8 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs cursor-move hover:shadow-md transition-shadow ${
-                                field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
-                              }`}
+                              className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs cursor-move hover:shadow-md transition-shadow ${field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
+                                }`}
                             >
                               <div className="font-medium text-gray-700">{field.label}</div>
                               <div className="text-blue-600 mt-1">{cstmCol} → {lblCol}</div>
@@ -310,9 +344,8 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                                   const lblCol = `lbl_col${fieldCounter}`;
                                   fieldCounter++;
                                   return (
-                                    <div key={fieldIndex} className={`p-1 bg-green-200 rounded text-xs ${
-                                      field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
-                                    }`}>
+                                    <div key={fieldIndex} className={`p-1 bg-green-200 rounded text-xs ${field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
+                                      }`}>
                                       <span className="font-medium text-gray-700">{field.label}</span>
                                       <div className="text-green-700">{cstmCol} → {lblCol}</div>
                                     </div>
@@ -328,7 +361,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                       const cstmCol = `cstm_col${fieldCounter}`;
                       const lblCol = `lbl_col${fieldCounter}`;
                       fieldCounter++;
-                      
+
                       return (
                         <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
                           {(provided) => (
@@ -404,9 +437,9 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                             <div className="flex items-center gap-2">
                               {getItemIcon(item.type)}
                               <span className="text-sm font-medium capitalize text-gray-700">
-                                {item.type === 'field' ? (item.data as FormField).label : 
-                                 item.type === 'section' ? (item.data as SectionData).title :
-                                 (item.data as RowGroup).title || 'Row Group'}
+                                {item.type === 'field' ? (item.data as FormField).label :
+                                  item.type === 'section' ? (item.data as SectionData).title :
+                                    (item.data as RowGroup).title || 'Row Group'}
                               </span>
                             </div>
                           </div>
@@ -438,7 +471,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                           </div>
                         </div>
                       </CardHeader>
-                      
+
                       {/* Section fields display */}
                       {item.type === 'section' && (item.data as SectionData).fields.length > 0 && (
                         <CardContent className="pt-0 pb-3">
@@ -461,24 +494,25 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                           </Droppable>
                         </CardContent>
                       )}
-                      
+
                       {editingItem === item.id && (
                         <CardContent>
                           {item.type === 'field' && (
                             <FieldEditor
+                              fields={items.filter(i => i.type === 'field').map(i => i.data as FormField)}
                               field={item.data as FormField}
                               onUpdate={(updatedField) => updateItem(item.id, updatedField)}
                               onCancel={() => setEditingItem(null)}
                             />
                           )}
-                          
+
                           {item.type === 'section' && (
                             <SectionEditor
                               section={item.data as SectionData}
                               onUpdate={(updatedSection) => updateItem(item.id, updatedSection)}
                             />
                           )}
-                          
+
                           {item.type === 'rowgroup' && (
                             <RowGroupEditor
                               rowGroup={item.data as RowGroup}
@@ -548,7 +582,7 @@ const SectionEditor: React.FC<{
           <Label>Collapsible</Label>
         </div>
       </div>
-      
+
       <div>
         <Label>Description</Label>
         <Textarea

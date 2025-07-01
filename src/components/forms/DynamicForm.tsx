@@ -39,12 +39,17 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   const maxFields = useMemo(() => getMaxFormFields(), []);
   const [rowGroups, setRowGroups] = useState<RowGroup[]>(() => JSON.parse(JSON.stringify(config.rowGroups || [])));
+  const [localFields, setLocalFields] = useState<FormField[]>(() => JSON.parse(JSON.stringify(config.fields || [])));
+
+  // Sync localFields with config.fields when config.fields changes
+  React.useEffect(() => {
+    setLocalFields(JSON.parse(JSON.stringify(config.fields || [])));
+  }, [config.fields]);
 
   // Get widgets from database for this service
   const serviceWidgetIds = useAppSelector(state => 
     serviceId ? selectServiceWidgets(state, parseInt(serviceId)) : []
   );
-  console.log("serviceWidgetIds", serviceWidgetIds);
   // Get widget configurations from registry
   const assignedWidgets: WidgetConfig[] = useMemo(() => {
     const ids = Array.isArray(serviceWidgetIds)
@@ -191,6 +196,40 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     }
   };
 
+  // Helper function to get nested property value by path string, e.g. "linkeddistributors.plant_description"
+  const getNestedProperty = (obj: any, path: string): any => {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  };
+
+  // Helper function to filter options of dependent fields based on filterOptionsBy key
+  const filterDependentFieldOptions = (field: FormField, dependsOnValue: any): string[] => {
+    if (!field.options || !field.filterOptionsBy) return field.options || [];
+
+    // Check if options are objects or strings
+    const firstOption = field.options[0];
+    let optionsArray: any[] = [];
+
+    try {
+      optionsArray = typeof firstOption === 'string' ? field.options : JSON.parse(field.options as unknown as string);
+    } catch {
+      optionsArray = field.options;
+    }
+
+    // Filter options by comparing nested property value with dependsOnValue
+    const filteredOptions = optionsArray.filter(option => {
+      if (typeof option === 'string') {
+        return option.includes(dependsOnValue);
+      } else if (typeof option === 'object' && option !== null) {
+        const propValue = getNestedProperty(option, field.filterOptionsBy!);
+        return propValue === dependsOnValue;
+      }
+      return false;
+    });
+
+    // Return filtered options as strings or JSON stringified objects
+    return filteredOptions.map(opt => (typeof opt === 'string' ? opt : JSON.stringify(opt)));
+  };
+
   const renderFieldsInRows = (fields: FormField[]) => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -204,7 +243,29 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 form={form}
                 fieldKey={fieldKey}
                 onValueChange={(value) => {
-                  setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                  // Update current field value
+                  setWatchedValues(prev => {
+                    const newValues = { ...prev, [fieldKey]: value };
+
+                    // Update dependent fields options based on new value
+                    const updatedFields = config.fields?.map(f => {
+                      if (f.dependsOn === field.name) {
+                        const filteredOptions = filterDependentFieldOptions(f, value);
+                        return { ...f, options: filteredOptions };
+                      }
+                      return f;
+                    }) || [];
+
+                    // Update config fields with filtered options
+                    if (updatedFields.length > 0) {
+                      // Update config fields state
+                      // Since config is a prop, we need to manage local state for fields
+                      setLocalFields(updatedFields);
+                    }
+
+                    return newValues;
+                  });
+
                 }}
                 onFileUpload={handleFileUpload}
               />
@@ -266,7 +327,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 </div>
               )}
 
-              Render sections if they exist
               {config.sections?.map((section, sectionIndex) => (
                 <div key={`section-${sectionIndex}`} className="space-y-4">
                   <h3 className="text-lg font-medium">{section.title}</h3>

@@ -63,6 +63,10 @@ export interface FormField {
   uiCondition?: string;
   columnSpan?: number;
   systemVariable?: string;
+
+  // New properties for chain reaction fields
+  dependsOn?: string; // field name this field depends on
+  filterOptionsBy?: string; // key or expression to filter options based on dependsOn field's value
 }
 
 export interface RowData {

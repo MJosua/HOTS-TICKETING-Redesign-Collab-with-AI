@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -210,8 +210,10 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({
         {fields.map((field, index) => (
           <FieldEditor
             key={index}
+            allfields={}
             field={field}
             index={index}
+            fields={fields}  {/* Pass all fields for dependency selection */}
             onUpdate={(updatedField) => updateField(index, updatedField)}
             onRemove={() => removeField(index)}
             onMoveUp={() => moveField(index, 'up')}
@@ -260,7 +262,6 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({
     </div>
   );
 };
-
 interface FieldEditorProps {
   field: FormField;
   index: number;
