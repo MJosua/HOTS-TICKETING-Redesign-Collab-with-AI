@@ -23,6 +23,8 @@ const Loginpage = () => {
     password: ''
   });
 
+  
+  
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
@@ -79,7 +81,7 @@ const Loginpage = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <a href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
+              <a  onClick={() => navigate("/register")} className="text-blue-600 hover:text-blue-500 font-medium">
                 Sign up
               </a>
             </p>
