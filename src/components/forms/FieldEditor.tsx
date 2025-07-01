@@ -28,7 +28,15 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
   };
 
   const handleSave = () => {
-    onUpdate({ ...localField, filterOptionsBy: filterInput || undefined });
+    const updatedField = { ...localField, filterOptionsBy: filterInput || undefined };
+    console.log('🔧 Field Editor - Saving field:', {
+      fieldName: updatedField.name,
+      fieldType: updatedField.type,
+      dependsOn: updatedField.dependsOn,
+      filterOptionsBy: updatedField.filterOptionsBy,
+      hasChainLink: !!updatedField.dependsOn
+    });
+    onUpdate(updatedField);
   };
 
   const SystemVariableHelper = () => (
@@ -87,6 +95,12 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
               if (!dependsOn) {
                 setFilterInput('');
               }
+              
+              console.log('🔗 Chain Link - Parent field changed:', {
+                childField: localField.name,
+                parentField: dependsOn,
+                action: dependsOn ? 'linked' : 'unlinked'
+              });
             }}
           >
             <SelectTrigger className="bg-white">
@@ -128,7 +142,14 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             <Label className="text-sm">Filter Property Path</Label>
             <Input
               value={filterInput}
-              onChange={(e) => setFilterInput(e.target.value)}
+              onChange={(e) => {
+                setFilterInput(e.target.value);
+                console.log('🔍 Chain Link - Filter path changed:', {
+                  childField: localField.name,
+                  parentField: localField.dependsOn,
+                  filterPath: e.target.value
+                });
+              }}
               placeholder="e.g., category.name or plant_description"
               className="bg-white"
             />
@@ -148,6 +169,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
               <p>2. This field's options get filtered automatically</p>
               <p>3. Only matching options will be shown to the user</p>
               <p>4. Filtering uses the property path you specify above</p>
+              <p>5. Console logs will show the filtering process for debugging</p>
             </div>
           </div>
         )}

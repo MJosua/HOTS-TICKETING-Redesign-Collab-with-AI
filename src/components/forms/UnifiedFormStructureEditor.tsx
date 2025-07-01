@@ -34,6 +34,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [showPreview, setShowPreview] = useState(true);
   const [configuringRowGroup, setConfiguringRowGroup] = useState<string | null>(null);
+  const [showChainLinkHelper, setShowChainLinkHelper] = useState(false);
 
   const addItem = (type: 'field' | 'section' | 'rowgroup') => {
     let newItem: FormStructureItem;
@@ -199,9 +200,10 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     if (!result.destination) return;
 
     const { source, destination } = result;
+    console.log('🔄 Drag operation:', { source, destination });
     
     // Handle reordering within main structure
-    if (source.droppableId === 'main-structure' && destination.droppableId === 'main-structure') {
+    if (source.droppableId === 'unified-structure' && destination.droppableId === 'unified-structure') {
       const newItems = [...items];
       const [reorderedItem] = newItems.splice(source.index, 1);
       newItems.splice(destination.index, 0, reorderedItem);
@@ -211,97 +213,12 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
         item.order = index;
       });
       
+      console.log('📋 Reordered main structure:', newItems.map(i => `${i.type}:${i.id}`));
       onUpdate(newItems);
       return;
     }
 
-    // Handle moving field from main structure to section
-    if (source.droppableId === 'main-structure' && destination.droppableId.startsWith('section-')) {
-      const sectionId = destination.droppableId.replace('section-', '');
-      const section = items.find(item => item.id === sectionId);
-      
-      if (section && section.type === 'section') {
-        const movedItem = items[source.index];
-        if (movedItem.type === 'field') {
-          const sectionData = section.data as FormSection;
-          const newItems = items.filter((_, index) => index !== source.index);
-          
-          // Add field to section
-          const updatedItems = newItems.map(item => {
-            if (item.id === sectionId) {
-              return {
-                ...item,
-                data: {
-                  ...sectionData,
-                  fields: [
-                    ...(sectionData.fields || []).slice(0, destination.index),
-                    movedItem.data as FormField,
-                    ...(sectionData.fields || []).slice(destination.index)
-                  ]
-                }
-              };
-            }
-            return item;
-          });
-          
-          // Update orders
-          updatedItems.forEach((item, index) => {
-            item.order = index;
-          });
-          
-          onUpdate(updatedItems);
-        }
-      }
-      return;
-    }
-
-    // Handle moving field from section to main structure
-    if (source.droppableId.startsWith('section-') && destination.droppableId === 'main-structure') {
-      const sectionId = source.droppableId.replace('section-', '');
-      const section = items.find(item => item.id === sectionId);
-      
-      if (section && section.type === 'section') {
-        const sectionData = section.data as FormSection;
-        const movedField = sectionData.fields?.[source.index];
-        
-        if (movedField) {
-          // Remove field from section
-          const updatedFields = sectionData.fields?.filter((_, i) => i !== source.index) || [];
-          const updatedItems = items.map(item => {
-            if (item.id === sectionId) {
-              return {
-                ...item,
-                data: {
-                  ...sectionData,
-                  fields: updatedFields
-                }
-              };
-            }
-            return item;
-          });
-          
-          // Add as new field item in main structure
-          const newFieldItem: FormStructureItem = {
-            id: `field-${Date.now()}`,
-            type: 'field',
-            order: destination.index,
-            data: movedField
-          };
-          
-          updatedItems.splice(destination.index, 0, newFieldItem);
-          
-          // Update orders
-          updatedItems.forEach((item, index) => {
-            item.order = index;
-          });
-          
-          onUpdate(updatedItems);
-        }
-      }
-      return;
-    }
-
-    // Handle reordering within section
+    // Handle moving field within section
     if (source.droppableId.startsWith('section-') && destination.droppableId.startsWith('section-')) {
       const sourceSectionId = source.droppableId.replace('section-', '');
       const destSectionId = destination.droppableId.replace('section-', '');
@@ -328,6 +245,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
             return item;
           });
           
+          console.log('🔄 Reordered fields within section:', sourceSectionId, fields.map(f => f.name));
           onUpdate(updatedItems);
         }
       }
@@ -349,187 +267,115 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     return allFields;
   };
 
-  const renderSectionFields = (sectionData: FormSection, sectionId: string) => (
-    <Droppable droppableId={`section-${sectionId}`} type="field">
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.droppableProps}
-          className={`space-y-2 min-h-[60px] p-4 rounded-lg border-2 border-dashed transition-colors ${
-            snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50'
-          }`}
-        >
-          <div className="flex justify-between items-center mb-3">
-            <div className="text-xs text-gray-600 font-medium">
-              Section Fields ({sectionData.fields?.length || 0})
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addFieldToSection(sectionId)}
-              className="h-7 px-2 text-xs"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Add Field
-            </Button>
+  // Chain Link Helper Component
+  const ChainLinkHelper = () => (
+    <Card className="border-blue-200 bg-blue-50 mb-4">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Link className="w-4 h-4 text-blue-600" />
+          Chain Link Quick Setup
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowChainLinkHelper(!showChainLinkHelper)}
+            className="ml-auto h-6 w-6 p-0"
+          >
+            {showChainLinkHelper ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      {showChainLinkHelper && (
+        <CardContent className="pt-0">
+          <div className="text-xs text-blue-700 space-y-2">
+            <p><strong>How to setup Chain Links:</strong></p>
+            <p>1. Create your parent field (e.g., "Category" select field)</p>
+            <p>2. Create your child field (e.g., "Sub-category" select field)</p>
+            <p>3. Edit the child field and set "Depends On" to the parent field</p>
+            <p>4. Configure the filter property path to match your data structure</p>
+            <p>5. The child field options will automatically filter based on parent selection</p>
           </div>
-          
-          {sectionData.fields?.map((field: FormField, index: number) => (
-            <Draggable key={`section-field-${index}`} draggableId={`section-field-${sectionId}-${index}`} index={index}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.draggableProps}
-                  className={`p-3 bg-white border rounded-lg shadow-sm transition-shadow ${
-                    snapshot.isDragging ? 'shadow-lg border-blue-300' : 'border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 flex-1">
-                      <div {...provided.dragHandleProps}>
-                        <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">{field.label}</span>
-                        <div className="flex items-center gap-2 mt-1">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div>
-                                  <Select
-                                    value={field.type}
-                                    onValueChange={(value: FormField['type']) => {
-                                      updateSectionField(sectionId, index, { ...field, type: value });
-                                    }}
-                                  >
-                                    <SelectTrigger className="w-20 h-6 text-xs">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="text">Text</SelectItem>
-                                      <SelectItem value="textarea">Textarea</SelectItem>
-                                      <SelectItem value="select">Select</SelectItem>
-                                      <SelectItem value="radio">Radio</SelectItem>
-                                      <SelectItem value="checkbox">Checkbox</SelectItem>
-                                      <SelectItem value="date">Date</SelectItem>
-                                      <SelectItem value="number">Number</SelectItem>
-                                      <SelectItem value="file">File</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Select the field input type</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          {field.dependsOn && (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-                              <Link className="w-3 h-3" />
-                              → {field.dependsOn}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+
+  const renderUnifiedStructure = () => {
+    let dbColumnIndex = 1;
+    
+    return (
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="unified-structure">
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`space-y-3 min-h-[200px] p-4 rounded-lg border-2 border-dashed transition-colors ${
+                snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
+              }`}
+            >
+              {items.map((item, index) => (
+                <Draggable key={item.id} draggableId={item.id} index={index}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      className={`${snapshot.isDragging ? 'transform rotate-1 z-50 shadow-lg' : ''}`}
+                    >
+                      {renderUnifiedItem(item, index, dbColumnIndex, provided.dragHandleProps)}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingItem(`${sectionId}-field-${index}`)}
-                        className="h-7 w-7 p-0"
-                      >
-                        {editingItem === `${sectionId}-field-${index}` ? <EyeOff className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeSectionField(sectionId, index)}
-                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+              
+              {items.length === 0 && (
+                <div className="text-center py-12 text-gray-400">
+                  <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">No form elements yet</p>
+                  <p className="text-sm mb-4">Start building your unified form structure</p>
+                  <div className="flex gap-2 justify-center">
+                    <Button onClick={() => addItem('field')} className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add First Field
+                    </Button>
                   </div>
-                  
-                  {editingItem === `${sectionId}-field-${index}` && (
-                    <div className="mt-3 p-3 border-t bg-gray-50 rounded-b-lg">
-                      <FieldEditor
-                        field={field}
-                        fields={getAllFields()}
-                        onUpdate={(updatedField) => {
-                          updateSectionField(sectionId, index, updatedField);
-                          setEditingItem(null);
-                        }}
-                        onCancel={() => setEditingItem(null)}
-                      />
+                </div>
+              )}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+    );
+  };
+
+  const renderUnifiedItem = (item: FormStructureItem, index: number, dbColumnStart: number, dragHandleProps: any) => {
+    if (item.type === 'field') {
+      const field = item.data as FormField;
+      const dbColumn = `cstm_col${dbColumnStart}`;
+      const lblColumn = `lbl_col${dbColumnStart}`;
+      
+      return (
+        <div className="p-4 bg-white border-l-4 border-l-blue-500 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1">
+              <div {...dragHandleProps} className="cursor-move">
+                <GripVertical className="w-4 h-4 text-gray-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-blue-800">{field.label}</span>
+                  <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                    Field • {field.type}
+                  </div>
+                  {field.dependsOn && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
+                      <Link className="w-3 h-3" />
+                      Linked to: {field.dependsOn}
                     </div>
                   )}
                 </div>
-              )}
-            </Draggable>
-          ))}
-          {provided.placeholder}
-          
-          {(!sectionData.fields || sectionData.fields.length === 0) && (
-            <div className="text-center text-gray-400 text-sm py-6">
-              <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              Drop fields here or click "Add Field"
-            </div>
-          )}
-        </div>
-      )}
-    </Droppable>
-  );
-
-  const renderItem = (item: FormStructureItem, index: number) => {
-    if (item.type === 'field') {
-      const field = item.data as FormField;
-      return (
-        <div className="p-4 bg-white border border-blue-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1">
-              <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
-              <div className="flex-1">
-                <span className="font-medium text-blue-800">{field.label}</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Select
-                            value={field.type}
-                            onValueChange={(value: FormField['type']) => {
-                              updateItem(item.id, { ...field, type: value });
-                            }}
-                          >
-                            <SelectTrigger className="w-20 h-6 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="text">Text</SelectItem>
-                              <SelectItem value="textarea">Textarea</SelectItem>
-                              <SelectItem value="select">Select</SelectItem>
-                              <SelectItem value="radio">Radio</SelectItem>
-                              <SelectItem value="checkbox">Checkbox</SelectItem>
-                              <SelectItem value="date">Date</SelectItem>
-                              <SelectItem value="number">Number</SelectItem>
-                              <SelectItem value="file">File</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Select the field input type</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  {field.dependsOn && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-                      <Link className="w-3 h-3" />
-                      → {field.dependsOn}
-                    </div>
-                  )}
+                <div className="text-xs text-gray-600 font-mono">
+                  DB: {dbColumn} → {lblColumn} | Span: {field.columnSpan || 1} column{(field.columnSpan || 1) > 1 ? 's' : ''}
                 </div>
               </div>
             </div>
@@ -579,15 +425,25 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     } else if (item.type === 'section') {
       const sectionData = item.data as FormSection;
       const isExpanded = expandedSections.has(item.id);
+      const sectionDbColumn = `cstm_col${dbColumnStart}`;
       
       return (
-        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg shadow-sm">
+        <div className="p-4 bg-purple-50 border-l-4 border-l-purple-500 rounded-lg shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
+              <div {...dragHandleProps} className="cursor-move">
+                <GripVertical className="w-4 h-4 text-gray-400" />
+              </div>
               <div>
-                <span className="font-medium text-purple-800">{sectionData.title}</span>
-                <span className="text-sm text-purple-600 ml-2">(Section • {sectionData.fields?.length || 0} fields)</span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-purple-800">{sectionData.title}</span>
+                  <div className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                    Section • {sectionData.fields?.length || 0} fields
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 font-mono">
+                  DB: Section starts at {sectionDbColumn}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -634,11 +490,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
             </div>
           </div>
           
-          {isExpanded && (
-            <div className="mt-3">
-              {renderSectionFields(sectionData, item.id)}
-            </div>
-          )}
+          {isExpanded && renderSectionFields(sectionData, item.id, dbColumnStart)}
           
           {editingItem === item.id && (
             <div className="mt-3 p-3 border-t bg-white rounded-lg">
@@ -683,18 +535,27 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       );
     } else if (item.type === 'rowgroup') {
       const rowGroupData = item.data as RowGroup;
+      const dbColumn = `cstm_col${dbColumnStart}`;
+      
       return (
-        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg shadow-sm">
+        <div className="p-4 bg-orange-50 border-l-4 border-l-orange-500 rounded-lg shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
+              <div {...dragHandleProps} className="cursor-move">
+                <GripVertical className="w-4 h-4 text-gray-400" />
+              </div>
               <div>
-                <span className="font-medium text-orange-800">
-                  {rowGroupData.title || 'Row Group'}
-                </span>
-                <span className="text-sm text-orange-600 ml-2">
-                  (Row Group • Max: {rowGroupData.maxRows || 10})
-                </span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-orange-800">
+                    {rowGroupData.title || 'Row Group'}
+                  </span>
+                  <div className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                    Row Group • Max: {rowGroupData.maxRows || 10}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 font-mono">
+                  DB: {dbColumn} (Dynamic Rows JSON)
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -781,13 +642,130 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     return null;
   };
 
+  const renderSectionFields = (sectionData: FormSection, sectionId: string, dbColumnStart: number) => {
+    let fieldDbIndex = dbColumnStart + 1; // Section fields start after section header
+    
+    return (
+      <Droppable droppableId={`section-${sectionId}`} type="field">
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`space-y-2 min-h-[60px] p-4 rounded-lg border-2 border-dashed transition-colors ${
+              snapshot.isDraggingOver ? 'border-purple-400 bg-purple-100' : 'border-purple-300 bg-white'
+            }`}
+          >
+            <div className="flex justify-between items-center mb-3">
+              <div className="text-xs text-purple-700 font-medium">
+                Section Fields ({sectionData.fields?.length || 0})
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => addFieldToSection(sectionId)}
+                className="h-7 px-2 text-xs"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Field
+              </Button>
+            </div>
+            
+            {sectionData.fields?.map((field: FormField, index: number) => {
+              const currentDbColumn = `cstm_col${fieldDbIndex + index}`;
+              const currentLblColumn = `lbl_col${fieldDbIndex + index}`;
+              
+              return (
+                <Draggable key={`section-field-${index}`} draggableId={`section-field-${sectionId}-${index}`} index={index}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      className={`p-3 bg-white border rounded-lg shadow-sm transition-shadow ${
+                        snapshot.isDragging ? 'shadow-lg border-purple-300 transform rotate-1' : 'border-purple-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 flex-1">
+                          <div {...provided.dragHandleProps}>
+                            <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium">{field.label}</span>
+                              <div className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                                {field.type}
+                              </div>
+                              {field.dependsOn && (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
+                                  <Link className="w-3 h-3" />
+                                  → {field.dependsOn}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 font-mono">
+                              DB: {currentDbColumn} → {currentLblColumn}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingItem(`${sectionId}-field-${index}`)}
+                            className="h-7 w-7 p-0"
+                          >
+                            {editingItem === `${sectionId}-field-${index}` ? <EyeOff className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSectionField(sectionId, index)}
+                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {editingItem === `${sectionId}-field-${index}` && (
+                        <div className="mt-3 p-3 border-t bg-gray-50 rounded-b-lg">
+                          <FieldEditor
+                            field={field}
+                            fields={getAllFields()}
+                            onUpdate={(updatedField) => {
+                              updateSectionField(sectionId, index, updatedField);
+                              setEditingItem(null);
+                            }}
+                            onCancel={() => setEditingItem(null)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Draggable>
+              );
+            })}
+            {provided.placeholder}
+            
+            {(!sectionData.fields || sectionData.fields.length === 0) && (
+              <div className="text-center text-purple-400 text-sm py-6">
+                <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                Drop fields here or click "Add Field"
+              </div>
+            )}
+          </div>
+        )}
+      </Droppable>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Controls */}
       <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">Form Structure Builder</h3>
-          <p className="text-sm text-gray-600">Drag and drop to organize your form fields, sections, and row groups</p>
+          <h3 className="text-lg font-semibold text-gray-800">Unified Form Structure Builder</h3>
+          <p className="text-sm text-gray-600">Drag and drop to organize your form with real-time database mapping</p>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -815,63 +793,24 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
         </div>
       </div>
 
+      {/* Chain Link Helper */}
+      <ChainLinkHelper />
+
       {/* Form Layout Preview */}
       {showPreview && <FormLayoutPreview items={items} onUpdate={onUpdate} />}
 
-      {/* Form Structure Editor */}
+      {/* Unified Form Structure Editor */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Structure Elements ({items.length})</span>
+            <span>Unified Structure ({items.length} elements)</span>
             <div className="text-sm text-gray-500">
-              Drag items to reorder • Click edit to configure
+              Drag to reorder • Real-time DB mapping • Chain link ready
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="main-structure">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`space-y-3 min-h-[200px] p-4 rounded-lg border-2 border-dashed transition-colors ${
-                    snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
-                  }`}
-                >
-                  {items.map((item, index) => (
-                    <Draggable key={item.id} draggableId={item.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={snapshot.isDragging ? 'transform rotate-2 z-50' : ''}
-                        >
-                          {renderItem(item, index)}
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                  
-                  {items.length === 0 && (
-                    <div className="text-center py-12 text-gray-400">
-                      <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium mb-2">No form elements yet</p>
-                      <p className="text-sm mb-4">Start building your form by adding fields, sections, or row groups</p>
-                      <div className="flex gap-2 justify-center">
-                        <Button onClick={() => addItem('field')} className="bg-blue-600 hover:bg-blue-700">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add First Field
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+          {renderUnifiedStructure()}
         </CardContent>
       </Card>
 

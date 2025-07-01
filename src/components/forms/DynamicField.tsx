@@ -1,332 +1,330 @@
 
-import React, { useEffect, useState, useRef } from 'react';
-import { UseFormReturn } from 'react-hook-form';
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from '@/components/ui/form';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { FormField } from '@/types/formTypes';
+import { resolveSystemVariables } from '@/utils/systemVariableResolver';
 import { Button } from '@/components/ui/button';
-import { Upload } from 'lucide-react';
-import { resolveSystemVariable,  } from '@/utils/systemVariableResolver';
-import { useSystemVariableContext} from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
-interface FormField {
-  label: string;
-  type: string;
-  placeholder?: string;
-  required?: boolean;
-  options?: string[];
-  readonly?: boolean;
-  value?: string;
-  accept?: string[];
-  maxSizeMB?: number;
-  multiple?: boolean;
-  default?: string;
-  note?: string;
-  systemVariable?: string;
-  suggestions?: string[];
-}
+import { Plus, X } from 'lucide-react';
 
 interface DynamicFieldProps {
   field: FormField;
-  form: UseFormReturn<any>;
-  fieldKey: string;
-  onValueChange?: (value: any) => void;
-  onFileUpload?: (files: FileList | null) => Promise<number[]>;
+  value: any;
+  onChange: (value: any) => void;
+  watchedValues?: Record<string, any>;
+  error?: string;
 }
-
-const SuggestionInsertInput: React.FC<{
-  suggestions: string[];
-  placeholder?: string;
-  readOnly?: boolean;
-  defaultValue?: string;
-  onChange: (value: string) => void;
-}> = ({ suggestions, placeholder, readOnly, defaultValue, onChange }) => {
-  const [inputValue, setInputValue] = useState(defaultValue || '');
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setInputValue(defaultValue || '');
-  }, [defaultValue]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setInputValue(value);
-    onChange(value);
-
-    if (value.length > 0) {
-      const filtered = suggestions.filter(suggestion =>
-        suggestion.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredSuggestions(filtered);
-      setShowSuggestions(true);
-      setActiveIndex(-1);
-    } else {
-      setShowSuggestions(false);
-      setFilteredSuggestions([]);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions) return;
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex(prev => (prev + 1) % filteredSuggestions.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex(prev => (prev - 1 + filteredSuggestions.length) % filteredSuggestions.length);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (activeIndex >= 0 && activeIndex < filteredSuggestions.length) {
-        const selected = filteredSuggestions[activeIndex];
-        setInputValue(selected);
-        onChange(selected);
-        setShowSuggestions(false);
-        setActiveIndex(-1);
-        if (inputRef.current) {
-          inputRef.current.blur();
-        }
-      }
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
-      setActiveIndex(-1);
-    }
-  };
-
-  const handleSuggestionClick = (index: number) => {
-    const selected = filteredSuggestions[index];
-    setInputValue(selected);
-    onChange(selected);
-    setShowSuggestions(false);
-    setActiveIndex(-1);
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-
-  const handleBlur = () => {
-    // Delay hiding suggestions to allow click event to register
-    setTimeout(() => {
-      setShowSuggestions(false);
-      setActiveIndex(-1);
-    }, 150);
-  };
-
-  return (
-    <div className="relative w-full">
-      <Input
-        ref={inputRef}
-        type="text"
-        placeholder={placeholder}
-        readOnly={readOnly}
-        value={inputValue}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
-        autoComplete="off"
-      />
-      {showSuggestions && filteredSuggestions.length > 0 && (
-        <ul className="absolute z-10 w-full max-h-48 overflow-auto rounded border border-gray-300 bg-white shadow-md">
-          {filteredSuggestions.map((suggestion, index) => (
-            <li
-              key={index}
-              className={`cursor-pointer px-3 py-1 hover:bg-gray-200 ${index === activeIndex ? 'bg-gray-300 font-semibold' : ''
-                }`}
-              onMouseDown={() => handleSuggestionClick(index)}
-            >
-              {suggestion}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
 
 export const DynamicField: React.FC<DynamicFieldProps> = ({
   field,
-  form,
-  fieldKey,
-  onValueChange,
-  onFileUpload
+  value,
+  onChange,
+  watchedValues = {},
+  error
 }) => {
-  const systemContext = useSystemVariableContext();
-  // Check if field is required - either explicitly set or has asterisk in label
-  const isRequired = field.required === true || field.label.includes('*');
-  const hasAsterisk = field.label.includes('*');
-  const cleanLabel = field.label.replace(/\*+$/, '');
+  const [localValue, setLocalValue] = useState(value || '');
+  const [filteredOptions, setFilteredOptions] = useState<string[]>(field.options || []);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  // Resolve system variables in default value and options
-  const resolvedDefault = React.useMemo(() => {
-    if (field.default) {
-      const resolved = resolveSystemVariable(field.default, systemContext);
-      return Array.isArray(resolved) ? resolved[0] : resolved;
-
-    }
-    return field.value || '';
-  }, [field.default, field.value, systemContext]);
-
-  const resolvedOptions = React.useMemo(() => {
-    if (!field.options) return [];
-
-    return field.options.map(option => {
-      const resolved = resolveSystemVariable(option, systemContext);
-      return Array.isArray(resolved) ? resolved : [resolved];
-    }).flat().filter(Boolean);
-  }, [field.options, systemContext]);
-
-  // Set default value when component mounts or resolved default changes
+  // Handle chain link filtering
   useEffect(() => {
-    if (resolvedDefault && !form.getValues(fieldKey)) {
-      form.setValue(fieldKey, resolvedDefault);
-      onValueChange?.(resolvedDefault);
-    }
-  }, [resolvedDefault, fieldKey, form, onValueChange]);
+    if (field.dependsOn && field.options && watchedValues) {
+      const parentValue = watchedValues[field.dependsOn];
+      
+      console.log('🔗 Chain Link Debug - Starting filter process:', {
+        childField: field.name,
+        parentField: field.dependsOn,
+        parentValue: parentValue,
+        filterProperty: field.filterOptionsBy,
+        totalOptions: field.options.length,
+        originalOptions: field.options
+      });
 
-  const renderFieldContent = () => {
-    switch (field.type?.trim()) {
+      if (parentValue) {
+        let filtered = field.options;
+
+        if (field.filterOptionsBy) {
+          // Complex filtering with property path
+          filtered = field.options.filter(option => {
+            try {
+              // Try to parse as JSON first
+              const optionObj = JSON.parse(option);
+              const filterPath = field.filterOptionsBy!.split('.');
+              let optionValue = optionObj;
+              
+              // Navigate through nested properties
+              for (const prop of filterPath) {
+                optionValue = optionValue[prop];
+                if (optionValue === undefined) break;
+              }
+              
+              const matches = String(optionValue).toLowerCase().includes(String(parentValue).toLowerCase());
+              
+              console.log('🔍 Chain Link Debug - Option filter check:', {
+                option: option,
+                parsedOption: optionObj,
+                filterPath: filterPath,
+                extractedValue: optionValue,
+                parentValue: parentValue,
+                matches: matches
+              });
+              
+              return matches;
+            } catch (e) {
+              // If not JSON, treat as simple string
+              const matches = option.toLowerCase().includes(String(parentValue).toLowerCase());
+              
+              console.log('🔍 Chain Link Debug - Simple string filter:', {
+                option: option,
+                parentValue: parentValue,
+                matches: matches
+              });
+              
+              return matches;
+            }
+          });
+        } else {
+          // Simple string matching
+          filtered = field.options.filter(option =>
+            option.toLowerCase().includes(String(parentValue).toLowerCase())
+          );
+          
+          console.log('🔍 Chain Link Debug - Default string matching:', {
+            parentValue: parentValue,
+            filteredCount: filtered.length,
+            filteredOptions: filtered
+          });
+        }
+
+        console.log('🎯 Chain Link Debug - Filter result:', {
+          childField: field.name,
+          parentField: field.dependsOn,
+          parentValue: parentValue,
+          originalCount: field.options.length,
+          filteredCount: filtered.length,
+          filteredOptions: filtered
+        });
+
+        setFilteredOptions(filtered);
+        
+        // Clear current value if it's not in filtered options
+        if (value && !filtered.includes(value)) {
+          console.log('🧹 Chain Link Debug - Clearing invalid value:', {
+            currentValue: value,
+            reason: 'not in filtered options'
+          });
+          onChange('');
+          setLocalValue('');
+        }
+      } else {
+        console.log('🔗 Chain Link Debug - No parent value, showing all options:', {
+          childField: field.name,
+          parentField: field.dependsOn,
+          allOptionsCount: field.options.length
+        });
+        setFilteredOptions(field.options);
+      }
+    } else {
+      setFilteredOptions(field.options || []);
+    }
+  }, [field.dependsOn, field.filterOptionsBy, field.options, watchedValues, field.name, value, onChange]);
+
+  // Handle suggestion-insert type
+  useEffect(() => {
+    if (field.type === 'suggestion-insert') {
+      if (field.suggestions) {
+        setSuggestions(field.suggestions);
+      } else if (filteredOptions.length > 0) {
+        // Use filtered options as suggestions
+        setSuggestions(filteredOptions);
+      }
+    }
+  }, [field.type, field.suggestions, filteredOptions]);
+
+  const handleChange = (newValue: any) => {
+    setLocalValue(newValue);
+    onChange(newValue);
+    
+    console.log('📝 Field value changed:', field.name, newValue);
+    if (field.dependsOn) {
+      console.log('🔗 Chain Link field changed:', {
+        fieldName: field.name,
+        newValue: newValue,
+        parentField: field.dependsOn,
+        parentValue: watchedValues[field.dependsOn]
+      });
+    }
+  };
+
+  const getDefaultValue = () => {
+    if (field.default) {
+      return resolveSystemVariables(field.default);
+    }
+    return '';
+  };
+
+  useEffect(() => {
+    if (!value && field.default) {
+      const defaultValue = getDefaultValue();
+      setLocalValue(defaultValue);
+      onChange(defaultValue);
+    }
+  }, [field.default]);
+
+  const renderField = () => {
+    switch (field.type) {
       case 'text':
       case 'number':
         return (
           <Input
             type={field.type}
+            value={localValue}
+            onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
             readOnly={field.readonly}
-            defaultValue={resolvedDefault}
-            {...form.register(fieldKey, {
-              required: isRequired ? `${cleanLabel} is required` : false
-            })}
-            onChange={(e) => {
-              form.setValue(fieldKey, e.target.value);
-              onValueChange?.(e.target.value);
-            }}
+            className={error ? 'border-red-500' : ''}
           />
         );
 
       case 'textarea':
         return (
           <Textarea
+            value={localValue}
+            onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
             readOnly={field.readonly}
-            defaultValue={resolvedDefault}
-            {...form.register(fieldKey, {
-              required: isRequired ? `${cleanLabel} is required` : false
-            })}
-            onChange={(e) => {
-              form.setValue(fieldKey, e.target.value);
-              onValueChange?.(e.target.value);
-            }}
+            className={error ? 'border-red-500' : ''}
           />
         );
 
       case 'select':
         return (
-          <Select onValueChange={(value) => {
-            form.setValue(fieldKey, value);
-            onValueChange?.(value);
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder={field.placeholder || `Select ${cleanLabel}`} />
+          <Select value={localValue} onValueChange={handleChange} disabled={field.readonly}>
+            <SelectTrigger className={error ? 'border-red-500' : ''}>
+              <SelectValue placeholder={field.placeholder} />
             </SelectTrigger>
             <SelectContent>
-              {resolvedOptions.map((option, index) => (
-                <SelectItem key={index} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
+              {filteredOptions.map((option, index) => {
+                try {
+                  const optionObj = JSON.parse(option);
+                  return (
+                    <SelectItem key={index} value={option}>
+                      {optionObj.label || optionObj.name || option}
+                    </SelectItem>
+                  );
+                } catch {
+                  return (
+                    <SelectItem key={index} value={option}>
+                      {option}
+                    </SelectItem>
+                  );
+                }
+              })}
             </SelectContent>
           </Select>
         );
 
       case 'suggestion-insert':
-        // Implement suggestion insert input with dropdown and arrow key navigation
         return (
-          <SuggestionInsertInput
-            suggestions={resolvedOptions || []}
-            placeholder={field.placeholder}
-            readOnly={field.readonly}
-            defaultValue={resolvedDefault}
-            onChange={(value: string) => {
-              form.setValue(fieldKey, value);
-              onValueChange?.(value);
-            }}
-          />
-        );
-        
-      case 'radio':
-        return (
-          <RadioGroup
-            onValueChange={(value) => {
-              form.setValue(fieldKey, value);
-              onValueChange?.(value);
-            }}
-            defaultValue={resolvedDefault}
-          >
-            <div className="flex flex-col space-y-2">
-              {resolvedOptions.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <RadioGroupItem value={option} id={`${fieldKey}-${index}`} />
-                  <label htmlFor={`${fieldKey}-${index}`} className="text-sm">
-                    {option}
-                  </label>
-                </div>
-              ))}
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={localValue}
+                onChange={(e) => handleChange(e.target.value)}
+                placeholder={field.placeholder || "Type or select from suggestions"}
+                readOnly={field.readonly}
+                className={error ? 'border-red-500' : ''}
+              />
+              {suggestions.length > 0 && (
+                <Select onValueChange={(selectedValue) => {
+                  try {
+                    const optionObj = JSON.parse(selectedValue);
+                    handleChange(optionObj.label || optionObj.name || selectedValue);
+                  } catch {
+                    handleChange(selectedValue);
+                  }
+                }}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Suggestions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suggestions.map((suggestion, index) => {
+                      try {
+                        const suggestionObj = JSON.parse(suggestion);
+                        return (
+                          <SelectItem key={index} value={suggestion}>
+                            {suggestionObj.label || suggestionObj.name || suggestion}
+                          </SelectItem>
+                        );
+                      } catch {
+                        return (
+                          <SelectItem key={index} value={suggestion}>
+                            {suggestion}
+                          </SelectItem>
+                        );
+                      }
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-          </RadioGroup>
+            {field.dependsOn && (
+              <div className="text-xs text-blue-600">
+                Suggestions filtered by: {field.dependsOn} = {watchedValues[field.dependsOn]}
+              </div>
+            )}
+          </div>
         );
 
-      case 'toggle':
+      case 'radio':
         return (
-          <Switch
-            onCheckedChange={(checked) => {
-              form.setValue(fieldKey, checked);
-              onValueChange?.(checked);
-            }}
-            defaultChecked={Boolean(
-              (typeof field.default === 'string' && (
-                field.default === 'on' ||
-                field.default === 'true' ||
-                field.default === 'yes'
-              )) ||
-              (typeof field.default === 'boolean' && field.default)
-            )}
-          />
+          <RadioGroup value={localValue} onValueChange={handleChange} disabled={field.readonly}>
+            {filteredOptions.map((option, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <RadioGroupItem value={option} id={`${field.name}-${index}`} />
+                <Label htmlFor={`${field.name}-${index}`}>{option}</Label>
+              </div>
+            ))}
+          </RadioGroup>
         );
 
       case 'checkbox':
         return (
-          <Checkbox
-            onCheckedChange={(checked) => {
-              form.setValue(fieldKey, checked);
-              onValueChange?.(checked);
-            }}
-          />
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={localValue}
+              onCheckedChange={handleChange}
+              disabled={field.readonly}
+            />
+            <Label>{field.placeholder}</Label>
+          </div>
+        );
+
+      case 'toggle':
+        return (
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={localValue}
+              onCheckedChange={handleChange}
+              disabled={field.readonly}
+            />
+            <Label>{field.placeholder}</Label>
+          </div>
         );
 
       case 'date':
         return (
           <Input
             type="date"
-            {...form.register(fieldKey, {
-              required: isRequired ? `${cleanLabel} is required` : false
-            })}
-            onChange={(e) => {
-              form.setValue(fieldKey, e.target.value);
-              onValueChange?.(e.target.value);
-            }}
+            value={localValue}
+            onChange={(e) => handleChange(e.target.value)}
+            readOnly={field.readonly}
+            className={error ? 'border-red-500' : ''}
           />
         );
 
@@ -334,149 +332,57 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         return (
           <Input
             type="time"
-            {...form.register(fieldKey, {
-              required: isRequired ? `${cleanLabel} is required` : false
-            })}
-            onChange={(e) => {
-              form.setValue(fieldKey, e.target.value);
-              onValueChange?.(e.target.value);
-            }}
+            value={localValue}
+            onChange={(e) => handleChange(e.target.value)}
+            readOnly={field.readonly}
+            className={error ? 'border-red-500' : ''}
           />
         );
 
       case 'file':
         return (
-          <div className="space-y-2">
-            {/* Show uploaded file names */}
-            {form.watch(fieldKey)?.length > 0 ? (
-              <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                {(() => {
-                  console.log("Preview files:", Array.from(form.watch(`${fieldKey}_raw`) || []));
-                  return null;
-                })()}
-
-                {Array.from(form.watch(`${fieldKey}_raw`) || []).map((file: File, i: number) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <span className="truncate max-w-xs">{file.name}</span>
-                    <span className="text-xs text-gray-400">
-                      ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                    </span>
-
-                    <button
-                      type="button"
-                      className="text-red-500 text-xs"
-                      onClick={() => {
-                        const rawFiles = Array.from(form.watch(`${fieldKey}_raw`) || []) as File[];
-                        const uploadedUrls = Array.from(form.watch(fieldKey) || []);
-
-                        // Remove both preview and submitted value
-                        rawFiles.splice(i, 1);
-                        uploadedUrls.splice(i, 1);
-
-                        const dt = new DataTransfer();
-                        rawFiles.forEach((f) => dt.items.add(f));
-
-                        form.setValue(`${fieldKey}_raw`, dt.files);
-                        form.setValue(fieldKey, uploadedUrls);
-                      }}
-                    >
-                      Remove
-                    </button>
-
-                    {file.type.startsWith('image/') && (
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={file.name}
-                        className="h-10 w-10 object-cover rounded"
-                      />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                    <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
-                    </p>
-                    {field.accept && (
-                      <p className="text-xs text-gray-500">{field.accept.join(', ')}</p>
-                    )}
-                    {field.maxSizeMB && (
-                      <p className="text-xs text-gray-500">Max size: {field.maxSizeMB}MB</p>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept={field.accept?.join(',')}
-                    multiple={field.multiple}
-                    onChange={async (e) => {
-                      const files = e.target.files;
-                      if (!files?.length) return;
-
-                      // 1. Set raw files for preview
-                      form.setValue(`${fieldKey}_raw`, files);
-
-                      // 2. Upload the files
-                      if (onFileUpload) {
-                        try {
-                          const uploadedData = await onFileUpload(files); // returns array of objects or strings
-                          const uploadedUrls = uploadedData.map((f: any) => f.url || f); // normalize
-
-                          // 3. Store the URLs (for submission)
-                          form.setValue(fieldKey, uploadedUrls);
-
-                          onValueChange?.(uploadedUrls);
-                        } catch (uploadError) {
-                          console.error('File upload error:', uploadError);
-                        }
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-            )}
-
-            {field.note && (
-              <p className="text-xs text-muted-foreground">{field.note}</p>
-            )}
-          </div>
+          <Input
+            type="file"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                handleChange(file.name);
+              }
+            }}
+            accept={field.accept?.join(',')}
+            multiple={field.multiple}
+            disabled={field.readonly}
+            className={error ? 'border-red-500' : ''}
+          />
         );
 
       default:
         return (
           <Input
+            value={localValue}
+            onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
-            defaultValue={resolvedDefault}
-            {...form.register(fieldKey, {
-              required: isRequired ? `${cleanLabel} is required` : false
-            })}
+            readOnly={field.readonly}
+            className={error ? 'border-red-500' : ''}
           />
         );
     }
   };
 
   return (
-    <FormField
-      control={form.control}
-      name={fieldKey}
-      render={() => (
-        <FormItem>
-          <FormLabel className={isRequired ? "after:content-['*'] after:text-red-500 after:ml-1" : ""}>
-            {cleanLabel}
-          </FormLabel>
-          <FormControl>
-            {renderFieldContent()}
-          </FormControl>
-          <FormMessage />
-          {field.note && !field.note.includes('size') && (
-            <FormDescription>{field.note}</FormDescription>
-          )}
-        </FormItem>
-      )}
-    />
+    <div className={`space-y-2 ${field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'}`}>
+      <Label htmlFor={field.name} className="flex items-center gap-2">
+        {field.label}
+        {field.required && <span className="text-red-500">*</span>}
+        {field.dependsOn && (
+          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+            Linked to: {field.dependsOn}
+          </span>
+        )}
+      </Label>
+      {renderField()}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      {field.note && <p className="text-sm text-gray-500">{field.note}</p>}
+    </div>
   );
-}
+};
