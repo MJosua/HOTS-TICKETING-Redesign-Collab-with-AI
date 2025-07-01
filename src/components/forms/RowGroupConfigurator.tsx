@@ -1,15 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Trash2, GripVertical, Settings, Save, X } from 'lucide-react';
-import { RowGroup, FormField } from '@/types/formTypes';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { RowGroup, RowData } from '@/types/formTypes';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 interface RowGroupConfiguratorProps {
@@ -31,34 +29,33 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
     setLocalRowGroup(prev => ({ ...prev, ...updates }));
   };
 
-  const addFieldToRowGroup = () => {
-    const newField: FormField = {
-      label: 'New Row Field',
-      name: `row_field_${Date.now()}`,
-      type: 'text',
-      required: false,
-      columnSpan: 1
+  const addRowToRowGroup = () => {
+    const newRow: RowData = {
+      id: `row_${Date.now()}`,
+      firstValue: '',
+      secondValue: '',
+      thirdValue: ''
     };
 
-    const updatedFields = Array.isArray(localRowGroup.rowGroup) 
-      ? [...localRowGroup.rowGroup, newField]
-      : [newField];
+    const updatedRows = Array.isArray(localRowGroup.rowGroup) 
+      ? [...localRowGroup.rowGroup, newRow]
+      : [newRow];
 
-    updateRowGroup({ rowGroup: updatedFields });
+    updateRowGroup({ rowGroup: updatedRows });
   };
 
-  const removeFieldFromRowGroup = (index: number) => {
+  const removeRowFromRowGroup = (index: number) => {
     if (Array.isArray(localRowGroup.rowGroup)) {
-      const updatedFields = localRowGroup.rowGroup.filter((_, i) => i !== index);
-      updateRowGroup({ rowGroup: updatedFields });
+      const updatedRows = localRowGroup.rowGroup.filter((_, i) => i !== index);
+      updateRowGroup({ rowGroup: updatedRows });
     }
   };
 
-  const updateRowGroupField = (index: number, updatedField: FormField) => {
+  const updateRowData = (index: number, updatedRow: RowData) => {
     if (Array.isArray(localRowGroup.rowGroup)) {
-      const updatedFields = [...localRowGroup.rowGroup];
-      updatedFields[index] = updatedField;
-      updateRowGroup({ rowGroup: updatedFields });
+      const updatedRows = [...localRowGroup.rowGroup];
+      updatedRows[index] = updatedRow;
+      updateRowGroup({ rowGroup: updatedRows });
     }
   };
 
@@ -70,11 +67,11 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
   const handleDragEnd = (result: any) => {
     if (!result.destination || !Array.isArray(localRowGroup.rowGroup)) return;
 
-    const fields = [...localRowGroup.rowGroup];
-    const [reorderedField] = fields.splice(result.source.index, 1);
-    fields.splice(result.destination.index, 0, reorderedField);
+    const rows = [...localRowGroup.rowGroup];
+    const [reorderedRow] = rows.splice(result.source.index, 1);
+    rows.splice(result.destination.index, 0, reorderedRow);
 
-    updateRowGroup({ rowGroup: fields });
+    updateRowGroup({ rowGroup: rows });
   };
 
   return (
@@ -136,26 +133,26 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
             </CardContent>
           </Card>
 
-          {/* Row Group Fields Configuration */}
+          {/* Row Data Configuration */}
           {!localRowGroup.isStructuredInput && (
             <Card className="border-purple-200 bg-purple-50">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm text-purple-800 flex items-center justify-between">
-                  Row Group Fields ({Array.isArray(localRowGroup.rowGroup) ? localRowGroup.rowGroup.length : 0})
-                  <Button variant="outline" size="sm" onClick={addFieldToRowGroup}>
+                  Row Data ({Array.isArray(localRowGroup.rowGroup) ? localRowGroup.rowGroup.length : 0})
+                  <Button variant="outline" size="sm" onClick={addRowToRowGroup}>
                     <Plus className="w-4 h-4 mr-1" />
-                    Add Field
+                    Add Row
                   </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {Array.isArray(localRowGroup.rowGroup) && localRowGroup.rowGroup.length > 0 ? (
                   <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="rowgroup-fields">
+                    <Droppable droppableId="rowgroup-rows">
                       {(provided) => (
                         <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
-                          {localRowGroup.rowGroup.map((field: FormField, index: number) => (
-                            <Draggable key={`field-${index}`} draggableId={`field-${index}`} index={index}>
+                          {localRowGroup.rowGroup.map((row: RowData, index: number) => (
+                            <Draggable key={`row-${index}`} draggableId={`row-${index}`} index={index}>
                               {(provided, snapshot) => (
                                 <div
                                   ref={provided.innerRef}
@@ -169,92 +166,47 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                                       <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
                                     </div>
                                     
-                                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3">
+                                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
                                       <div>
-                                        <Label className="text-xs">Field Label</Label>
+                                        <Label className="text-xs">First Value</Label>
                                         <Input
-                                          value={field.label}
-                                          onChange={(e) => updateRowGroupField(index, { ...field, label: e.target.value })}
-                                          placeholder="Field Label"
+                                          value={row.firstValue}
+                                          onChange={(e) => updateRowData(index, { ...row, firstValue: e.target.value })}
+                                          placeholder="First column value"
                                           className="h-8"
                                         />
                                       </div>
                                       
                                       <div>
-                                        <Label className="text-xs">Field Name</Label>
+                                        <Label className="text-xs">Second Value</Label>
                                         <Input
-                                          value={field.name}
-                                          onChange={(e) => updateRowGroupField(index, { ...field, name: e.target.value })}
-                                          placeholder="field_name"
+                                          value={row.secondValue}
+                                          onChange={(e) => updateRowData(index, { ...row, secondValue: e.target.value })}
+                                          placeholder="Second column value"
                                           className="h-8"
                                         />
                                       </div>
                                       
                                       <div>
-                                        <Label className="text-xs">Field Type</Label>
-                                        <Select
-                                          value={field.type}
-                                          onValueChange={(value: FormField['type']) => 
-                                            updateRowGroupField(index, { ...field, type: value })
-                                          }
-                                        >
-                                          <SelectTrigger className="h-8">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="text">Text</SelectItem>
-                                            <SelectItem value="number">Number</SelectItem>
-                                            <SelectItem value="select">Select</SelectItem>
-                                            <SelectItem value="date">Date</SelectItem>
-                                            <SelectItem value="textarea">Textarea</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      
-                                      <div>
-                                        <Label className="text-xs">Column Span</Label>
-                                        <Select
-                                          value={String(field.columnSpan || 1)}
-                                          onValueChange={(value) => 
-                                            updateRowGroupField(index, { ...field, columnSpan: Number(value) as 1 | 2 | 3 })
-                                          }
-                                        >
-                                          <SelectTrigger className="h-8">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="1">1 Col</SelectItem>
-                                            <SelectItem value="2">2 Col</SelectItem>
-                                            <SelectItem value="3">3 Col</SelectItem>
-                                          </SelectContent>
-                                        </Select>
+                                        <Label className="text-xs">Third Value</Label>
+                                        <Input
+                                          value={row.thirdValue}
+                                          onChange={(e) => updateRowData(index, { ...row, thirdValue: e.target.value })}
+                                          placeholder="Third column value"
+                                          className="h-8"
+                                        />
                                       </div>
                                     </div>
                                     
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => removeFieldFromRowGroup(index)}
+                                      onClick={() => removeRowFromRowGroup(index)}
                                       className="text-red-600 hover:text-red-700"
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </Button>
                                   </div>
-
-                                  {field.type === 'select' && (
-                                    <div className="mt-3">
-                                      <Label className="text-xs">Options (one per line)</Label>
-                                      <Textarea
-                                        value={field.options?.join('\n') || ''}
-                                        onChange={(e) => updateRowGroupField(index, {
-                                          ...field,
-                                          options: e.target.value.split('\n').filter(Boolean)
-                                        })}
-                                        placeholder="Option 1&#10;Option 2&#10;Option 3"
-                                        className="h-16"
-                                      />
-                                    </div>
-                                  )}
                                 </div>
                               )}
                             </Draggable>
@@ -266,10 +218,10 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                   </DragDropContext>
                 ) : (
                   <div className="text-center py-8 border-2 border-dashed border-purple-300 rounded-lg">
-                    <p className="text-purple-600 mb-2">No fields in this row group</p>
-                    <Button variant="outline" onClick={addFieldToRowGroup}>
+                    <p className="text-purple-600 mb-2">No rows in this group</p>
+                    <Button variant="outline" onClick={addRowToRowGroup}>
                       <Plus className="w-4 h-4 mr-2" />
-                      Add First Field
+                      Add First Row
                     </Button>
                   </div>
                 )}

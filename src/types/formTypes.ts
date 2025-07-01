@@ -96,3 +96,11 @@ export interface RowGroup {
     combinedMapping?: 'first_second' | 'second_third' | 'none';
   };
 }
+
+// Add the missing FormStructureItem type
+export interface FormStructureItem {
+  id: string;
+  type: 'field' | 'section' | 'rowgroup';
+  order: number;
+  data: FormField | FormSection | RowGroup;
+}
