@@ -816,7 +816,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       </div>
 
       {/* Form Layout Preview */}
-      {showPreview && <FormLayoutPreview items={items} />}
+      {showPreview && <FormLayoutPreview items={items} onUpdate={onUpdate} />}
 
       {/* Form Structure Editor */}
       <Card>
