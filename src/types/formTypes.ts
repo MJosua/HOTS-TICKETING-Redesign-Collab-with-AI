@@ -1,3 +1,4 @@
+
 export interface FormConfig {
   id?: string;
   title: string;
@@ -25,6 +26,7 @@ export interface FormSection {
   description?: string;
   fields: FormField[];
   repeatable?: boolean;
+  defaultOpen?: boolean; // Add this property
   summary?: {
     label: string;
     type?: string;
