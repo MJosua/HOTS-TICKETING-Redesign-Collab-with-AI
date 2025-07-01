@@ -163,7 +163,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
   const getDefaultValue = () => {
     if (field.default) {
-      return resolveSystemVariable(field.default, {});
+      return resolveSystemVariables(field.default);
     }
     return '';
   };
