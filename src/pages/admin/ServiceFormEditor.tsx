@@ -144,7 +144,6 @@ const ServiceFormEditor = () => {
           title: section.title,
           description: section.description,
           fields: section.fields,
-          collapsible: false,
           defaultOpen: true
         }
       });

@@ -27,6 +27,10 @@ const Loginpage = () => {
 
           {lockedAccount ? (
             <Lockedaccount 
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              credentials={credentials}
+              setCredentials={setCredentials}
               setLockedAccount={setLockedAccount}
               setForgotToggle={setForgotToggle}
             />
