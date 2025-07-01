@@ -1,7 +1,8 @@
+
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
-import { factoryplant, srfsamplecategory, linkeddistributor } from "@/types/srf_types";
+import { factoryplant, srfsamplecategory, linkeddistributor } from "@/types/sku_types";
 
 interface srf_data {
   factoryplants: factoryplant[];
@@ -72,7 +73,7 @@ const srfSlice = createSlice({
         state.loading = true;
         state.error = undefined;
       })
-      .addCase(fetchSRF.fulfilled, (state, action: PayloadAction<srf_data>) => {
+      .addCase(fetchSRF.fulfilled, (state, action: PayloadAction<{ factoryplants: factoryplant[]; srfsamplecategoryes: srfsamplecategory[]; linkeddistributors: linkeddistributor[]; }>) => {
         state.loading = false;
         state.factoryplants = action.payload.factoryplants;
         state.srfsamplecategoryes = action.payload.srfsamplecategoryes;
