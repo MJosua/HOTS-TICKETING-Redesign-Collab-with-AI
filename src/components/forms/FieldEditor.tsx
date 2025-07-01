@@ -8,23 +8,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/types/formTypes';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown, RefreshCw, Info } from 'lucide-react';
-import { SYSTEM_VARIABLE_ENTRIES } from '@/utils/systemVariableDefinitions/systemVariableDefinitions'; // adjust path as needed
+import { Info, Link, Unlink } from 'lucide-react';
+import { SYSTEM_VARIABLE_ENTRIES } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
 
 interface FieldEditorProps {
   field: FormField;
-  fields?: FormField[]; // all fields for dependency selection
+  fields?: FormField[];
   onUpdate: (field: FormField) => void;
   onCancel: () => void;
 }
-export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], onUpdate, onCancel,  allfields = [], }) => {
+
+export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], onUpdate, onCancel }) => {
   const [localField, setLocalField] = useState<FormField>(field);
 
   const updateField = (updates: Partial<FormField>) => {
     setLocalField(prev => ({ ...prev, ...updates }));
   };
-  console.log("allfields",allfields)
-  
+
   const handleSave = () => {
     onUpdate(localField);
   };
@@ -53,11 +53,13 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
     </Popover>
   );
 
+  // Get available fields for dependency selection
+  const availableFields = fields.filter(f => f.name !== localField.name && f.name);
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-
           <Label>Field Label</Label>
           <Input
             value={localField.label}
@@ -75,10 +77,13 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
         </div>
       </div>
 
-      {/* New UI for dependency selection */}
+      {/* Enhanced dependency selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label>Depends On</Label>
+          <Label className="flex items-center gap-2">
+            <Link className="w-4 h-4" />
+            Chain Link Field (Depends On)
+          </Label>
           <Select
             value={localField.dependsOn ?? "none"}
             onValueChange={(value) =>
@@ -89,15 +94,21 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
               <SelectValue placeholder="Select a field" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {fields && fields.length > 0 ? (
-                fields
-                  .filter(f => f.name !== localField.name && f.name)
-                  .map(f => (
-                    <SelectItem key={f.name} value={f.name}>
+              <SelectItem value="none">
+                <div className="flex items-center gap-2">
+                  <Unlink className="w-4 h-4" />
+                  None
+                </div>
+              </SelectItem>
+              {availableFields.length > 0 ? (
+                availableFields.map(f => (
+                  <SelectItem key={f.name} value={f.name}>
+                    <div className="flex items-center gap-2">
+                      <Link className="w-4 h-4" />
                       {f.label} ({f.name})
-                    </SelectItem>
-                  ))
+                    </div>
+                  </SelectItem>
+                ))
               ) : (
                 <SelectItem value="no_fields" disabled>
                   No fields available
@@ -105,14 +116,25 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
               )}
             </SelectContent>
           </Select>
+          {localField.dependsOn && (
+            <p className="text-xs text-blue-600 mt-1">
+              This field will be filtered based on the selected field's value
+            </p>
+          )}
         </div>
         <div>
           <Label>Filter Options By</Label>
           <Input
             value={localField.filterOptionsBy || ''}
             onChange={(e) => updateField({ filterOptionsBy: e.target.value || undefined })}
-            placeholder="Filter key or expression"
+            placeholder="property.key or expression"
+            disabled={!localField.dependsOn}
           />
+          {localField.dependsOn && (
+            <p className="text-xs text-gray-500 mt-1">
+              e.g., "plant_description" or "category.name"
+            </p>
+          )}
         </div>
       </div>
 
@@ -137,7 +159,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
               <SelectItem value="file">File</SelectItem>
               <SelectItem value="toggle">Toggle</SelectItem>
               <SelectItem value="number">Number</SelectItem>
-              <SelectItem value="suggestion-insert">suggestion-insert</SelectItem>
+              <SelectItem value="suggestion-insert">Suggestion Insert</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -173,10 +195,13 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             value={localField.options?.join('\n') || ''}
             onChange={(e) => updateField({ options: e.target.value.split('\n').filter(Boolean) })}
             placeholder="Option 1&#10;Option 2&#10;Option 3"
+            className="min-h-[100px]"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            For chain link fields, these options will be filtered based on the dependent field's value
+          </p>
         </div>
       )}
-
 
       <div>
         <Label>Placeholder</Label>

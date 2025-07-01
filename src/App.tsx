@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Provider, useDispatch } from "react-redux";
@@ -17,6 +18,7 @@ import UserGuide from "./pages/UserGuide";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 import Loginpage from "./pages/login/Loginpage";
+import Registerpage from "./pages/login/Registerpage";
 
 // Admin
 import ServiceCatalogAdmin from "./pages/admin/ServiceCatalogAdmin";
@@ -38,9 +40,7 @@ import { fetchSRF } from "./store/slices/srf_slice";
 import { API_URL } from '@/config/sourceConfig';
 import axios from 'axios';
 
-
 const queryClient = new QueryClient();
-
 
 const AppContentInner = () => {
   const dispatch = useDispatch();
@@ -49,7 +49,6 @@ const AppContentInner = () => {
     dispatch(fetchDepartments());
     dispatch(fetchSRF());
   }, [dispatch]);
-
 
   useEffect(() => {
     const fetchSRFSKU = async () => {
@@ -81,6 +80,7 @@ const AppContentInner = () => {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Loginpage />} />
+          <Route path="/register" element={<Registerpage />} />
 
           {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -88,13 +88,16 @@ const AppContentInner = () => {
           <Route path="/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
           <Route path="/ticket/:id" element={<ProtectedRoute><TicketDetail /></ProtectedRoute>} />
           <Route path="/task-list" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
-          <Route path="/help/user-guide" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
           <Route path="/help-center" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
+          <Route path="/help/user-guide" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
           <Route path="/help/faq" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
+          <Route path="/user-guide" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
+          <Route path="/faq" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
 
           {/* Admin Routes */}
           <Route path="/admin/service-catalog" element={<ProtectedRoute><ServiceCatalogAdmin /></ProtectedRoute>} />
           <Route path="/admin/service-catalog/new" element={<ProtectedRoute><ServiceFormEditor /></ProtectedRoute>} />
+          <Route path="/admin/service-catalog/create" element={<ProtectedRoute><ServiceFormEditor /></ProtectedRoute>} />
           <Route path="/admin/service-catalog/edit/:id" element={<ProtectedRoute><ServiceFormEditor /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
           <Route path="/admin/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />

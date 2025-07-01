@@ -1,31 +1,20 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, GripVertical, Edit3, Folder, FileText, Grid3x3, ArrowDown } from 'lucide-react';
+import { FormField, FormSection, RowGroup } from '@/types/formTypes';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { FormField, RowGroup } from '@/types/formTypes';
-import { FieldEditor } from './FieldEditor';
+import { Plus, Trash2, GripVertical, Edit3, Package, ChevronDown, ChevronUp, Link } from 'lucide-react';
 
-export type FormStructureItem = {
+interface FormStructureItem {
   id: string;
   type: 'field' | 'section' | 'rowgroup';
-  data: FormField | SectionData | RowGroup;
   order: number;
-};
-
-export type SectionData = {
-  title: string;
-  description?: string;
-  fields: FormField[];
-  collapsible?: boolean;
-  defaultOpen?: boolean;
-};
+  data: FormField | FormSection | RowGroup;
+}
 
 interface UnifiedFormStructureEditorProps {
   items: FormStructureItem[];
@@ -34,643 +23,432 @@ interface UnifiedFormStructureEditorProps {
 
 export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProps> = ({
   items,
-  onUpdate
+  onUpdate,
 }) => {
   const [editingItem, setEditingItem] = useState<string | null>(null);
-  const [previewItems, setPreviewItems] = useState<FormStructureItem[]>(items);
-  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
-  // Helper function to get nested property value by path string, e.g. "linkeddistributors.plant_description"
-  const getNestedProperty = (obj: any, path: string): any => {
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-  };
+  const addItem = (type: 'field' | 'section' | 'rowgroup') => {
+    let newItem: FormStructureItem;
 
-  // Helper function to filter options of dependent fields based on filterOptionsBy key
-  const filterDependentFieldOptions = (field: FormField, dependsOnValue: any): string[] => {
-    if (!field.options || !field.filterOptionsBy) return field.options || [];
-
-    // Check if options are objects or strings
-    const firstOption = field.options[0];
-    let optionsArray: any[] = [];
-
-    try {
-      optionsArray = typeof firstOption === 'string' ? field.options : JSON.parse(field.options as unknown as string);
-    } catch {
-      optionsArray = field.options;
+    switch (type) {
+      case 'field':
+        newItem = {
+          id: `field-${Date.now()}`,
+          type: 'field',
+          order: items.length,
+          data: {
+            label: 'New Field',
+            name: `field_${Date.now()}`,
+            type: 'text',
+            required: false,
+            columnSpan: 1
+          }
+        };
+        break;
+      case 'section':
+        newItem = {
+          id: `section-${Date.now()}`,
+          type: 'section',
+          order: items.length,
+          data: {
+            title: 'New Section',
+            description: '',
+            fields: [],
+            repeatable: false
+          }
+        };
+        break;
+      case 'rowgroup':
+        newItem = {
+          id: `rowgroup-${Date.now()}`,
+          type: 'rowgroup',
+          order: items.length,
+          data: {
+            title: 'New Row Group',
+            isStructuredInput: false,
+            rowGroup: []
+          }
+        };
+        break;
     }
 
-    // Filter options by comparing nested property value with dependsOnValue
-    const filteredOptions = optionsArray.filter(option => {
-      if (typeof option === 'string') {
-        return option.includes(dependsOnValue);
-      } else if (typeof option === 'object' && option !== null) {
-        const propValue = getNestedProperty(option, field.filterOptionsBy!);
-        return propValue === dependsOnValue;
-      }
-      return false;
-    });
-
-    // Return filtered options as strings or JSON stringified objects
-    return filteredOptions.map(opt => (typeof opt === 'string' ? opt : JSON.stringify(opt)));
-  };
-
-  // Update preview items when items prop changes
-  React.useEffect(() => {
-    setPreviewItems(items);
-  }, [items]);
-
-  const addField = () => {
-    const newItem: FormStructureItem = {
-      id: `field-${Date.now()}`,
-      type: 'field',
-      order: items.length,
-      data: {
-        label: 'New Field',
-        name: `field_${Date.now()}`,
-        type: 'text',
-        required: false,
-        columnSpan: 1
-      }
-    };
-    const updatedItems = [...items, newItem];
-    onUpdate(updatedItems);
-  };
-
-  const addSection = () => {
-    const newItem: FormStructureItem = {
-      id: `section-${Date.now()}`,
-      type: 'section',
-      order: items.length,
-      data: {
-        title: 'New Section',
-        description: '',
-        fields: [],
-        collapsible: false,
-        defaultOpen: true
-      }
-    };
-    const updatedItems = [...items, newItem];
-    onUpdate(updatedItems);
-  };
-
-  const addRowGroup = () => {
-    const newItem: FormStructureItem = {
-      id: `rowgroup-${Date.now()}`,
-      type: 'rowgroup',
-      order: items.length,
-      data: {
-        title: 'New Row Group',
-        isStructuredInput: true,
-        maxRows: 5,
-        rowGroup: [],
-        structure: {
-          firstColumn: {
-            label: 'Item',
-            placeholder: 'Enter item name',
-            type: 'text'
-          },
-          secondColumn: {
-            label: 'Quantity',
-            placeholder: 'Enter quantity',
-            type: 'number'
-          },
-          thirdColumn: {
-            label: 'Notes',
-            placeholder: 'Enter notes',
-            type: 'text'
-          },
-          combinedMapping: 'none'
-        }
-      }
-    };
-    const updatedItems = [...items, newItem];
-    onUpdate(updatedItems);
-  };
-
-  const updateItem = (id: string, updatedData: any) => {
-    const updatedItems = items.map(item =>
-      item.id === id ? { ...item, data: updatedData } : item
-    );
-    onUpdate(updatedItems);
-    setEditingItem(null);
+    onUpdate([...items, newItem]);
   };
 
   const removeItem = (id: string) => {
-    const updatedItems = items.filter(item => item.id !== id);
-    onUpdate(updatedItems);
+    const newItems = items.filter(item => item.id !== id);
+    onUpdate(newItems);
   };
 
-  const addFieldToSection = (sectionId: string) => {
-    const newField: FormField = {
-      label: 'New Field',
-      name: `field_${Date.now()}`,
-      type: 'text',
-      required: false,
-      columnSpan: 1
-    };
-
-    const updatedItems = items.map(item => {
-      if (item.id === sectionId && item.type === 'section') {
-        const sectionData = item.data as SectionData;
-        return {
-          ...item,
-          data: {
-            ...sectionData,
-            fields: [...sectionData.fields, newField]
-          }
-        };
+  const updateItem = (id: string, newData: any) => {
+    const newItems = items.map(item => {
+      if (item.id === id) {
+        return { ...item, data: newData };
       }
       return item;
     });
-    onUpdate(updatedItems);
+    onUpdate(newItems);
   };
 
-  const onDragEnd = (result: any) => {
+  const handleDragEnd = (result: any) => {
     if (!result.destination) return;
 
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
-    const sourceDroppableId = result.source.droppableId;
-    const destinationDroppableId = result.destination.droppableId;
+    const { source, destination } = result;
+    const newItems = [...items];
 
-    if (sourceIndex === destinationIndex && sourceDroppableId === destinationDroppableId) return;
-
-    // Handle moving items within main structure
-    if (sourceDroppableId === 'form-structure' && destinationDroppableId === 'form-structure') {
-      const newItems = Array.from(items);
-      const [reorderedItem] = newItems.splice(sourceIndex, 1);
-      newItems.splice(destinationIndex, 0, reorderedItem);
-
-      const reorderedWithOrder = newItems.map((item, index) => ({
-        ...item,
-        order: index
-      }));
-
-      setPreviewItems(reorderedWithOrder);
-      onUpdate(reorderedWithOrder);
-    }
-
-    // Handle moving fields to sections
-    if (sourceDroppableId === 'form-structure' && destinationDroppableId.startsWith('section-')) {
-      const sectionId = destinationDroppableId.replace('section-', '');
-      const itemToMove = items[sourceIndex];
-
-      if (itemToMove.type === 'field') {
-        const fieldData = itemToMove.data as FormField;
-
-        // Remove field from main structure
-        const newItems = items.filter((_, index) => index !== sourceIndex);
-
-        // Add field to section
-        const updatedItems = newItems.map(item => {
-          if (item.id === sectionId && item.type === 'section') {
-            const sectionData = item.data as SectionData;
-            return {
-              ...item,
-              data: {
-                ...sectionData,
-                fields: [...sectionData.fields, fieldData]
-              }
-            };
-          }
-          return item;
-        });
-
-        onUpdate(updatedItems);
+    // Handle section field reordering
+    if (source.droppableId.startsWith('section-') && destination.droppableId.startsWith('section-')) {
+      const sourceSectionId = source.droppableId.replace('section-', '');
+      const destSectionId = destination.droppableId.replace('section-', '');
+      
+      const sourceSection = newItems.find(item => item.id === sourceSectionId);
+      const destSection = newItems.find(item => item.id === destSectionId);
+      
+      if (sourceSection && destSection && sourceSection.type === 'section' && destSection.type === 'section') {
+        const sourceSectionData = sourceSection.data as any;
+        const destSectionData = destSection.data as any;
+        
+        // Move field from source to destination section
+        const [movedField] = sourceSectionData.fields.splice(source.index, 1);
+        destSectionData.fields.splice(destination.index, 0, movedField);
+        
+        onUpdate(newItems);
+        return;
       }
     }
-  };
 
-  const onPreviewDragEnd = (result: any) => {
-    if (!result.destination) return;
+    // Handle moving field from section to main structure
+    if (source.droppableId.startsWith('section-') && destination.droppableId === 'main-structure') {
+      const sectionId = source.droppableId.replace('section-', '');
+      const section = newItems.find(item => item.id === sectionId);
+      
+      if (section && section.type === 'section') {
+        const sectionData = section.data as any;
+        const [movedField] = sectionData.fields.splice(source.index, 1);
+        
+        // Create new field item
+        const newFieldItem: FormStructureItem = {
+          id: `field-${Date.now()}`,
+          type: 'field',
+          order: destination.index,
+          data: movedField
+        };
+        
+        // Insert into main structure
+        newItems.splice(destination.index, 0, newFieldItem);
+        
+        // Update orders
+        newItems.forEach((item, index) => {
+          item.order = index;
+        });
+        
+        onUpdate(newItems);
+        return;
+      }
+    }
 
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
+    // Handle moving field from main structure to section
+    if (source.droppableId === 'main-structure' && destination.droppableId.startsWith('section-')) {
+      const sectionId = destination.droppableId.replace('section-', '');
+      const section = newItems.find(item => item.id === sectionId);
+      
+      if (section && section.type === 'section') {
+        const sectionData = section.data as any;
+        const [movedItem] = newItems.splice(source.index, 1);
+        
+        if (movedItem.type === 'field') {
+          sectionData.fields.splice(destination.index, 0, movedItem.data);
+        }
+        
+        // Update orders
+        newItems.forEach((item, index) => {
+          item.order = index;
+        });
+        
+        onUpdate(newItems);
+        return;
+      }
+    }
 
-    if (sourceIndex === destinationIndex) return;
-
-    const newPreviewItems = Array.from(previewItems);
-    const [reorderedItem] = newPreviewItems.splice(sourceIndex, 1);
-    newPreviewItems.splice(destinationIndex, 0, reorderedItem);
-
-    const reorderedWithOrder = newPreviewItems.map((item, index) => ({
-      ...item,
-      order: index
-    }));
-
-    setPreviewItems(reorderedWithOrder);
-    onUpdate(reorderedWithOrder);
-  };
-
-  const getItemIcon = (type: string) => {
-    switch (type) {
-      case 'field':
-        return <FileText className="w-4 h-4" />;
-      case 'section':
-        return <Folder className="w-4 h-4" />;
-      case 'rowgroup':
-        return <Grid3x3 className="w-4 h-4" />;
-      default:
-        return <FileText className="w-4 h-4" />;
+    // Handle main structure reordering
+    if (source.droppableId === 'main-structure' && destination.droppableId === 'main-structure') {
+      const [reorderedItem] = newItems.splice(source.index, 1);
+      newItems.splice(destination.index, 0, reorderedItem);
+      
+      // Update orders
+      newItems.forEach((item, index) => {
+        item.order = index;
+      });
+      
+      onUpdate(newItems);
     }
   };
 
-  const getItemColor = (type: string) => {
-    switch (type) {
-      case 'field':
-        return 'border-l-blue-500 bg-blue-50';
-      case 'section':
-        return 'border-l-green-500 bg-green-50';
-      case 'rowgroup':
-        return 'border-l-purple-500 bg-purple-50';
-      default:
-        return 'border-l-gray-500 bg-gray-50';
-    }
-  };
-
-  const renderFormPreview = () => {
-    let fieldCounter = 1;
-
-    return (
-      <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-        <h4 className="text-sm font-medium mb-3 text-gray-700">Form Layout Preview & Database Mapping</h4>
-        <DragDropContext onDragEnd={onPreviewDragEnd}>
-          <Droppable droppableId="preview-structure">
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef}>
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  {previewItems.map((item, index) => {
-                    const currentFieldCounter = fieldCounter;
-
-                    if (item.type === 'field') {
-                      const field = item.data as FormField;
-                      const cstmCol = `cstm_col${fieldCounter}`;
-                      const lblCol = `lbl_col${fieldCounter}`;
-                      fieldCounter++;
-
-                      return (
-                        <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs cursor-move hover:shadow-md transition-shadow ${field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
-                                }`}
-                            >
-                              <div className="font-medium text-gray-700">{field.label}</div>
-                              <div className="text-blue-600 mt-1">{cstmCol} → {lblCol}</div>
-                              <div className="text-xs text-gray-500">Span: {field.columnSpan || 1} column{(field.columnSpan || 1) > 1 ? 's' : ''}</div>
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    } else if (item.type === 'section') {
-                      const section = item.data as SectionData;
-                      return (
-                        <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="col-span-3 p-3 bg-green-100 border border-green-300 rounded cursor-move hover:shadow-md transition-shadow"
-                            >
-                              <div className="font-medium text-sm mb-2 text-gray-700">📁 {section.title}</div>
-                              <div className="text-xs text-green-600">Section (spans 3 columns)</div>
-                              <div className="grid grid-cols-3 gap-1 mt-2">
-                                {section.fields.map((field, fieldIndex) => {
-                                  const cstmCol = `cstm_col${fieldCounter}`;
-                                  const lblCol = `lbl_col${fieldCounter}`;
-                                  fieldCounter++;
-                                  return (
-                                    <div key={fieldIndex} className={`p-1 bg-green-200 rounded text-xs ${field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
-                                      }`}>
-                                      <span className="font-medium text-gray-700">{field.label}</span>
-                                      <div className="text-green-700">{cstmCol} → {lblCol}</div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    } else if (item.type === 'rowgroup') {
-                      const rowGroup = item.data as RowGroup;
-                      const cstmCol = `cstm_col${fieldCounter}`;
-                      const lblCol = `lbl_col${fieldCounter}`;
-                      fieldCounter++;
-
-                      return (
-                        <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="col-span-3 p-2 bg-purple-100 border border-purple-300 rounded text-xs cursor-move hover:shadow-md transition-shadow"
-                            >
-                              <div className="font-medium text-gray-700">🗂️ {rowGroup.title || 'Row Group'}</div>
-                              <div className="text-purple-600 mt-1">{cstmCol} → {lblCol} (Dynamic Rows)</div>
-                              <div className="text-xs text-gray-500">Max rows: {rowGroup.maxRows || 5}</div>
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    }
-                    return null;
-                  })}
+  const renderSectionFields = (sectionData: any, sectionId: string) => (
+    <Droppable droppableId={`section-${sectionId}`} type="section-field">
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className={`space-y-2 min-h-[60px] p-2 rounded-lg border-2 border-dashed ${
+            snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50' : 'border-gray-200'
+          }`}
+        >
+          <div className="text-xs text-gray-500 mb-2">
+            Section Fields ({sectionData.fields?.length || 0})
+          </div>
+          {sectionData.fields?.map((field: FormField, index: number) => (
+            <Draggable key={`section-field-${index}`} draggableId={`section-field-${sectionId}-${index}`} index={index}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  {...provided.dragHandleProps}
+                  className={`p-2 bg-white border rounded-lg shadow-sm ${
+                    snapshot.isDragging ? 'shadow-lg' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm font-medium">{field.label}</span>
+                      <span className="text-xs text-gray-500">({field.type})</span>
+                      {field.dependsOn && (
+                        <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                          <Link className="w-3 h-3" />
+                          Chain Link
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // Edit field logic
+                          console.log('Edit field:', field);
+                        }}
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // Remove field from section
+                          const updatedFields = sectionData.fields.filter((_: any, i: number) => i !== index);
+                          const updatedItems = items.map(item => 
+                            item.id === sectionId 
+                              ? { ...item, data: { ...sectionData, fields: updatedFields } }
+                              : item
+                          );
+                          onUpdate(updatedItems);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-        <div className="text-xs text-gray-600 mt-3 pt-2 border-t border-gray-200">
-          Total database columns used: {fieldCounter - 1}
+              )}
+            </Draggable>
+          ))}
+          {provided.placeholder}
+          {(!sectionData.fields || sectionData.fields.length === 0) && (
+            <div className="text-center text-gray-400 text-sm py-4">
+              Drop fields here or drag fields from main structure
+            </div>
+          )}
         </div>
-      </div>
-    );
+      )}
+    </Droppable>
+  );
+
+  const renderItem = (item: FormStructureItem, index: number) => {
+    if (item.type === 'field') {
+      const field = item.data as FormField;
+      return (
+        <div className="p-3 bg-white border rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
+              <div>
+                <span className="font-medium">{field.label}</span>
+                <span className="text-sm text-gray-500 ml-2">({field.type})</span>
+                {field.dependsOn && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs mt-1">
+                    <Link className="w-3 h-3" />
+                    Chain Link → {field.dependsOn}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingItem(item.id)}
+              >
+                <Edit3 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => removeItem(item.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    } else if (item.type === 'section') {
+      const sectionData = item.data as any;
+      const isExpanded = expandedSections.has(item.id);
+      
+      return (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
+              <div>
+                <span className="font-medium text-blue-800">{sectionData.title}</span>
+                <span className="text-sm text-blue-600 ml-2">(Section)</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const newExpanded = new Set(expandedSections);
+                  if (isExpanded) {
+                    newExpanded.delete(item.id);
+                  } else {
+                    newExpanded.add(item.id);
+                  }
+                  setExpandedSections(newExpanded);
+                }}
+              >
+                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingItem(item.id)}
+              >
+                <Edit3 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => removeItem(item.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {isExpanded && (
+            <div className="mt-3">
+              {renderSectionFields(sectionData, item.id)}
+            </div>
+          )}
+        </div>
+      );
+    } else if (item.type === 'rowgroup') {
+      const rowGroupData = item.data as any;
+      return (
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
+              <div>
+                <span className="font-medium text-green-800">
+                  {rowGroupData.title || 'Row Group'}
+                </span>
+                <span className="text-sm text-green-600 ml-2">(Row Group)</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingItem(item.id)}
+              >
+                <Edit3 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => removeItem(item.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-800">Form Structure</h3>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={addField} className="flex items-center gap-1">
-            <FileText className="w-4 h-4" />
-            Field
-          </Button>
-          <Button size="sm" variant="outline" onClick={addSection} className="flex items-center gap-1">
-            <Folder className="w-4 h-4" />
-            Section
-          </Button>
-          <Button size="sm" variant="outline" onClick={addRowGroup} className="flex items-center gap-1">
-            <Grid3x3 className="w-4 h-4" />
-            Row Group
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={() => addItem('field')}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Field
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => addItem('section')}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Section
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => addItem('rowgroup')}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Row Group
+        </Button>
       </div>
-
-      {renderFormPreview()}
-
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="form-structure">
-          {(provided) => (
-            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
+      
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="main-structure">
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`space-y-3 min-h-[200px] p-4 rounded-lg border-2 border-dashed ${
+                snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50' : 'border-gray-200'
+              }`}
+            >
               {items.map((item, index) => (
                 <Draggable key={item.id} draggableId={item.id} index={index}>
-                  {(provided) => (
-                    <Card
+                  {(provided, snapshot) => (
+                    <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
-                      className={`border-l-4 ${getItemColor(item.type)}`}
+                      {...provided.dragHandleProps}
+                      className={snapshot.isDragging ? 'opacity-50' : ''}
                     >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div {...provided.dragHandleProps} className="cursor-move">
-                              <GripVertical className="w-4 h-4 text-gray-400" />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {getItemIcon(item.type)}
-                              <span className="text-sm font-medium capitalize text-gray-700">
-                                {item.type === 'field' ? (item.data as FormField).label :
-                                  item.type === 'section' ? (item.data as SectionData).title :
-                                    (item.data as RowGroup).title || 'Row Group'}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {item.type === 'section' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => addFieldToSection(item.id)}
-                              >
-                                <Plus className="w-4 h-4 mr-1" />
-                                Add Field
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditingItem(editingItem === item.id ? null : item.id)}
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeItem(item.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-
-                      {/* Section fields display */}
-                      {item.type === 'section' && (item.data as SectionData).fields.length > 0 && (
-                        <CardContent className="pt-0 pb-3">
-                          <Droppable droppableId={`section-${item.id}`}>
-                            {(provided) => (
-                              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                                <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                  <ArrowDown className="w-3 h-3" />
-                                  Section Fields (drag fields here)
-                                </div>
-                                {(item.data as SectionData).fields.map((field, fieldIndex) => (
-                                  <div key={fieldIndex} className="p-2 bg-white border rounded text-sm">
-                                    <span className="font-medium">{field.label}</span>
-                                    <span className="text-gray-500 ml-2">({field.type})</span>
-                                  </div>
-                                ))}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </CardContent>
-                      )}
-
-                      {editingItem === item.id && (
-                        <CardContent>
-                          {item.type === 'field' && (
-                            <FieldEditor
-                              fields={items.filter(i => i.type === 'field').map(i => i.data as FormField)}
-                              field={item.data as FormField}
-                              onUpdate={(updatedField) => updateItem(item.id, updatedField)}
-                              onCancel={() => setEditingItem(null)}
-                            />
-                          )}
-
-                          {item.type === 'section' && (
-                            <SectionEditor
-                              section={item.data as SectionData}
-                              onUpdate={(updatedSection) => updateItem(item.id, updatedSection)}
-                            />
-                          )}
-
-                          {item.type === 'rowgroup' && (
-                            <RowGroupEditor
-                              rowGroup={item.data as RowGroup}
-                              onUpdate={(updatedRowGroup) => updateItem(item.id, updatedRowGroup)}
-                            />
-                          )}
-                        </CardContent>
-                      )}
-                    </Card>
+                      {renderItem(item, index)}
+                    </div>
                   )}
                 </Draggable>
               ))}
               {provided.placeholder}
+              
+              {items.length === 0 && (
+                <div className="text-center text-gray-400 py-12">
+                  <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No form elements yet</p>
+                  <p className="text-sm">Add fields, sections, or row groups to get started</p>
+                </div>
+              )}
             </div>
           )}
         </Droppable>
       </DragDropContext>
-
-      {items.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-          <p className="text-gray-500 mb-4">No form elements created yet</p>
-          <div className="flex justify-center gap-2">
-            <Button onClick={addField}>
-              <FileText className="w-4 h-4 mr-2" />
-              Add Field
-            </Button>
-            <Button variant="outline" onClick={addSection}>
-              <Folder className="w-4 h-4 mr-2" />
-              Add Section
-            </Button>
-            <Button variant="outline" onClick={addRowGroup}>
-              <Grid3x3 className="w-4 h-4 mr-2" />
-              Add Row Group
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Individual editors for each type
-const SectionEditor: React.FC<{
-  section: SectionData;
-  onUpdate: (section: SectionData) => void;
-}> = ({ section, onUpdate }) => {
-  const updateSection = (updates: Partial<SectionData>) => {
-    onUpdate({ ...section, ...updates });
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label>Section Title</Label>
-          <Input
-            value={section.title}
-            onChange={(e) => updateSection({ title: e.target.value })}
-            placeholder="Section title"
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={section.collapsible || false}
-            onCheckedChange={(checked) => updateSection({ collapsible: checked })}
-          />
-          <Label>Collapsible</Label>
-        </div>
-      </div>
-
-      <div>
-        <Label>Description</Label>
-        <Textarea
-          value={section.description || ''}
-          onChange={(e) => updateSection({ description: e.target.value })}
-          placeholder="Section description (optional)"
-        />
-      </div>
-    </div>
-  );
-};
-
-const RowGroupEditor: React.FC<{
-  rowGroup: RowGroup;
-  onUpdate: (rowGroup: RowGroup) => void;
-}> = ({ rowGroup, onUpdate }) => {
-  const updateRowGroup = (updates: Partial<RowGroup>) => {
-    onUpdate({ ...rowGroup, ...updates });
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Row Group Title</Label>
-          <Input
-            value={rowGroup.title || ''}
-            onChange={(e) => updateRowGroup({ title: e.target.value })}
-            placeholder="Row group title"
-          />
-        </div>
-        <div>
-          <Label>Max Rows</Label>
-          <Input
-            type="number"
-            value={rowGroup.maxRows || 5}
-            onChange={(e) => updateRowGroup({ maxRows: parseInt(e.target.value) })}
-            min="1"
-          />
-        </div>
-      </div>
-
-      {rowGroup.structure && (
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-700">Column Configuration</h4>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label>First Column</Label>
-              <Input
-                value={rowGroup.structure.firstColumn.label}
-                onChange={(e) => updateRowGroup({
-                  structure: {
-                    ...rowGroup.structure!,
-                    firstColumn: { ...rowGroup.structure!.firstColumn, label: e.target.value }
-                  }
-                })}
-                placeholder="Column label"
-              />
-            </div>
-            <div>
-              <Label>Second Column</Label>
-              <Input
-                value={rowGroup.structure.secondColumn.label}
-                onChange={(e) => updateRowGroup({
-                  structure: {
-                    ...rowGroup.structure!,
-                    secondColumn: { ...rowGroup.structure!.secondColumn, label: e.target.value }
-                  }
-                })}
-                placeholder="Column label"
-              />
-            </div>
-            <div>
-              <Label>Third Column</Label>
-              <Input
-                value={rowGroup.structure.thirdColumn.label}
-                onChange={(e) => updateRowGroup({
-                  structure: {
-                    ...rowGroup.structure!,
-                    thirdColumn: { ...rowGroup.structure!.thirdColumn, label: e.target.value }
-                  }
-                })}
-                placeholder="Column label"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
