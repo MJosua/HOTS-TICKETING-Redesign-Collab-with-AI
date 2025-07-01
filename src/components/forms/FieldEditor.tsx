@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/types/formTypes';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Info, Link, Unlink, AlertCircle } from 'lucide-react';
+import { Info, Link, Unlink, AlertCircle, Save, X } from 'lucide-react';
 import { SYSTEM_VARIABLE_ENTRIES } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -21,29 +21,30 @@ interface FieldEditorProps {
 
 export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], onUpdate, onCancel }) => {
   const [localField, setLocalField] = useState<FormField>(field);
+  const [filterInput, setFilterInput] = useState(field.filterOptionsBy || '');
 
   const updateField = (updates: Partial<FormField>) => {
     setLocalField(prev => ({ ...prev, ...updates }));
   };
 
   const handleSave = () => {
-    onUpdate(localField);
+    onUpdate({ ...localField, filterOptionsBy: filterInput || undefined });
   };
 
   const SystemVariableHelper = () => (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="h-7">
           <Info className="w-3 h-3 mr-1" />
-          System Variables
+          Variables
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 max-h-96 overflow-auto">
+      <PopoverContent className="w-96 max-h-96 overflow-auto bg-white border shadow-lg z-50">
         <div className="space-y-2">
           <h4 className="font-medium">Available System Variables:</h4>
           <div className="text-sm space-y-1">
             {SYSTEM_VARIABLE_ENTRIES.map((entry) => (
-              <div key={entry.key}>
+              <div key={entry.key} className="p-2 hover:bg-gray-50 rounded">
                 <code className="bg-muted px-1 py-0.5 rounded text-xs">{entry.key}</code>
                 <span className="ml-2 text-muted-foreground">{entry.description}</span>
               </div>
@@ -83,12 +84,15 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
                 // Clear filterOptionsBy if removing dependency
                 filterOptionsBy: dependsOn ? localField.filterOptionsBy : undefined
               });
+              if (!dependsOn) {
+                setFilterInput('');
+              }
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-white">
               <SelectValue placeholder="Select a parent field" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border shadow-lg z-50">
               <SelectItem value="none">
                 <div className="flex items-center gap-2">
                   <Unlink className="w-4 h-4" />
@@ -123,9 +127,10 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
           <div>
             <Label className="text-sm">Filter Property Path</Label>
             <Input
-              value={localField.filterOptionsBy || ''}
-              onChange={(e) => updateField({ filterOptionsBy: e.target.value || undefined })}
+              value={filterInput}
+              onChange={(e) => setFilterInput(e.target.value)}
               placeholder="e.g., category.name or plant_description"
+              className="bg-white"
             />
             <div className="text-xs text-gray-600 mt-1 space-y-1">
               <p>• For simple matching: use property name like "category"</p>
@@ -151,7 +156,21 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4 bg-white rounded-lg border">
+      <div className="flex items-center justify-between border-b pb-2">
+        <h4 className="font-medium text-gray-800">Edit Field: {field.label}</h4>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onCancel}>
+            <X className="w-4 h-4 mr-1" />
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+            <Save className="w-4 h-4 mr-1" />
+            Save
+          </Button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label>Field Label</Label>
@@ -159,6 +178,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             value={localField.label}
             onChange={(e) => updateField({ label: e.target.value })}
             placeholder="Field label"
+            className="bg-white"
           />
         </div>
         <div>
@@ -167,6 +187,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             value={localField.name}
             onChange={(e) => updateField({ name: e.target.value })}
             placeholder="field_name"
+            className="bg-white"
           />
         </div>
       </div>
@@ -178,10 +199,10 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             value={localField.type}
             onValueChange={(value: FormField['type']) => updateField({ type: value })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border shadow-lg z-50">
               <SelectItem value="text">Text</SelectItem>
               <SelectItem value="textarea">Textarea</SelectItem>
               <SelectItem value="select">Select</SelectItem>
@@ -202,10 +223,10 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             value={String(localField.columnSpan || 1)}
             onValueChange={(value) => updateField({ columnSpan: Number(value) as 1 | 2 | 3 })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border shadow-lg z-50">
               <SelectItem value="1">1 Column</SelectItem>
               <SelectItem value="2">2 Columns</SelectItem>
               <SelectItem value="3">3 Columns</SelectItem>
@@ -233,7 +254,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             value={localField.options?.join('\n') || ''}
             onChange={(e) => updateField({ options: e.target.value.split('\n').filter(Boolean) })}
             placeholder="Option 1&#10;Option 2&#10;Option 3"
-            className="min-h-[100px]"
+            className="min-h-[100px] bg-white"
           />
           <div className="text-xs text-gray-500 mt-1 space-y-1">
             <p>• Enter each option on a new line</p>
@@ -251,6 +272,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
           value={localField.placeholder || ''}
           onChange={(e) => updateField({ placeholder: e.target.value })}
           placeholder="Placeholder text"
+          className="bg-white"
         />
       </div>
 
@@ -268,16 +290,16 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
           value={localField.default || ''}
           onChange={(e) => updateField({ default: e.target.value })}
           placeholder="Default value"
+          className="bg-white"
         />
       </div>
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button onClick={handleSave}>
-          Save Field
-        </Button>
+      <div className="flex items-center space-x-2">
+        <Switch
+          checked={localField.readonly || false}
+          onCheckedChange={(checked) => updateField({ readonly: checked })}
+        />
+        <Label>Read Only</Label>
       </div>
     </div>
   );
