@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -201,33 +202,59 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
   };
 
-  // Helper function to filter options of dependent fields based on filterOptionsBy key
+  // Improved helper function to filter options of dependent fields based on filterOptionsBy key
   const filterDependentFieldOptions = (field: FormField, dependsOnValue: any): string[] => {
-    if (!field.options || !field.filterOptionsBy) return field.options || [];
+    if (!field.options || !field.filterOptionsBy || !dependsOnValue) {
+      return field.options || [];
+    }
+
+    console.log('Filtering options for field:', field.name, 'based on value:', dependsOnValue);
 
     // Check if options are objects or strings
     const firstOption = field.options[0];
     let optionsArray: any[] = [];
 
     try {
-      optionsArray = typeof firstOption === 'string' ? field.options : JSON.parse(field.options as unknown as string);
+      // Try to parse as JSON if it's a string that looks like JSON
+      optionsArray = typeof firstOption === 'string' && firstOption.startsWith('{') 
+        ? field.options.map(opt => JSON.parse(opt))
+        : field.options;
     } catch {
       optionsArray = field.options;
     }
 
+    console.log('Options array to filter:', optionsArray);
+    console.log('Filter property:', field.filterOptionsBy);
+
     // Filter options by comparing nested property value with dependsOnValue
     const filteredOptions = optionsArray.filter(option => {
       if (typeof option === 'string') {
-        return option.includes(dependsOnValue);
+        // Simple string matching - check if the option contains the dependsOnValue
+        return option.toLowerCase().includes(dependsOnValue.toLowerCase());
       } else if (typeof option === 'object' && option !== null) {
+        // Object matching - get nested property value
         const propValue = getNestedProperty(option, field.filterOptionsBy!);
-        return propValue === dependsOnValue;
+        console.log('Comparing:', propValue, 'with:', dependsOnValue);
+        
+        // Try both exact match and contains match
+        if (propValue === dependsOnValue) {
+          return true;
+        }
+        if (typeof propValue === 'string' && typeof dependsOnValue === 'string') {
+          return propValue.toLowerCase().includes(dependsOnValue.toLowerCase());
+        }
+        return false;
       }
       return false;
     });
 
+    console.log('Filtered options:', filteredOptions);
+
     // Return filtered options as strings or JSON stringified objects
-    return filteredOptions.map(opt => (typeof opt === 'string' ? opt : JSON.stringify(opt)));
+    const result = filteredOptions.map(opt => (typeof opt === 'string' ? opt : JSON.stringify(opt)));
+    console.log('Final filtered result:', result);
+    
+    return result;
   };
 
   const renderFieldsInRows = (fields: FormField[]) => {
@@ -236,36 +263,44 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         {fields.map((field, fieldIndex) => {
           const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
           if (!shouldShowField(field, watchedValues)) return null;
+
+          // For dependent fields, use filtered options
+          let fieldToRender = field;
+          if (field.dependsOn && watchedValues[field.dependsOn]) {
+            const filteredOptions = filterDependentFieldOptions(field, watchedValues[field.dependsOn]);
+            fieldToRender = { ...field, options: filteredOptions };
+          }
+
           return (
             <div key={fieldKey} className={getColSpanClass(field.columnSpan || 1)}>
               <DynamicField
-                field={field}
+                field={fieldToRender}
                 form={form}
                 fieldKey={fieldKey}
                 onValueChange={(value) => {
+                  console.log('Field value changed:', fieldKey, value);
                   // Update current field value
                   setWatchedValues(prev => {
                     const newValues = { ...prev, [fieldKey]: value };
-
-                    // Update dependent fields options based on new value
-                    const updatedFields = config.fields?.map(f => {
-                      if (f.dependsOn === field.name) {
-                        const filteredOptions = filterDependentFieldOptions(f, value);
-                        return { ...f, options: filteredOptions };
-                      }
-                      return f;
-                    }) || [];
-
-                    // Update config fields with filtered options
-                    if (updatedFields.length > 0) {
-                      // Update config fields state
-                      // Since config is a prop, we need to manage local state for fields
-                      setLocalFields(updatedFields);
-                    }
-
+                    console.log('Updated watched values:', newValues);
                     return newValues;
                   });
 
+                  // Update dependent fields options based on new value
+                  const updatedFields = (config.fields || []).map(f => {
+                    if (f.dependsOn === field.name) {
+                      const filteredOptions = filterDependentFieldOptions(f, value);
+                      console.log('Updating dependent field options:', f.name, filteredOptions);
+                      return { ...f, options: filteredOptions };
+                    }
+                    return f;
+                  });
+
+                  // Update config fields with filtered options
+                  if (updatedFields.some(f => f.dependsOn === field.name)) {
+                    console.log('Setting local fields with updated options');
+                    setLocalFields(updatedFields);
+                  }
                 }}
                 onFileUpload={handleFileUpload}
               />
@@ -323,7 +358,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               {config.fields && (
                 <div className="space-y-4">
-                  {renderFieldsInRows(config.fields)}
+                  {renderFieldsInRows(localFields.length > 0 ? localFields : config.fields)}
                 </div>
               )}
 
