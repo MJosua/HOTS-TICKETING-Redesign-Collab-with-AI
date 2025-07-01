@@ -1,12 +1,19 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAppSelector } from '@/hooks/useAppSelector';
+import { useAppDispatch } from '@/hooks/useAppDispatch';
+import { resetLoginAttempts } from '@/store/slices/authSlice';
 import Loginform from './form/Loginform';
 import Forgotpassform from './form/Forgotpassform';
 import Recoveryform from './form/Recoveryform';
 import Lockedaccount from './form/Lockedaccount';
 
 const Loginpage = () => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+
   const [showPassword, setShowPassword] = useState(false);
   const [forgotToggle, setForgotToggle] = useState(false);
   const [recoveryToggle, setRecoveryToggle] = useState(false);
@@ -16,17 +23,19 @@ const Loginpage = () => {
     password: ''
   });
 
-
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-
-  
+  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/service-catalog');
     }
   }, [isAuthenticated, navigate]);
 
-  
+  // Reset login attempts when toggling back to login
+  useEffect(() => {
+    if (!forgotToggle && !lockedAccount && !recoveryToggle) {
+      dispatch(resetLoginAttempts());
+    }
+  }, [forgotToggle, lockedAccount, recoveryToggle, dispatch]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -38,7 +47,7 @@ const Loginpage = () => {
           </div>
 
           {lockedAccount ? (
-            <Lockedaccount 
+            <Lockedaccount
               showPassword={showPassword}
               setShowPassword={setShowPassword}
               credentials={credentials}
@@ -47,17 +56,21 @@ const Loginpage = () => {
               setForgotToggle={setForgotToggle}
             />
           ) : recoveryToggle ? (
-            <Recoveryform 
+            <Recoveryform
               setRecoveryToggle={setRecoveryToggle}
               setForgotToggle={setForgotToggle}
             />
           ) : forgotToggle ? (
-            <Forgotpassform 
+            <Forgotpassform
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              credentials={credentials}
+              setCredentials={setCredentials}
               setForgotToggle={setForgotToggle}
               setRecoveryToggle={setRecoveryToggle}
             />
           ) : (
-            <Loginform 
+            <Loginform
               showPassword={showPassword}
               setShowPassword={setShowPassword}
               credentials={credentials}
