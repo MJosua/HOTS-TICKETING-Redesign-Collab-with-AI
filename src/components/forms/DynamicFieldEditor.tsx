@@ -212,7 +212,7 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({
             key={index}
             field={field}
             index={index}
-            fields={fields}  {/* Pass all fields for dependency selection */}
+            fields={fields}
             onUpdate={(updatedField) => updateField(index, updatedField)}
             onRemove={() => removeField(index)}
             onMoveUp={() => moveField(index, 'up')}
@@ -273,6 +273,7 @@ interface FieldEditorProps {
   canMoveDown: boolean;
   validateFieldName: (name: string, index: number) => boolean;
   generateFieldName: (label: string) => string;
+  fields: FormField[];
 }
 
 const SystemVariableHelper = () => (
@@ -310,7 +311,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   canMoveUp,
   canMoveDown,
   validateFieldName,
-  generateFieldName
+  generateFieldName,
+  fields
 }) => {
   const [nameError, setNameError] = useState<string>('');
 
