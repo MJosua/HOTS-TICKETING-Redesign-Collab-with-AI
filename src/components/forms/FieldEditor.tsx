@@ -143,12 +143,8 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             <Input
               value={filterInput}
               onChange={(e) => {
+                // Only update local state, don't trigger field updates during typing
                 setFilterInput(e.target.value);
-                console.log('🔍 Chain Link - Filter path changed:', {
-                  childField: localField.name,
-                  parentField: localField.dependsOn,
-                  filterPath: e.target.value
-                });
               }}
               placeholder="e.g., category.name or plant_description"
               className="bg-white"
@@ -157,6 +153,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
               <p>• For simple matching: use property name like "category"</p>
               <p>• For nested objects: use dot notation like "plant.description"</p>
               <p>• Leave empty for basic string includes matching</p>
+              <p className="text-blue-600">• Changes will be applied when you click Save</p>
             </div>
           </div>
         )}
@@ -281,6 +278,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
           <div className="text-xs text-gray-500 mt-1 space-y-1">
             <p>• Enter each option on a new line</p>
             <p>• For JSON objects, enter valid JSON on each line</p>
+            <p>• System variables like ${'{factoryplants}'} will be resolved automatically</p>
             {localField.dependsOn && (
               <p className="text-blue-600">• These options will be filtered based on the chain link configuration above</p>
             )}

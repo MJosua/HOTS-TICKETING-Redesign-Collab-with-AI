@@ -9,8 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/types/formTypes';
 import { resolveSystemVariable } from '@/utils/systemVariableResolver';
-import { Button } from '@/components/ui/button';
-import { Plus, X } from 'lucide-react';
+import { useSystemVariableContext } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
+import { SuggestionInsertInput } from './SuggestionInsertInput';
 
 interface DynamicFieldProps {
   field: FormField;
@@ -30,6 +30,20 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   const [localValue, setLocalValue] = useState(value || '');
   const [filteredOptions, setFilteredOptions] = useState<string[]>(field.options || []);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const systemContext = useSystemVariableContext();
+
+  // Resolve system variables for options
+  const resolveOptions = (options: string[]) => {
+    return options.map(option => {
+      const resolved = resolveSystemVariable(option, systemContext);
+      console.log('🔧 System Variable Resolution:', {
+        original: option,
+        resolved: resolved,
+        context: systemContext
+      });
+      return Array.isArray(resolved) ? resolved.join(', ') : resolved;
+    }).flat();
+  };
 
   // Handle chain link filtering
   useEffect(() => {
@@ -46,11 +60,15 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       });
 
       if (parentValue) {
-        let filtered = field.options;
+        // First resolve system variables in options
+        const resolvedOptions = resolveOptions(field.options);
+        console.log('🔧 Chain Link - Resolved options:', resolvedOptions);
+        
+        let filtered = resolvedOptions;
 
         if (field.filterOptionsBy) {
           // Complex filtering with property path
-          filtered = field.options.filter(option => {
+          filtered = resolvedOptions.filter(option => {
             try {
               // Try to parse as JSON first
               const optionObj = JSON.parse(option);
@@ -76,7 +94,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               
               return matches;
             } catch (e) {
-              // If not JSON, treat as simple string
+              // If not JSON, treat as simple string and filter by the actual data value
               const matches = option.toLowerCase().includes(String(parentValue).toLowerCase());
               
               console.log('🔍 Chain Link Debug - Simple string filter:', {
@@ -89,8 +107,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             }
           });
         } else {
-          // Simple string matching
-          filtered = field.options.filter(option =>
+          // Simple string matching on resolved data
+          filtered = resolvedOptions.filter(option =>
             option.toLowerCase().includes(String(parentValue).toLowerCase())
           );
           
@@ -106,6 +124,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           parentField: field.dependsOn,
           parentValue: parentValue,
           originalCount: field.options.length,
+          resolvedCount: resolvedOptions.length,
           filteredCount: filtered.length,
           filteredOptions: filtered
         });
@@ -122,23 +141,31 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           setLocalValue('');
         }
       } else {
-        console.log('🔗 Chain Link Debug - No parent value, showing all options:', {
+        console.log('🔗 Chain Link Debug - No parent value, showing all resolved options:', {
           childField: field.name,
           parentField: field.dependsOn,
           allOptionsCount: field.options.length
         });
-        setFilteredOptions(field.options);
+        const resolvedOptions = resolveOptions(field.options);
+        setFilteredOptions(resolvedOptions);
       }
     } else {
-      setFilteredOptions(field.options || []);
+      // No dependency, just resolve system variables
+      if (field.options) {
+        const resolvedOptions = resolveOptions(field.options);
+        setFilteredOptions(resolvedOptions);
+      } else {
+        setFilteredOptions([]);
+      }
     }
-  }, [field.dependsOn, field.filterOptionsBy, field.options, watchedValues, field.name, value, onChange]);
+  }, [field.dependsOn, field.filterOptionsBy, field.options, watchedValues, field.name, value, onChange, systemContext]);
 
   // Handle suggestion-insert type
   useEffect(() => {
     if (field.type === 'suggestion-insert') {
       if (field.suggestions) {
-        setSuggestions(field.suggestions);
+        const resolvedSuggestions = resolveOptions(field.suggestions);
+        setSuggestions(resolvedSuggestions);
       } else if (filteredOptions.length > 0) {
         // Use filtered options as suggestions
         setSuggestions(filteredOptions);
@@ -163,7 +190,14 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
   const getDefaultValue = () => {
     if (field.default) {
-      return resolveSystemVariable(field.default, {});
+      const resolved = resolveSystemVariable(field.default, systemContext);
+      console.log('🔧 Default value resolution:', {
+        field: field.name,
+        original: field.default,
+        resolved: resolved,
+        context: systemContext
+      });
+      return Array.isArray(resolved) ? resolved.join(', ') : resolved;
     }
     return '';
   };
@@ -174,7 +208,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       setLocalValue(defaultValue);
       onChange(defaultValue);
     }
-  }, [field.default]);
+  }, [field.default, systemContext]);
 
   const renderField = () => {
     switch (field.type) {
@@ -231,54 +265,13 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
       case 'suggestion-insert':
         return (
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Input
-                value={localValue}
-                onChange={(e) => handleChange(e.target.value)}
-                placeholder={field.placeholder || "Type or select from suggestions"}
-                readOnly={field.readonly}
-                className={error ? 'border-red-500' : ''}
-              />
-              {suggestions.length > 0 && (
-                <Select onValueChange={(selectedValue) => {
-                  try {
-                    const optionObj = JSON.parse(selectedValue);
-                    handleChange(optionObj.label || optionObj.name || selectedValue);
-                  } catch {
-                    handleChange(selectedValue);
-                  }
-                }}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Suggestions" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suggestions.map((suggestion, index) => {
-                      try {
-                        const suggestionObj = JSON.parse(suggestion);
-                        return (
-                          <SelectItem key={index} value={suggestion}>
-                            {suggestionObj.label || suggestionObj.name || suggestion}
-                          </SelectItem>
-                        );
-                      } catch {
-                        return (
-                          <SelectItem key={index} value={suggestion}>
-                            {suggestion}
-                          </SelectItem>
-                        );
-                      }
-                    })}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            {field.dependsOn && (
-              <div className="text-xs text-blue-600">
-                Suggestions filtered by: {field.dependsOn} = {watchedValues[field.dependsOn]}
-              </div>
-            )}
-          </div>
+          <SuggestionInsertInput
+            suggestions={suggestions}
+            placeholder={field.placeholder || "Type or select from suggestions"}
+            readOnly={field.readonly}
+            defaultValue={localValue}
+            onChange={handleChange}
+          />
         );
 
       case 'radio':
