@@ -61,14 +61,10 @@ const Loginpage = () => {
               setForgotToggle={setForgotToggle}
             />
           ) : forgotToggle ? (
-            <Forgotpassform
-              showPassword={showPassword}
-              setShowPassword={setShowPassword}
-              credentials={credentials}
-              setCredentials={setCredentials}
-              setForgotToggle={setForgotToggle}
-              setRecoveryToggle={setRecoveryToggle}
-            />
+            <Forgotpassform 
+                setForgotToggle={setForgotToggle}
+                setRecoveryToggle={setRecoveryToggle}
+              />
           ) : (
             <Loginform
               showPassword={showPassword}
