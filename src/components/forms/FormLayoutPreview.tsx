@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormSection, RowGroup, FormStructureItem } from '@/types/formTypes';
 import { GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 interface FormLayoutPreviewProps {
   items: FormStructureItem[];
