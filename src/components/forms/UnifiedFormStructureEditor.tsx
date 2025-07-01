@@ -9,7 +9,7 @@ import { FormField, FormSection, RowGroup } from '@/types/formTypes';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Plus, Trash2, GripVertical, Edit3, Package, ChevronDown, ChevronUp, Link } from 'lucide-react';
 
-interface FormStructureItem {
+export interface FormStructureItem {
   id: string;
   type: 'field' | 'section' | 'rowgroup';
   order: number;

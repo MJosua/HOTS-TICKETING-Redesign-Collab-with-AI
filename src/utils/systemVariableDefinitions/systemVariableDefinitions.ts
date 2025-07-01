@@ -1,3 +1,4 @@
+
 import { useAppSelector } from '@/hooks/useAppSelector';
 
 export type VariableType = 'string' | 'string[]';
@@ -15,29 +16,46 @@ export interface SystemVariableContext {
   departments?: { department_name: string; [key: string]: any }[];
   divisions?: { division_name: string; [key: string]: any }[];
   teams?: { team_name: string }[];
-  factoryplants?: { factory_name?: string; name?: string }[];
-  srfsamplecategoryes?: { name: string }[];
-  linkeddistributors?: { name: string }[];
+  factoryplants?: { plant_shortname?: string; plant_description?: string; [key: string]: any }[];
+  srfsamplecategoryes?: { samplecat_name: string; [key: string]: any }[];
+  linkeddistributors?: { company_name: string; [key: string]: any }[];
 }
 
 export const useSystemVariableContext = (): SystemVariableContext => {
-    const auth = useAppSelector(state => state.auth);
-    const userManagement = useAppSelector(state => state.userManagement);
-    const srf = useAppSelector(state => state.srf);
-    return {
-      user: auth.user,
-      superior: userManagement.users?.filter(u =>
-        u.role_name?.toLowerCase().includes('manager') ||
-        u.role_name?.toLowerCase().includes('supervisor')
-      ) || [],
-      departments: userManagement.departments || [],
-      divisions: userManagement.departments || [], // Use departments since divisions doesn't exist in state
-      teams: userManagement.teams || [],
-      factoryplants: srf.factoryplants || [],
-      srfsamplecategoryes: srf.srfsamplecategoryes || [],
-      linkeddistributors: srf.linkeddistributors || [],
-    };
+  const auth = useAppSelector(state => state.auth);
+  const userManagement = useAppSelector(state => state.userManagement);
+  const srf = useAppSelector(state => state.srf);
+  
+  return {
+    user: auth.user,
+    superior: userManagement.users?.filter(u =>
+      u.role_name?.toLowerCase().includes('manager') ||
+      u.role_name?.toLowerCase().includes('supervisor')
+    ) || [],
+    departments: userManagement.departments?.map(d => ({
+      department_name: d.department_name,
+      ...d
+    })) || [],
+    divisions: userManagement.departments?.map(d => ({
+      division_name: d.department_name, // Use department_name as division_name fallback
+      ...d
+    })) || [],
+    teams: userManagement.teams || [],
+    factoryplants: srf.factoryplants?.map(f => ({
+      plant_shortname: f.plant_shortname || '',
+      plant_description: f.plant_description || '',
+      ...f
+    })) || [],
+    srfsamplecategoryes: srf.srfsamplecategoryes?.map(s => ({
+      samplecat_name: s.samplecat_name || '',
+      ...s
+    })) || [],
+    linkeddistributors: srf.linkeddistributors?.map(d => ({
+      company_name: d.company_name || '',
+      ...d
+    })) || [],
   };
+};
 
 export interface SystemVariableEntry {
   key: string;

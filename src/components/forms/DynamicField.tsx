@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import {
@@ -262,9 +263,6 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               form.setValue(fieldKey, value);
               onValueChange?.(value);
             }}
-            {...form.register(fieldKey, {
-              required: isRequired ? `${cleanLabel} is required` : false
-            })}
           />
         );
         

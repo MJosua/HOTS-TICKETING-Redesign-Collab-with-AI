@@ -1,4 +1,3 @@
-
 export interface FormConfig {
   id?: string;
   title: string;
@@ -39,20 +38,11 @@ export interface FormSection {
 export interface FormField {
   label: string;
   name: string;
-  type:
-  | 'text'
-  | 'textarea'
-  | 'select'
-  | 'radio'
-  | 'checkbox'
-  | 'date'
-  | 'file'
-  | 'toggle'
-  | 'number'
-  | 'suggestion-insert';
+  type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'date' | 'time' | 'file' | 'toggle' | 'number' | 'suggestion-insert';
   placeholder?: string;
   required?: boolean;
   options?: string[];
+  suggestions?: string[]; // Add this line
   readonly?: boolean;
   value?: string;
   accept?: string[];
@@ -61,10 +51,8 @@ export interface FormField {
   default?: string;
   note?: string;
   uiCondition?: string;
-  columnSpan?: number;
+  columnSpan?: 1 | 2 | 3;
   systemVariable?: string;
-
-  // New properties for chain reaction fields
   dependsOn?: string; // field name this field depends on
   filterOptionsBy?: string; // key or expression to filter options based on dependsOn field's value
 }

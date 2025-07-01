@@ -39,11 +39,12 @@ import { fetchDepartments } from "@/store/slices/userManagementSlice";
 import { fetchSRF } from "./store/slices/srf_slice";
 import { API_URL } from '@/config/sourceConfig';
 import axios from 'axios';
+import { AppDispatch } from './store';
 
 const queryClient = new QueryClient();
 
 const AppContentInner = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
     dispatch(fetchDepartments());
