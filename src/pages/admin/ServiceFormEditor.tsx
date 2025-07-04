@@ -16,7 +16,7 @@ import { SectionEditor } from '@/components/forms/SectionEditor';
 import { RowGroupEditor } from '@/components/forms/RowGroupEditor';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
+import { fetchTeams, fetchWorkflowGroups } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
 import { useToast } from '@/hooks/use-toast';
@@ -29,7 +29,7 @@ const ServiceFormEditor = () => {
   const dispatch = useAppDispatch();
   const isEdit = !!id;
   const { categoryList, serviceCatalog } = useCatalogData();
-  const { workflowGroups } = useAppSelector(state => state.userManagement);
+  const { workflowGroups, teams } = useAppSelector(state => state.userManagement);
 
   const [config, setConfig] = useState<FormConfig>({
     title: '',
@@ -43,6 +43,7 @@ const ServiceFormEditor = () => {
   });
 
   const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<number | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
@@ -65,6 +66,7 @@ const ServiceFormEditor = () => {
   // Fetch workflow groups on component mount
   useEffect(() => {
     dispatch(fetchWorkflowGroups());
+    dispatch(fetchTeams())
   }, [dispatch]);
 
   useEffect(() => {
@@ -106,6 +108,9 @@ const ServiceFormEditor = () => {
         setConfig(parsedConfig);
         if (serviceData.m_workflow_groups) {
           setSelectedWorkflowGroup(serviceData.m_workflow_groups);
+        }
+        if (serviceData.team_id) {
+          setSelectedAssignment(serviceData.team_id)
         }
       }
     } else if (!isEdit) {
@@ -165,7 +170,7 @@ const ServiceFormEditor = () => {
 
   const handleStructureUpdate = (items: FormStructureItem[]) => {
     setFormStructure(items);
-    
+
     // Convert back to legacy format for saving
     const fields: FormField[] = [];
     const sections: FormSection[] = [];
@@ -221,12 +226,13 @@ const ServiceFormEditor = () => {
         image_url: "",
         nav_link: config.url.replace(/^\/+/, ''),
         active: 1,
-        team_id: null,
+        team_id: selectedAssignment || null,
         api_endpoint: config.apiEndpoint,
         form_json: config,
-        m_workflow_groups: selectedWorkflowGroup
-      };
+        m_workflow_groups: selectedWorkflowGroup,
 
+      };
+      console.log("payload",payload)
       const response = await axios.post(`${API_URL}/hots_settings/insertupdate/service_catalog`, payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
@@ -454,6 +460,39 @@ const ServiceFormEditor = () => {
                       </p>
                     </div>
                   )}
+
+                  <div >
+                    <Label htmlFor="workflowGroup">Assignment</Label>
+
+                    <div className=" mt-2">
+                      <Select
+                        value={selectedAssignment?.toString() || ''}
+                        onValueChange={(value) => setSelectedAssignment(parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Task Team" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teams
+                            .slice() // create a shallow copy
+                            .sort((a, b) => a.team_name.localeCompare(b.team_name))
+                            .map((team) => (
+                              <SelectItem key={team.team_id} value={team.team_id.toString()}>
+                                <div className="flex flex-col text-start">
+                                  <span className="font-medium">{team.team_name}</span>
+                                  <span className="text-sm text-gray-500">{team.department_name} </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Select the task assignment that will handle the approval process for this service. Leaving this field blank will assign the task to the user.
+                      </p>
+                    </div>
+                  </div>
+
                 </CardContent>
               </Card>
             </div>

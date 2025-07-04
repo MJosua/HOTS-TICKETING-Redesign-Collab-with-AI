@@ -31,7 +31,6 @@ const MyTickets = () => {
   }, [dispatch]);
 
   const tickets = myTickets.data.map(convertTicketToDisplayFormat);
-
   const filteredTickets = tickets.filter(ticket => {
     const statusFilter = filterStatus === 'all' || ticket.status === filterStatus;
     const priorityFilter = filterPriority === 'all' || ticket.priority === filterPriority;

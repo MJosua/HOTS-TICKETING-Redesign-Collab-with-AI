@@ -38,7 +38,7 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
         team_name: team.team_name,
         department_id: team.department_id.toString(),
       });
-      
+
       // Load existing team members
       if (team.team_id) {
         setIsLoadingMembers(true);
@@ -47,11 +47,11 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
             if (result.payload && Array.isArray(result.payload)) {
               const memberUserIds = result.payload.map((member: any) => member.user_id);
               const leader = result.payload.find((member: any) => member.team_leader);
-              
+
               // console.log('Loaded team members:', result.payload);
               // console.log('Member user IDs:', memberUserIds);
               // console.log('Team leader:', leader);
-              
+
               setSelectedUsers(memberUserIds);
               setTeamLeader(leader ? leader.user_id : null);
             }
@@ -97,16 +97,26 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
       department_id: parseInt(formData.department_id),
       team_leader_id: teamLeader
     };
-    
+
     onSave(teamToSave, selectedUsers, teamLeader);
     onClose();
   };
 
-  const availableUsers = users.filter(user => 
-    !user.is_deleted && 
-    user.is_active &&
-    (!formData.department_id || user.department_id === parseInt(formData.department_id))
-  );
+  const seenUserIds = new Set<number>();
+
+  const availableUsers = users.filter(user => {
+    const isUnique = !seenUserIds.has(user.user_id!);
+    const isActive = user.is_active && !user.is_deleted;
+    const departmentMatch =
+      !formData.department_id || user.department_id === Number(formData.department_id);
+
+    if (isUnique && isActive && departmentMatch) {
+      seenUserIds.add(user.user_id!);
+      return true;
+    }
+
+    return false;
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -116,7 +126,7 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
             {mode === 'add' ? 'Add New Team' : 'Edit Team'}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Basic Team Information */}
           <div className="space-y-4">
@@ -125,18 +135,18 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
               <Input
                 id="team_name"
                 value={formData.team_name}
-                onChange={(e) => setFormData({...formData, team_name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, team_name: e.target.value })}
                 placeholder="Enter team name"
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Select 
-                value={formData.department_id} 
+              <Select
+                value={formData.department_id}
                 onValueChange={(value) => {
-                  setFormData({...formData, department_id: value});
+                  setFormData({ ...formData, department_id: value });
                   // Clear selected users when department changes
                   setSelectedUsers([]);
                   setTeamLeader(null);
@@ -181,7 +191,7 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
                             <div className="text-sm text-gray-500">{user.role_name} • {user.email}</div>
                           </div>
                         </div>
-                        
+
                         {selectedUsers.includes(user.user_id) && (
                           <div className="flex items-center gap-2">
                             <Button

@@ -27,6 +27,7 @@ import { useAppSelector } from '@/hooks/useAppSelector';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
+import { fetchTaskCount } from '@/store/slices/ticketsSlice';
 
 interface UserProfile {
   user_id: number;
@@ -145,6 +146,7 @@ export function AppSidebar() {
 
   useEffect(() => {
     fetchUserProfile();
+    fetchTaskCount();
   }, []);
 
   const handleLogout = () => {

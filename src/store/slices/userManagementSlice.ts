@@ -350,13 +350,13 @@ export const updateTeamMember = createAsyncThunk(
 
 export const removeTeamMember = createAsyncThunk(
   'userManagement/removeTeamMember',
-  async (id: number) => {
-    await axios.delete(`${API_URL}/hots_settings/delete/team_member/${id}`, {
+  async ({ team_id, user_id }: { team_id: number; user_id: number }) => {
+    await axios.delete(`${API_URL}/hots_settings/delete/team_member/${team_id}/${user_id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    return id;
+    return { team_id, user_id };
   }
 );
 
@@ -530,7 +530,6 @@ export const fetchServices = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     })
-    console.log("response.data.data", response.data.data)
     return response.data.data;
   }
 );
@@ -543,7 +542,6 @@ export const fetchActiveServices = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    console.log("response.data.data", response.data.data)
     return response.data.data;
   }
 );

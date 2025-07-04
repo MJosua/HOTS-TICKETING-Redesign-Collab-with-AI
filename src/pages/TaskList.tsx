@@ -34,6 +34,7 @@ const TaskList = () => {
   }, [dispatch]);
 
   const tasks = taskList.data.map(convertTicketToDisplayFormat);
+  console.log('myTickets.data',taskList.data)
 
   const filteredTasks = tasks.filter(task => {
     const statusFilter = filterStatus === 'all' || task.status === filterStatus;
@@ -66,27 +67,36 @@ const TaskList = () => {
     );
   };
 
-  // Helper function to check if current user can approve a specific step
-  const canUserApprove = (ticket: any, approvalOrder: number): boolean => {
-    if (!ticket.list_approval) return false;
-
-    const currentUserApproval = ticket.list_approval.find((approval: any) =>
-      approval.approval_order === approvalOrder && approval.approval_status === 0
-    );
-
-    return !!currentUserApproval;
-  };
 
   // Get the current user's pending approval order for a ticket
-  const getUserApprovalOrder = (ticket: any): number | null => {
+  const getUserApprovalOrder = (ticket: any, user_id: string | number): number | null => {
     if (!ticket.list_approval) return null;
 
+
     const userApproval = ticket.list_approval.find((approval: any) =>
-      approval.approval_status === 0
+      approval.approval_status === 0 && approval.approver_id === user?.user_id
     );
 
     return userApproval ? userApproval.approval_order : null;
   };
+
+
+
+  const canUserApprove = (task) => {
+    if (!task || !task.approvalSteps) return false;
+    return task.approvalSteps.some(approver =>
+      approver.approval_order === task.current_step &&
+      approver.id?.toString() === user?.user_id?.toString() &&
+      approver.status === 'pending'
+    );
+  };
+
+  // Sort: yang bisa approve muncul dulu
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    const aCan = canUserApprove(a);
+    const bCan = canUserApprove(b);
+    return (aCan === bCan) ? 0 : aCan ? -1 : 1;
+  });
 
   const TableView = () => (
     <Card className="border-border shadow-sm">
@@ -105,68 +115,71 @@ const TaskList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTasks.map((task) => (
-                <TableRow
-                  key={task.id}
-                  className="hover:bg-muted/30 cursor-pointer transition-colors"
-                  onClick={() => handleRowClick(task.id)}
-                >
-                  <TableCell className="font-medium text-primary">
-                    {renderHighlightedText(task.id)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {renderHighlightedText(task.type)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {renderHighlightedText(task.requester)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {renderHighlightedText(task.department)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`${getPriorityColor(task.priority)} border`}>
-                      {renderHighlightedText(task.priority)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <ProgressionBar steps={task.approvalSteps} />
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`${getStatusColor(task.status)} border`}>
-                      {renderHighlightedText(task.status)}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {sortedTasks.map((task, index) => {
+                const canApprove = canUserApprove(task);
+
+                return (
+                  <TableRow
+                    key={task.id}
+                    className={`${canApprove ? "bg-orange-200/30 hover:bg-orange-200/50" : "hover:bg-muted/30"
+                      } cursor-pointer transition-colors`}
+                    onClick={() => handleRowClick(task.id)}
+                  >
+                    <TableCell className="font-medium text-primary">
+                      {renderHighlightedText(task.id)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {renderHighlightedText(task.type)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {renderHighlightedText(task.requester)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {renderHighlightedText(task.department)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getPriorityColor(task.priority)} border`}>
+                        {renderHighlightedText(task.priority)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <ProgressionBar steps={task.approvalSteps} />
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getStatusColor(task.status)} border`}>
+                        {renderHighlightedText(task.status)}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
       </CardContent>
-    </Card>
+    </Card >
   );
 
   const CardView = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {filteredTasks.slice(0, 1).map((task) => {
-        const originalTicket = taskList.data.find(t => t.ticket_id.toString() === task.id);
-        const userApprovalOrder = getUserApprovalOrder(originalTicket);
-        const canApprove = userApprovalOrder !== null;
+      {sortedTasks.map((task, index) => {
+        const originalTicket = taskList.data.find(
+          t => t.ticket_id.toString() === task.id
+        );
 
         const getCurrentApprover = () => {
           if (!task.approvalSteps) return null;
           return task.approvalSteps.find(
             approver =>
               approver.approval_order === task.current_step &&
-              approver.name === user?.user_name &&
+              approver.approver_id === user?.user_id && // ⬅️ ini pembanding yang benar
               approver.status === 'pending'
           );
         };
 
         const currentApprover = getCurrentApprover();
 
-        console.log("taskList.list_approval", task);
-        console.log("taskList.current_step", task.current_step);
-        console.log("currentApprover", currentApprover);
+        const canApprove = canUserApprove(task);
 
         return (
           <div key={task.id} className="space-y-4">
@@ -218,8 +231,7 @@ const TaskList = () => {
                     {new Date(originalTicket?.creation_date || '').toLocaleDateString()}
                   </span>
                 </div>
-
-                {canApprove && userApprovalOrder && (
+                {canApprove && (
                   <TaskApprovalActions
                     ticketId={task.id}
                     approvalOrder={task.current_step || 1}

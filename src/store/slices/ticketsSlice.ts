@@ -190,11 +190,11 @@ export const fetchTaskCount = createAsyncThunk(
         },
       });
       
-      console.log('Task Count API Response:', response.data);
       
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch task count');
       }
+      console.log('Task Count API Response:', response.data);
       
       return response.data.count || 0;
     } catch (error: any) {

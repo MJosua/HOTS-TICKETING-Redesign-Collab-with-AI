@@ -9,6 +9,9 @@ import { searchInObject } from '@/utils/searchUtils';
 import { renderHighlightedText } from '@/utils/renderhighlight';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
+import { fetchTaskCount } from '@/store/slices/ticketsSlice';
+
 
 // Icon mapping for categories
 const categoryIcons: Record<string, any> = {
@@ -19,6 +22,7 @@ const categoryIcons: Record<string, any> = {
   'Accounting': FileText,
   'Freight': FileText,
 };
+
 
 // Color mapping for categories
 const categoryColors: Record<string, string> = {
@@ -46,7 +50,13 @@ const serviceIcons: Record<string, any> = {
 const ServiceCatalog = () => {
   const [searchValue, setSearchValue] = useState('');
   const navigate = useNavigate(); // Move this to the top, before any conditional returns
-  
+
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(fetchTaskCount())
+  }, [dispatch]);
+
   const {
     serviceCatalog,
     categoryList,
@@ -63,8 +73,8 @@ const ServiceCatalog = () => {
 
   // Group services by category for rendering
   const serviceCategories = categoryList.map(category => {
-    const categoryServices = serviceCatalog.filter(service => 
-      service.category_id === category.category_id && 
+    const categoryServices = serviceCatalog.filter(service =>
+      service.category_id === category.category_id &&
       service.active === 1 &&
       searchInObject(service, searchValue)
     );
@@ -144,6 +154,7 @@ const ServiceCatalog = () => {
       </AppLayout>
     );
   }
+
 
   return (
     <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search services...">

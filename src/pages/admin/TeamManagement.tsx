@@ -60,14 +60,18 @@ const TeamManagement = () => {
   const fetchTeams = async () => {
     try {
       const token = localStorage.getItem('tokek');
-      const response = await axios.get(`${API_URL}/hots_settings/teams`, {
+      const response = await axios.get(`${API_URL}/hots_settings/get/team`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+      console.log("team",response.data)
+
       if (response.data.success) {
-        setTeams(response.data.data || []);
+        setTeams(response.data.data);
       }
     } catch (error: any) {
+      
+      console.log("error",error)
+      
       toast({
         title: "Error",
         description: "Failed to fetch teams",
@@ -76,6 +80,9 @@ const TeamManagement = () => {
     }
   };
 
+
+
+  console.log("teams",teams)
   const updateTeamMember = async (userId: number, teamId: number) => {
     try {
       const token = localStorage.getItem('tokek');
@@ -144,8 +151,8 @@ const TeamManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Teams</SelectItem>
-                  {teams.map((team) => (
-                    <SelectItem key={team.team_id} value={team.team_id.toString()}>
+                  {teams.map((team,index) => (
+                    <SelectItem key={index} value={team.team_id.toString()}>
                       {team.team_name}
                     </SelectItem>
                   ))}

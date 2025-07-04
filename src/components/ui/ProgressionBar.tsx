@@ -22,7 +22,6 @@ interface ProgressionBarProps {
 const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBarProps) => {
   const approvedCount = steps.filter(step => step.status === 'approved').length;
   const totalSteps = steps.length;
-
   if (!showDetails) {
     // Simple progress bar view
     return (
@@ -30,7 +29,7 @@ const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBa
         <span className="text-sm font-medium text-muted-foreground mr-2">
           {approvedCount}/{totalSteps}
         </span>
-        {steps.map((step, index) => (
+        {steps.sort((a, b) => a.approval_order - b.approval_order).map((step, index) => (
           <div
             key={`${step.id}-${index}`}
             className={cn(
@@ -47,10 +46,9 @@ const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBa
       </div>
     );
   }
-  {console.log("steps",steps)}
 
-                    
-                    // Detailed view (for ticket detail page)
+
+  // Detailed view (for ticket detail page)
   return (
     <div className={cn("flex items-center space-x-2 overflow-x-auto whitespace-nowrap flex-nowrap max-w-full", className)}>
       {steps.sort((a, b) => a.approval_order - b.approval_order).map((step, index) => (
@@ -67,7 +65,7 @@ const ProgressionBar = ({ steps, className, showDetails = false }: ProgressionBa
                 }
               )}
             >
-              {step.status === 'approved' && <Check className="w-4 h-4" />}
+              {step.approval_status === 1 && <Check className="w-4 h-4" />}
               {step.status === 'rejected' && <X className="w-4 h-4" />}
               {step.status === 'pending' && <Clock className="w-4 h-4" />}
               {step.status === 'waiting' && (index + 1)}

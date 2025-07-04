@@ -1,5 +1,5 @@
 
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Provider, useDispatch } from "react-redux";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -39,23 +39,36 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { fetchDepartments } from "@/store/slices/userManagementSlice";
 import { fetchSRF } from "./store/slices/srf_slice";
 import { fetchsku } from "./store/slices/SKUslice";
+import { fetchMyTickets } from '@/store/slices/ticketsSlice';
 
-import { API_URL } from '@/config/sourceConfig';
-import axios from 'axios';
+import { fetchTaskList, fetchTaskCount } from '@/store/slices/ticketsSlice';
+
 import { AppDispatch } from './store';
+import { useAppSelector } from "./hooks/useAppSelector";
 
 const queryClient = new QueryClient();
 
+
+
 const AppContentInner = () => {
+
+
   const dispatch = useDispatch<AppDispatch>();
+
+  const { taskCount } = useAppSelector(state => state.tickets);
+
+
 
   useEffect(() => {
     dispatch(fetchDepartments());
     dispatch(fetchSRF());
     dispatch(fetchsku());
+
+
   }, [dispatch]);
 
-  
+
+
 
   const handleServiceSubmit = useCallback((data: any) => {
     console.log("Service form submitted:", data);
@@ -78,7 +91,7 @@ const AppContentInner = () => {
           <Route path="/ticket/:id" element={<ProtectedRoute><TicketDetail /></ProtectedRoute>} />
           <Route path="/task-list" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
           <Route path="/help-center" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
-          <Route path="/help/user-guide" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
+          <Route path="/help/user-guide" element={<ProtectedRoute><HelpCenter /></ProtectedRoute>} />
           <Route path="/help/faq" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
           <Route path="/user-guide" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
           <Route path="/faq" element={<ProtectedRoute><UserGuide /></ProtectedRoute>} />
@@ -88,7 +101,7 @@ const AppContentInner = () => {
           <Route path="/admin/service-catalog/new" element={<ProtectedRoute><ServiceFormEditor /></ProtectedRoute>} />
           <Route path="/admin/service-catalog/create" element={<ProtectedRoute><ServiceFormEditor /></ProtectedRoute>} />
           <Route path="/admin/service-catalog/edit/:id" element={<ProtectedRoute><ServiceFormEditor /></ProtectedRoute>} />
-          <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><UserManagement/></ProtectedRoute>} />
           <Route path="/admin/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
           <Route path="/admin/departments" element={<ProtectedRoute><DepartmentManagement /></ProtectedRoute>} />
           <Route path="/admin/divisions" element={<ProtectedRoute><DepartmentManagement /></ProtectedRoute>} />

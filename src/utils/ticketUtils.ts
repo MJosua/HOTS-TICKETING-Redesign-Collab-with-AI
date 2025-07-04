@@ -26,7 +26,7 @@ export const convertTicketToDisplayFormat = (ticket: Ticket) => {
     id: ticket.ticket_id.toString(),
     type: ticket.service_name,
     requester: ticket.created_by_name || "Current User",
-    department: ticket.team_name || "Unknown Department",
+    department: ticket.department_name || "Unknown Department",
     priority: getPriority(ticket.approval_level || 1),
     created: ticket.creation_date,
     amount: "-", // Not provided in API
@@ -39,6 +39,7 @@ export const convertTicketToDisplayFormat = (ticket: Ticket) => {
 export const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case "submitted": return "bg-yellow-100 text-orange-800 border-orange-200";
+    case "onservice": return "bg-orange-100 text-orange-800 border-orange-200";
     case "in progress": return "bg-blue-100 text-blue-800 border-blue-200";
     case "approved": return "bg-green-100 text-green-800 border-green-200";
     case "rejected": return "bg-red-100 text-red-800 border-red-200";

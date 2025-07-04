@@ -74,7 +74,16 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       ];
       onUpdateRowGroup(groupIndex, defaultRow);
     }
+
   }, []);
+
+  // Compute total of secondValue fields as numbers
+  const totalSecondValue = useMemo(() => {
+    return rows.reduce((sum, row) => {
+      const num = Number(row.secondValue);
+      return sum + (isNaN(num) ? 0 : num);
+    }, 0);
+  }, [rows]);
 
   const addRow = () => {
     const newRowCount = rows.length + 1;
@@ -213,6 +222,15 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     }
   };
 
+  // useEffect(() => {
+  //   first
+
+  //   return () => {
+  //     second
+  //   }
+  // }, [third])
+
+
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
@@ -234,13 +252,13 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
               <label className="text-sm font-medium mb-1 block">{structure.thirdColumn.label}</label>
             </div>
           </div>
-
+          {console.log("rows", rows)}
           {/* Row Entries */}
           {rows.map((row, index) => (
             <div key={row.id} className="relative">
 
 
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-start mb-4">
                 <div className="col-span-1 md:col-span-3">
                   {renderField('firstColumn', row.firstValue, val => updateRow(row.id, 'first', val))}
                 </div>
@@ -249,9 +267,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
                 </div>
                 <div className="col-span-1 md:col-span-2">
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end ">
-                    <div className="col-span-1 md:col-span-4  {rows.length > 1 ? 'hidden' : ''}">
-
-                      // ini cek woi
+                    <div className={`col-span-1   ${rows.length > 1 ? 'md:col-span-4' : 'md:col-span-5'} `}>
                       {renderField('thirdColumn', row.thirdValue, val => updateRow(row.id, 'third', val))}
                     </div>
                     <div className="col-span-1 md:col-span-1">
@@ -283,7 +299,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 
             <div className="col-span-1 md:col-span-2">
               {/* Insert total value or field here if needed */}
-              <Input readOnly value="123" />
+              <Input readOnly value={totalSecondValue.toString()} />
             </div>
           </div>
 

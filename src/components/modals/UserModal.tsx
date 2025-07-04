@@ -1,10 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
 interface UserType {
@@ -32,13 +42,13 @@ interface UserModalProps {
   departments: Array<{ department_id: number; department_name: string }>;
 }
 
-export const UserModal: React.FC<UserModalProps> = ({
+const UserModal: React.FC<UserModalProps> = ({
   isOpen,
   onClose,
   onSave,
   user,
   roles,
-  departments
+  departments,
 }) => {
   const [formData, setFormData] = useState<UserType>(() => ({
     user_name: user?.user_name || '',
@@ -93,7 +103,9 @@ export const UserModal: React.FC<UserModalProps> = ({
               <Input
                 id="firstname"
                 value={formData.firstname}
-                onChange={(e) => setFormData({ ...formData, firstname: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, firstname: e.target.value })
+                }
                 required
               />
             </div>
@@ -102,7 +114,9 @@ export const UserModal: React.FC<UserModalProps> = ({
               <Input
                 id="lastname"
                 value={formData.lastname}
-                onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, lastname: e.target.value })
+                }
                 required
               />
             </div>
@@ -113,7 +127,9 @@ export const UserModal: React.FC<UserModalProps> = ({
             <Input
               id="user_name"
               value={formData.user_name}
-              onChange={(e) => setFormData({ ...formData, user_name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, user_name: e.target.value })
+              }
               required
             />
           </div>
@@ -123,7 +139,9 @@ export const UserModal: React.FC<UserModalProps> = ({
             <Input
               id="uid"
               value={formData.uid}
-              onChange={(e) => setFormData({ ...formData, uid: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, uid: e.target.value })
+              }
               required
             />
           </div>
@@ -134,7 +152,9 @@ export const UserModal: React.FC<UserModalProps> = ({
               id="email"
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               required
             />
           </div>
@@ -144,7 +164,9 @@ export const UserModal: React.FC<UserModalProps> = ({
             <Input
               id="job_title"
               value={formData.job_title}
-              onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, job_title: e.target.value })
+              }
             />
           </div>
 
@@ -154,20 +176,23 @@ export const UserModal: React.FC<UserModalProps> = ({
               value={formData.role_id.toString()}
               onValueChange={(value) => {
                 const roleId = parseInt(value);
-                const role = roles.find(r => r.role_id === roleId);
+                const role = roles.find((r) => r.role_id === roleId);
                 setFormData({
                   ...formData,
                   role_id: roleId,
-                  role_name: role?.role_name || ''
+                  role_name: role?.role_name || '',
                 });
               }}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role.role_id} value={role.role_id.toString()}>
+                {roles && roles.map((role) => (
+                  <SelectItem
+                    key={role.role_id}
+                    value={role.role_id.toString()}
+                  >
                     {role.role_name}
                   </SelectItem>
                 ))}
@@ -181,20 +206,25 @@ export const UserModal: React.FC<UserModalProps> = ({
               value={formData.department_id.toString()}
               onValueChange={(value) => {
                 const deptId = parseInt(value);
-                const dept = departments.find(d => d.department_id === deptId);
+                const dept = departments.find(
+                  (d) => d.department_id === deptId
+                );
                 setFormData({
                   ...formData,
                   department_id: deptId,
-                  team_name: dept?.department_name || ''
+                  team_name: dept?.department_name || '',
                 });
               }}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select a department" />
               </SelectTrigger>
               <SelectContent>
-                {departments.map((dept) => (
-                  <SelectItem key={dept.department_id} value={dept.department_id.toString()}>
+                {departments && departments.map((dept) => (
+                  <SelectItem
+                    key={dept.department_id}
+                    value={dept.department_id.toString()}
+                  >
                     {dept.department_name}
                   </SelectItem>
                 ))}
@@ -206,7 +236,9 @@ export const UserModal: React.FC<UserModalProps> = ({
             <Switch
               id="is_active"
               checked={formData.is_active}
-              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, is_active: checked })
+              }
             />
             <Label htmlFor="is_active">Active</Label>
           </div>
@@ -224,3 +256,5 @@ export const UserModal: React.FC<UserModalProps> = ({
     </Dialog>
   );
 };
+
+export default UserModal;

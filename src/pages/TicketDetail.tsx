@@ -25,6 +25,7 @@ import TaskApprovalActionsSimple from '@/components/ui/TaskApprovalActionssimple
 import { WidgetConfig } from '@/types/widgetTypes';
 import { getWidgetPresetById } from '@/models/widgets';
 import { getWidgetById } from '@/registry/widgetRegistry';
+import { CardCollapsible } from '@/components/ui/CardCollapsible';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -51,7 +52,7 @@ const TicketDetail = () => {
         ? widgetData
         : [widgetData];
     }
-        
+
     return ids
       .map(getWidgetById)
       .filter((widget): widget is WidgetConfig => !!widget)
@@ -358,46 +359,46 @@ const TicketDetail = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-card shadow-sm border">
-              <CardHeader className="bg-muted/50 border-b">
-                <CardTitle className="text-lg">Request Information</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Requester</p>
-                      <p className="font-medium">{ticketDetail.created_by_name || 'Unknown'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Created Date</p>
-                      <p className="font-medium">{new Date(ticketDetail.creation_date).toLocaleDateString()}</p>
-                    </div>
-                  </div>
+
+            <CardCollapsible
+              title="Request Information"
+              description="Details about the current request"
+              defaultOpen
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <User className="w-4 h-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Department</p>
-                    <p className="font-medium">{ticketDetail.department_name || ticketDetail.team_name || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Status</p>
-                    <Badge style={{ backgroundColor: ticketDetail.color, color: 'white' }}>
-                      {ticketDetail.status}
-                    </Badge>
+                    <p className="text-sm text-muted-foreground">Requester</p>
+                    <p className="font-medium">{ticketDetail.created_by_name || 'Unknown'}</p>
                   </div>
                 </div>
-
-                {ticketDetail.reason && (
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">Description</p>
-                    <p className="text-foreground bg-muted/50 p-3 rounded-md">{ticketDetail.reason}</p>
+                    <p className="text-sm text-muted-foreground">Created Date</p>
+                    <p className="font-medium">{new Date(ticketDetail.creation_date).toLocaleDateString()}</p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Department</p>
+                  <p className="font-medium">{ticketDetail.department_name || ticketDetail.team_name || 'Unknown'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge style={{ backgroundColor: ticketDetail.color, color: 'white' }}>
+                    {ticketDetail.status}
+                  </Badge>
+                </div>
+              </div>
+
+              {ticketDetail.reason && (
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-2">Description</p>
+                  <p className="text-foreground bg-muted/50 p-3 rounded-md">{ticketDetail.reason}</p>
+                </div>
+              )}
+            </CardCollapsible>
 
             {/* Render assigned widgets after request information */}
             {assignedWidgets.map(widget => (
@@ -414,10 +415,11 @@ const TicketDetail = () => {
 
             {/* Custom Form Data Table */}
             {customFormData.length > 0 && (
-              <Card className="bg-card shadow-sm border">
-                <CardHeader className="bg-muted/50 border-b">
-                  <CardTitle className="text-lg">Form Data</CardTitle>
-                </CardHeader>
+              <CardCollapsible
+                title="Ticket Details"
+                description="Details about the current ticket"
+                defaultOpen
+              >
                 <CardContent className="p-6">
                   <Table>
                     <TableHeader>
@@ -471,7 +473,8 @@ const TicketDetail = () => {
                     </TableBody>
                   </Table>
                 </CardContent>
-              </Card>
+
+              </CardCollapsible>
             )}
 
             {/* Files Attached */}
@@ -498,15 +501,11 @@ const TicketDetail = () => {
 
             {/* Generated Documents */}
             {(isLoadingCustomFunction || (generatedDocuments && generatedDocuments.length > 0)) && (
-              <Card className="bg-card shadow-sm border">
-                <CardHeader className="bg-muted/50 border-b">
-                  <CardTitle className="text-lg">
-                    Generated Documents
-                    {isLoadingCustomFunction && (
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin inline" />
-                    )}
-                  </CardTitle>
-                </CardHeader>
+              <CardCollapsible
+                title="Ticket Item"
+                description="Generated or Uploaded Items Organized Here"
+                defaultOpen
+              >
                 <CardContent className="p-6">
                   {isLoadingCustomFunction ? (
                     <div className="flex items-center justify-center py-8">
@@ -536,15 +535,60 @@ const TicketDetail = () => {
                     <p className="text-muted-foreground text-center py-4">No generated documents found</p>
                   )}
                 </CardContent>
-              </Card>
+              </CardCollapsible>
             )}
           </div>
 
           <div className="space-y-6">
+
+          muncul kalo fully approve
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Approval Progress</CardTitle>
+                <CardTitle className="text-lg">Service Work</CardTitle>
               </CardHeader>
+              <CardContent className="p-0">
+                <div className="h-64 overflow-y-auto p-4 space-y-3">
+                  {ticketDetail.chat_messages && ticketDetail.chat_messages.length > 0 ? (
+                    ticketDetail.chat_messages.map((msg) => (
+                      <div key={msg.id} className={`flex ${msg.isRequester ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${msg.isRequester
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-foreground'
+                          }`}>
+                          <p className="text-xs font-medium mb-1">{msg.user}</p>
+                          <p className="text-sm">{msg.message}</p>
+                          <p className="text-xs opacity-75 mt-1">{msg.time}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-center">No messages yet</p>
+                  )}
+                </div>
+                <div className="border-t p-4">
+                  <div className="flex space-x-2">
+                    <Textarea
+                      value={chatMessage}
+                      onChange={(e) => setChatMessage(e.target.value)}
+                      placeholder="Type your message..."
+                      className="flex-1 min-h-[40px] max-h-[120px]"
+                      rows={1}
+                    />
+                    <Button onClick={handleSendMessage} size="sm">
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+
+            <CardCollapsible
+              title="Approval Progress"
+              color="bg-white"
+              description="Details about the current progress"
+              defaultOpen
+            >
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   {canUserApprove() && (
@@ -593,7 +637,7 @@ const TicketDetail = () => {
                     ))}
                 </div>
               </CardContent>
-            </Card>
+            </CardCollapsible>
 
             <Card>
               <CardHeader>
@@ -634,6 +678,9 @@ const TicketDetail = () => {
                 </div>
               </CardContent>
             </Card>
+
+
+
           </div>
         </div>
       </div>
