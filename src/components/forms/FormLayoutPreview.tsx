@@ -262,7 +262,7 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
 
   return (
     <div className="space-y-6">
-      <Card className="border-green-200 bg-green-50">
+      {/* <Card className="border-green-200 bg-green-50">
         <CardHeader className="pb-3">
           <CardTitle className="text-green-800 text-lg">
             Form Layout Preview
@@ -274,7 +274,7 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
         <CardContent>
           {renderLayoutPreview()}
         </CardContent>
-      </Card>
+      </Card> */}
 
       <Card className="border-blue-200 bg-blue-50">
         <CardHeader className="pb-3">
@@ -290,7 +290,7 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
         </CardContent>
       </Card>
 
-      <Card className="border-purple-200 bg-purple-50">
+      {/* <Card className="border-purple-200 bg-purple-50">
         <CardHeader className="pb-3">
           <CardTitle className="text-purple-800 text-lg">
             Database Column Mapping
@@ -302,7 +302,7 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
         <CardContent>
           {renderDatabaseMapping()}
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 };

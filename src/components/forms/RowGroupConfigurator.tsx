@@ -9,6 +9,8 @@ import { Plus, Trash2, GripVertical, Settings, Save, X } from 'lucide-react';
 import { RowGroup, RowData } from '@/types/formTypes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { SYSTEM_VARIABLE_ENTRIES } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
+import { Textarea } from '../ui/textarea';
 
 interface RowGroupConfiguratorProps {
   rowGroup: RowGroup;
@@ -37,12 +39,36 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
       thirdValue: ''
     };
 
-    const updatedRows = Array.isArray(localRowGroup.rowGroup) 
+    const updatedRows = Array.isArray(localRowGroup.rowGroup)
       ? [...localRowGroup.rowGroup, newRow]
       : [newRow];
 
     updateRowGroup({ rowGroup: updatedRows });
   };
+
+  const SystemVariableHelper = () => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-7">
+          <Info className="w-3 h-3 mr-1" />
+          Variables
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-96 max-h-96 overflow-auto bg-white border shadow-lg z-50">
+        <div className="space-y-2">
+          <h4 className="font-medium">Available System Variables:</h4>
+          <div className="text-sm space-y-1">
+            {SYSTEM_VARIABLE_ENTRIES.map((entry) => (
+              <div key={entry.key} className="p-2 hover:bg-gray-50 rounded">
+                <code className="bg-muted px-1 py-0.5 rounded text-xs">{entry.key}</code>
+                <span className="ml-2 text-muted-foreground">{entry.description}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 
   const removeRowFromRowGroup = (index: number) => {
     if (Array.isArray(localRowGroup.rowGroup)) {
@@ -157,15 +183,14 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`p-3 bg-white border rounded-lg ${
-                                    snapshot.isDragging ? 'shadow-lg border-purple-400' : 'border-purple-200'
-                                  }`}
+                                  className={`p-3 bg-white border rounded-lg ${snapshot.isDragging ? 'shadow-lg border-purple-400' : 'border-purple-200'
+                                    }`}
                                 >
                                   <div className="flex items-center gap-3">
                                     <div {...provided.dragHandleProps}>
                                       <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
                                     </div>
-                                    
+
                                     <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
                                       <div>
                                         <Label className="text-xs">First Value</Label>
@@ -176,7 +201,7 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                                           className="h-8"
                                         />
                                       </div>
-                                      
+
                                       <div>
                                         <Label className="text-xs">Second Value</Label>
                                         <Input
@@ -186,7 +211,7 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                                           className="h-8"
                                         />
                                       </div>
-                                      
+
                                       <div>
                                         <Label className="text-xs">Third Value</Label>
                                         <Input
@@ -197,7 +222,7 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                                         />
                                       </div>
                                     </div>
-                                    
+
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -268,7 +293,7 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                     />
                     <Select
                       value={localRowGroup.structure?.firstColumn?.type || 'text'}
-                      onValueChange={(value: 'text' | 'number' | 'select') => updateRowGroup({
+                      onValueChange={(value: 'text' | 'number' | 'select' | 'suggestion-insert') => updateRowGroup({
                         structure: {
                           ...localRowGroup.structure,
                           firstColumn: {
@@ -285,8 +310,59 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                         <SelectItem value="text">Text</SelectItem>
                         <SelectItem value="number">Number</SelectItem>
                         <SelectItem value="select">Select</SelectItem>
+                        <SelectItem value="suggestion-insert">suggestion insert</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    {console.log("localRowGroup", localRowGroup)}
+                    {(localRowGroup.structure?.firstColumn?.type === 'select' || localRowGroup.structure?.firstColumn?.type === 'suggestion-insert') && (
+                      <div>
+                        <Label>Options (one per line)</Label>
+                        <Textarea
+                          value={
+                            Array.isArray(localRowGroup.structure?.firstColumn?.options)
+                              ? localRowGroup.structure.firstColumn.options
+                                .flatMap(item => item.split(',').map(opt => opt.trim()))
+                                .join('\n')
+                              : ''
+                          }
+                          onChange={(e) =>
+                            updateRowGroup({
+                              structure: {
+                                ...localRowGroup.structure,
+                                firstColumn: {
+                                  ...localRowGroup.structure?.firstColumn,
+                                  options: e.target.value.split('\n').filter(line => line.trim() !== '')
+                                }
+                              }
+                            })
+                          }
+                          placeholder="Option 1&#10;Option 2&#10;Option 3"
+                          className="min-h-[100px] bg-white"
+                        />
+                        <div className="text-xs text-gray-500 mt-1 space-y-1">
+                          <p>• Enter each option on a new line</p>
+                          <p>• For JSON objects, enter valid JSON on each line</p>
+                          <p>• System variables like ${'{factoryplants}'} will be resolved automatically</p>
+
+                        </div>
+                      </div>
+                    )}
+                    {/* {localRowGroup.structure?.firstColumn?.type === 'suggestion-insert' && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label>Suggestions</Label>
+                          <SystemVariableHelper />
+                        </div>
+                        <Textarea
+                          value={field.suggestions?.join('\n') || ''}
+                          onChange={(e) => updateField({ suggestions: e.target.value.split('\n').filter(o => o.trim()) })}
+                          placeholder="Enter suggestions (one per line)"
+                          rows={3}
+                        />
+                      </div>
+                    )} */}
                   </div>
                 </div>
 

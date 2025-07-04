@@ -1,4 +1,3 @@
-
 import { useAppSelector } from '@/hooks/useAppSelector';
 
 export type VariableType = 'string' | 'string[]';
@@ -12,20 +11,22 @@ export interface SystemVariableContext {
     department_name?: string;
     division_name?: string;
   };
-  superior?: { name?: string; username?: string; [key: string]: any }[];
-  departments?: { department_name: string; [key: string]: any }[];
-  divisions?: { division_name: string; [key: string]: any }[];
+  superior?: { name?: string; username?: string;[key: string]: any }[];
+  departments?: { department_name: string;[key: string]: any }[];
+  divisions?: { division_name: string;[key: string]: any }[];
   teams?: { team_name: string }[];
-  factoryplants?: { plant_shortname?: string; plant_description?: string; [key: string]: any }[];
-  srfsamplecategoryes?: { samplecat_name: string; [key: string]: any }[];
-  linkeddistributors?: { company_name: string; [key: string]: any }[];
+  factoryplants?: { plant_shortname?: string; plant_description?: string;[key: string]: any }[];
+  srfsamplecategoryes?: { samplecat_name: string;[key: string]: any }[];
+  linkeddistributors?: { company_name: string;[key: string]: any }[];
+  skulist?: { product_name_complete: string;[key: string]: any }[];
 }
 
 export const useSystemVariableContext = (): SystemVariableContext => {
   const auth = useAppSelector(state => state.auth);
   const userManagement = useAppSelector(state => state.userManagement);
   const srf = useAppSelector(state => state.srf);
-  
+  const sku = useAppSelector(state => state.sku);
+
   return {
     user: auth.user,
     superior: userManagement.users?.filter(u =>
@@ -54,8 +55,10 @@ export const useSystemVariableContext = (): SystemVariableContext => {
       company_name: d.company_name || '',
       ...d
     })) || [],
+    skulist: sku.skulist || [],
   };
 };
+
 
 export interface SystemVariableEntry {
   key: string;
@@ -120,8 +123,13 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
   {
     key: '${factoryplants}',
     type: 'string[]',
-    description: 'Factory plant names',
-    resolve: (ctx) => ctx.factoryplants?.map(f => f.plant_shortname || f.plant_description) || [],
+    description: 'Factory plant objects with id and label for filtering',
+    resolve: (ctx) =>
+    (ctx.factoryplants?.map(f => ({
+      plan_id: f.plan_id,
+      label: f.plant_shortname,
+      description: f.plant_description,
+    })) || []),
   },
   {
     key: '${srfsamplecategoryes}',
@@ -134,5 +142,11 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
     type: 'string[]',
     description: 'Linked distributor names',
     resolve: (ctx) => ctx.linkeddistributors?.map(d => d.company_name) || [],
+  },
+  {
+    key: '${skulist}',
+    type: 'string[]',
+    description: 'List All SKUs',
+    resolve: (ctx) => ctx.skulist?.map(d => d.product_name_complete) || [],
   },
 ];

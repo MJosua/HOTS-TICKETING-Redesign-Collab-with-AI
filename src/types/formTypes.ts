@@ -76,7 +76,7 @@ export interface RowGroup {
       label: string;
       placeholder: string;
       name?: string;
-      type?: 'text' | 'number' | 'select';
+      type?: 'text' | 'number' | 'select' | suggestion-insert;
       options?: string[];
     };
     secondColumn: {

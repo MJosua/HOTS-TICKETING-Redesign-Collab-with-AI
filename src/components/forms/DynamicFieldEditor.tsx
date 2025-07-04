@@ -59,12 +59,14 @@ export const DynamicFieldEditor: React.FC<DynamicFieldEditorProps> = ({
           label: "Item Name",
           name: "item_name",
           type: "text",
-          placeholder: "Enter item name"
+          placeholder: "Enter item name",
+          options: [],
         },
         secondColumn: {
           label: "Quantity",
           name: "quantity",
           type: "number",
+          options: [],
           placeholder: "Enter quantity"
         },
         thirdColumn: {
@@ -475,10 +477,11 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             </p>
           </div>
         )}
+        {console.log("fieldSuggestion",field.suggestions)}
         {field.type === 'suggestion-insert' && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Label>Suggestions</Label>
+              <Label>Suggestionsxsxsx</Label>
               <SystemVariableHelper />
             </div>
             <Textarea

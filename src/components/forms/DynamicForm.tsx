@@ -35,20 +35,20 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [structuredRowCounts, setStructuredRowCounts] = useState<Record<number, number>>({});
-  
+
   const { user } = useAppSelector(state => state.auth);
 
   const maxFields = useMemo(() => getMaxFormFields(), []);
   const [rowGroups, setRowGroups] = useState<RowGroup[]>(() => JSON.parse(JSON.stringify(config.rowGroups || [])));
   const [localFields, setLocalFields] = useState<FormField[]>(() => JSON.parse(JSON.stringify(config.fields || [])));
-
+  console.log("config",config)
   // Sync localFields with config.fields when config.fields changes
   React.useEffect(() => {
     setLocalFields(JSON.parse(JSON.stringify(config.fields || [])));
   }, [config.fields]);
 
   // Get widgets from database for this service
-  const serviceWidgetIds = useAppSelector(state => 
+  const serviceWidgetIds = useAppSelector(state =>
     serviceId ? selectServiceWidgets(state, parseInt(serviceId)) : []
   );
   // Get widget configurations from registry
@@ -56,9 +56,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     const ids = Array.isArray(serviceWidgetIds)
       ? serviceWidgetIds
       : serviceWidgetIds
-      ? [serviceWidgetIds]
-      : [];
-  
+        ? [serviceWidgetIds]
+        : [];
+
     return ids
       .map(getWidgetById)
       .filter((widget): widget is WidgetConfig => !!widget)
@@ -112,7 +112,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       return [];
     }
   };
-  
+
   const handleSubmit = async (data: any) => {
     if (!serviceId) {
       const mappedData = mapFormDataToTicketColumns(
@@ -204,58 +204,44 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   // Improved helper function to filter options of dependent fields based on filterOptionsBy key
   const filterDependentFieldOptions = (field: FormField, dependsOnValue: any): string[] => {
-    if (!field.options || !field.filterOptionsBy || !dependsOnValue) {
-      return field.options || [];
+    if (!field.options || !field.filterOptionsBy) {
+      console.log(`[filterDependentFieldOptions] No filterOptionsBy — return original options`);
+      return field.options;
     }
 
-    console.log('Filtering options for field:', field.name, 'based on value:', dependsOnValue);
+    console.log(`[filterDependentFieldOptions] Transforming options using filterOptionsBy for field: ${field.name}`);
+    console.log(`[filterDependentFieldOptions] dependsOnValue:`, dependsOnValue);
 
-    // Check if options are objects or strings
-    const firstOption = field.options[0];
     let optionsArray: any[] = [];
 
     try {
-      // Try to parse as JSON if it's a string that looks like JSON
-      optionsArray = typeof firstOption === 'string' && firstOption.startsWith('{') 
+      // Try to parse JSON strings
+      optionsArray = typeof field.options[0] === 'string' && field.options[0].startsWith('{')
         ? field.options.map(opt => JSON.parse(opt))
         : field.options;
-    } catch {
+    } catch (error) {
+      console.warn(`[filterDependentFieldOptions] Error parsing options`, error);
       optionsArray = field.options;
     }
 
-    console.log('Options array to filter:', optionsArray);
-    console.log('Filter property:', field.filterOptionsBy);
+    const result = optionsArray.map(opt => {
+      if (typeof opt === 'string') return opt;
 
-    // Filter options by comparing nested property value with dependsOnValue
-    const filteredOptions = optionsArray.filter(option => {
-      if (typeof option === 'string') {
-        // Simple string matching - check if the option contains the dependsOnValue
-        return option.toLowerCase().includes(dependsOnValue.toLowerCase());
-      } else if (typeof option === 'object' && option !== null) {
-        // Object matching - get nested property value
-        const propValue = getNestedProperty(option, field.filterOptionsBy!);
-        console.log('Comparing:', propValue, 'with:', dependsOnValue);
-        
-        // Try both exact match and contains match
-        if (propValue === dependsOnValue) {
-          return true;
-        }
-        if (typeof propValue === 'string' && typeof dependsOnValue === 'string') {
-          return propValue.toLowerCase().includes(dependsOnValue.toLowerCase());
-        }
-        return false;
-      }
-      return false;
+      const extracted = getNestedProperty(opt, field.filterOptionsBy!);
+      console.log(`[filterDependentFieldOptions] Extracted value from object:`, {
+        original: opt,
+        path: field.filterOptionsBy,
+        extracted
+      });
+
+      return extracted ?? JSON.stringify(opt);
     });
 
-    console.log('Filtered options:', filteredOptions);
+    console.log(`[filterDependentFieldOptions] Final mapped result:`, result);
 
-    // Return filtered options as strings or JSON stringified objects
-    const result = filteredOptions.map(opt => (typeof opt === 'string' ? opt : JSON.stringify(opt)));
-    console.log('Final filtered result:', result);
-    
-    return result;
+    return result.filter(Boolean); // remove null/undefined
   };
+
 
   const renderFieldsInRows = (fields: FormField[]) => {
     return (
@@ -278,11 +264,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                 value={form.watch(fieldKey)}
                 onChange={(value) => {
                   form.setValue(fieldKey, value);
-                  console.log('Field value changed:', fieldKey, value);
+                  // console.log('Field value changed:', fieldKey, value);
                   // Update current field value
                   setWatchedValues(prev => {
                     const newValues = { ...prev, [fieldKey]: value };
-                    console.log('Updated watched values:', newValues);
                     return newValues;
                   });
 
@@ -314,10 +299,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   // Helper function to check if a row group is legacy (contains FormField[])
   const isLegacyRowGroup = (rg: RowGroup): rg is RowGroup & { rowGroup: FormField[] } => {
-    return !rg.isStructuredInput && 
-           Array.isArray(rg.rowGroup) && 
-           rg.rowGroup.length > 0 && 
-           'label' in rg.rowGroup[0];
+    return !rg.isStructuredInput &&
+      Array.isArray(rg.rowGroup) &&
+      rg.rowGroup.length > 0 &&
+      'label' in rg.rowGroup[0];
   };
 
   return (
@@ -347,7 +332,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
           )}
           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
             <span className="text-blue-800">
-              <strong>Form Fields:</strong> {currentFieldCount} of {maxFields} used
+              <strong>Form Fieldss:</strong> {currentFieldCount} of {maxFields} used
             </span>
             {currentFieldCount >= maxFields && (
               <span className="text-red-600 font-medium">⚠️ Field limit reached</span>
@@ -369,7 +354,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
                   {section.description && (
                     <p className="text-sm text-muted-foreground">{section.description}</p>
                   )}
-                  
+
                   {section.repeatable ? (
                     <RepeatingSection section={section} form={form} />
                   ) : (

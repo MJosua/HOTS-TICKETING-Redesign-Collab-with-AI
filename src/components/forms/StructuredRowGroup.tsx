@@ -1,5 +1,5 @@
 // StructuredRowGroup.tsx
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,10 +14,9 @@ import {
 } from '@/components/ui/select';
 import { RowGroup } from '@/types/formTypes';
 import { useToast } from '@/hooks/use-toast';
-import {
-  resolveSystemVariable,
-} from '@/utils/systemVariableResolver';
-import { useSystemVariableContext} from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
+import { resolveSystemVariable } from '@/utils/systemVariableResolver';
+import { useSystemVariableContext } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
+import { SuggestionInsertInput } from './SuggestionInsertInput';
 
 interface StructuredRowGroupProps {
   rowGroup: RowGroup;
@@ -120,67 +119,185 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     onUpdateRowGroup(groupIndex, updatedRows);
   };
 
+
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [filteredOptions, setFilteredOptions] = useState<string[]>(rowGroup.options || []);
+
+
+  const resolveOptions = (options: string[]) => {
+    return options.map(option => {
+      const resolved = resolveSystemVariable(option, systemContext);
+      // console.log('🔧 System Variable Resolution:', {
+      //   original: option,
+      //   resolved: resolved,
+      //   context: systemContext
+      // });
+      // Instead of joining arrays into a string, flatten arrays to individual options
+      return Array.isArray(resolved) ? resolved : [resolved];
+    }).flat();
+  };
+
+
+
+  useEffect(() => {
+    if (structure.firstColumn.type === 'suggestion-insert') {
+      if (Array.isArray(structure?.firstColumn.options)) {
+        const resolvedSuggestions = resolveOptions(structure?.firstColumn.options);
+        setSuggestions(resolvedSuggestions);
+      } else if (filteredOptions.length > 0) {
+        // Use filtered options as fallback suggestions
+        setSuggestions(filteredOptions);
+      } else {
+        // If nothing is available, clear suggestions
+        setSuggestions([]);
+      }
+    }
+  }, [structure, rowGroup?.suggestions, filteredOptions]);
+
+
+
+
+  const renderField = (
+    column: 'firstColumn' | 'secondColumn' | 'thirdColumn',
+    value: string,
+    onChange: (val: string) => void
+  ) => {
+    const colDef = structure[column];
+    switch (colDef.type) {
+
+      case 'select':
+        const options =
+          column === 'thirdColumn' ? resolvedThirdOptions :
+            Array.isArray(colDef.options) ? colDef.options : [];
+
+        return (
+          <Select value={value} onValueChange={onChange}>
+            <SelectTrigger>
+              <SelectValue placeholder={colDef.placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((opt: string, idx: number) => (
+                <SelectItem key={idx} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+
+      case 'number':
+        return (
+          <Input
+            type="number"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={colDef.placeholder}
+          />
+        );
+
+      case 'suggestion-insert':
+        return (
+          <SuggestionInsertInput
+            suggestions={suggestions.map(s => (typeof s === 'object' && s !== null ? s.label || s.name || JSON.stringify(s) : s))}
+            placeholder={colDef.placeholder || "Type or select from suggestions"}
+            onChange={val => onChange(val)}
+          />
+        );
+
+      default:
+        return (
+          <Input
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={colDef.placeholder}
+          />
+        );
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
         {rows.length} of {rowGroup.maxRows || 'unlimited'} rows • Using {rows.length} of {maxTotalFields} fields
       </div>
-      {rows.map((row, index) => (
-        <Card key={row.id} className="relative">
-          <CardContent className="pt-4">
-            {rows.length > 1 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={() => removeRow(row.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3 items-end">
-              <div>
-                <label className="text-sm font-medium mb-1 block">{structure.firstColumn.label}</label>
-                <Input
-                  value={row.firstValue}
-                  onChange={e => updateRow(row.id, 'first', e.target.value)}
-                  placeholder={structure.firstColumn.placeholder}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">{structure.secondColumn.label}</label>
-                <Input
-                  value={row.secondValue}
-                  onChange={e => updateRow(row.id, 'second', e.target.value)}
-                  placeholder={structure.secondColumn.placeholder}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">{structure.thirdColumn.label}</label>
-                <Select
-                  value={row.thirdValue}
-                  onValueChange={value => updateRow(row.id, 'third', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={structure.thirdColumn.placeholder} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {resolvedThirdOptions.map((opt, idx) => (
-                      <SelectItem key={idx} value={opt}>{opt}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+      <Card className="relative">
+        <CardContent className="pt-4 space-y-4">
+
+          {/* Header Labels */}
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mt-4">
+            <div className="col-span-1 md:col-span-3">
+              <label className="text-sm font-medium mb-1 block">{structure.firstColumn.label}</label>
+            </div>
+            <div className="col-span-1 md:col-span-1">
+              <label className="text-sm font-medium mb-1 block">{structure.secondColumn.label}</label>
+            </div>
+            <div className="col-span-1 md:col-span-1">
+              <label className="text-sm font-medium mb-1 block">{structure.thirdColumn.label}</label>
+            </div>
+          </div>
+
+          {/* Row Entries */}
+          {rows.map((row, index) => (
+            <div key={row.id} className="relative">
+
+
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-4">
+                <div className="col-span-1 md:col-span-3">
+                  {renderField('firstColumn', row.firstValue, val => updateRow(row.id, 'first', val))}
+                </div>
+                <div className="col-span-1 md:col-span-1">
+                  {renderField('secondColumn', row.secondValue, val => updateRow(row.id, 'second', val))}
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end ">
+                    <div className="col-span-1 md:col-span-4  {rows.length > 1 ? 'hidden' : ''}">
+
+                      // ini cek woi
+                      {renderField('thirdColumn', row.thirdValue, val => updateRow(row.id, 'third', val))}
+                    </div>
+                    <div className="col-span-1 md:col-span-1">
+                      {rows.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-[39px] w-10 flex items-center justify-center"
+                          onClick={() => removeRow(row.id)}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
-          </CardContent>
-        </Card>
-      ))}
+          ))}
+
+          {/* Bottom Total Row */}
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mt-0">
+            <div className="col-span-1 md:col-span-3" />
+            <label className="text-sm font-medium text-right flex items-center justify-end h-full">
+              Total
+            </label>
+
+            <div className="col-span-1 md:col-span-2">
+              {/* Insert total value or field here if needed */}
+              <Input readOnly value="123" />
+            </div>
+          </div>
+
+        </CardContent>
+      </Card>
+
+
+
+
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={addRow}>
           <Plus className="w-4 h-4" />
         </Button>
       </div>
-    </div>
+    </div >
   );
 };

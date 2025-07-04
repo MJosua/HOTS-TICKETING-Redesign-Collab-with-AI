@@ -35,8 +35,11 @@ import AdminGuide from "./pages/admin/AdminGuide";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useDynamicServiceRoutes } from "./components/routing/DynamicServiceRoutes";
 import { AppLayout } from "@/components/layout/AppLayout";
+
 import { fetchDepartments } from "@/store/slices/userManagementSlice";
 import { fetchSRF } from "./store/slices/srf_slice";
+import { fetchsku } from "./store/slices/SKUslice";
+
 import { API_URL } from '@/config/sourceConfig';
 import axios from 'axios';
 import { AppDispatch } from './store';
@@ -49,25 +52,10 @@ const AppContentInner = () => {
   useEffect(() => {
     dispatch(fetchDepartments());
     dispatch(fetchSRF());
+    dispatch(fetchsku());
   }, [dispatch]);
 
-  useEffect(() => {
-    const fetchSRFSKU = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/hots_settings/get_srf_sku`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('tokek')}`,
-          },
-        });
-
-        console.log("haha", response.data);
-      } catch (err: any) {
-        console.error('Failed to fetch SRF SKU:', err);
-      }
-    };
-
-    fetchSRFSKU();
-  }, []);
+  
 
   const handleServiceSubmit = useCallback((data: any) => {
     console.log("Service form submitted:", data);

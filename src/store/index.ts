@@ -6,7 +6,7 @@ import ticketsReducer from './slices/ticketsSlice';
 import userManagementReducer from './slices/userManagementSlice';
 import customFunctionReducer from './slices/customFunctionSlice';
 import srfSliceReducer from './slices/srf_slice';
-
+import skuSliceReducer from './slices/SKUslice';
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -15,6 +15,7 @@ export const store = configureStore({
     userManagement: userManagementReducer,
     customFunction: customFunctionReducer,
     srf: srfSliceReducer,
+    sku: skuSliceReducer,
   },
 });
 

@@ -762,7 +762,8 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
   return (
     <div className="space-y-6">
       {/* Header Controls */}
-      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+      <div className="flex items-center justify-between sticky top-[80px] z-30 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-b border shadow-sm">
+
         <div>
           <h3 className="text-lg font-semibold text-gray-800">Unified Form Structure Builder</h3>
           <p className="text-sm text-gray-600">Drag and drop to organize your form with real-time database mapping</p>
@@ -794,7 +795,6 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       </div>
 
       {/* Chain Link Helper */}
-      <ChainLinkHelper />
 
       {/* Form Layout Preview */}
       {showPreview && <FormLayoutPreview items={items} onUpdate={onUpdate} />}
