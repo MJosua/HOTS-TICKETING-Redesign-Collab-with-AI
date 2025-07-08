@@ -154,6 +154,8 @@ export default function ServiceFunctionAssignment({ serviceId, serviceName }: Se
       resetForm();
       dispatch(fetchServiceFunctions(serviceId));
     } catch (error: any) {
+
+      console.log("error",error)
       toast({
         title: "Error",
         description: error.message || "Failed to update assignment",
@@ -184,7 +186,8 @@ export default function ServiceFunctionAssignment({ serviceId, serviceName }: Se
     { value: 'on_approved', label: 'On Approved' },
     { value: 'on_step_approved', label: 'On Step Approved' },
     { value: 'on_rejected', label: 'On Rejected' },
-    { value: 'on_final_approved', label: 'On Final Approved' }
+    { value: 'on_final_approved', label: 'On Final Approved' },
+    { value: 'on_trigger', label: 'On Trigger' }
   ];
 
   const closeModal = () => {

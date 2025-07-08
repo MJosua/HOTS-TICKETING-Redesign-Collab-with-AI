@@ -60,7 +60,7 @@ const ServiceCatalogAdmin = () => {
     error,
     fetchData
   } = useCatalogData();
-
+  console.log("serviceCatalog",serviceCatalog)
   const { toast } = useToast();
   const dispatch = useAppDispatch();
 
@@ -71,40 +71,30 @@ const ServiceCatalogAdmin = () => {
   }, [dispatch]);
 
   const forms: FormConfig[] = serviceCatalog.map(service => {
-    if (service.form_json) {
-      try {
-        const parsedConfig = JSON.parse(service.form_json);
-        return {
-          servis_aktif: Number(service.active) ?? 0,
-          ...parsedConfig,
-          id: service.service_id.toString(),
-          category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown'
-        };
-      } catch (error) {
-        console.error(`Failed to parse form_json for service ${service.service_id}:`, error);
+    let parsedConfig = {};
+    try {
+      if (service.form_json) {
+        parsedConfig = JSON.parse(service.form_json);
       }
+    } catch (error) {
+      console.error(`Failed to parse form_json for service ${service.service_id}:`, error);
     }
+  
     return {
+      ...parsedConfig,
       id: service.service_id.toString(),
-      title: service.service_name,
-      url: `/${service.nav_link}`,
-      servis_aktif: Number(service.active) ?? 0,
-      testing: "Tester",
+      title: parsedConfig.title || service.service_name,
+      url: parsedConfig.url || `/${service.nav_link}`,
+      servis_aktif: Number(service.active) || 0, // ← force DB value
       category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown',
-      description: service.service_description,
-      apiEndpoint: `/api/${service.nav_link}`,
-      approval: {
+      description: parsedConfig.description || service.service_description,
+      apiEndpoint: parsedConfig.apiEndpoint || `/api/${service.nav_link}`,
+      approval: parsedConfig.approval || {
         steps: service.approval_level > 0 ? ['Manager', 'Supervisor'] : [],
         mode: 'sequential' as const
       },
-      fields: [
-        {
-          label: 'Description',
-          name: 'description',
-          type: 'textarea',
-          required: true
-        }
-      ]
+      fields: parsedConfig.fields || [],
+      rowGroups: parsedConfig.rowGroups || []
     };
   });
 

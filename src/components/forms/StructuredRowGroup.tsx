@@ -78,10 +78,19 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   }, []);
 
   // Compute total of secondValue fields as numbers
-  const totalSecondValue = useMemo(() => {
+  const totalSecondValueA = useMemo(() => {
     return rows.reduce((sum, row) => {
+      const isPcs = typeof row.thirdValue === 'string' && row.thirdValue.toLowerCase().includes("pcs");
       const num = Number(row.secondValue);
-      return sum + (isNaN(num) ? 0 : num);
+      return sum + (isPcs && !isNaN(num) ? num : 0);
+    }, 0);
+  }, [rows]);
+
+  const totalSecondValueB = useMemo(() => {
+    return rows.reduce((sum, row) => {
+      const isCtns = typeof row.thirdValue === 'string' && row.thirdValue.toLowerCase().includes("ctns");
+      const num = Number(row.secondValue);
+      return sum + (isCtns && !isNaN(num) ? num : 0);
     }, 0);
   }, [rows]);
 
@@ -234,7 +243,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
-        {rows.length} of {rowGroup.maxRows || 'unlimited'} rows • Using {rows.length} of {maxTotalFields} fields
+        {rows.length} of {rowGroup.maxRows || 'unlimited'} rows •
       </div>
 
       <Card className="relative">
@@ -294,12 +303,24 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mt-0">
             <div className="col-span-1 md:col-span-3" />
             <label className="text-sm font-medium text-right flex items-center justify-end h-full">
-              Total
+              Total Pcs
             </label>
 
             <div className="col-span-1 md:col-span-2">
               {/* Insert total value or field here if needed */}
-              <Input readOnly value={totalSecondValue.toString()} />
+              <Input readOnly value={totalSecondValueA.toString()} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mt-0">
+            <div className="col-span-1 md:col-span-3" />
+            <label className="text-sm font-medium text-right flex items-center justify-end h-full">
+              Total Ctns
+            </label>
+
+            <div className="col-span-1 md:col-span-2">
+              {/* Insert total value or field here if needed */}
+              <Input readOnly value={totalSecondValueB.toString()} />
             </div>
           </div>
 

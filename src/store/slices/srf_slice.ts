@@ -40,7 +40,6 @@ export const fetchSRF = createAsyncThunk(
       if (!plantRes.data.success || !categoryRes.data.success || !deliverToRes.data.success) {
         return rejectWithValue('One or more SRF fetches failed');
       }
-      console.log("factoryplants",plantRes.data.data)
 
       return {
         factoryplants: plantRes.data.data || [],

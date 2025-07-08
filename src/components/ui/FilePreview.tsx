@@ -89,7 +89,6 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
         />
       );
     } else if (ext === 'pdf' && generated === true) {
-      console.log(`${API_URL}/${filePath.replace(/\\/g, '/')}`)
       return (
         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
 

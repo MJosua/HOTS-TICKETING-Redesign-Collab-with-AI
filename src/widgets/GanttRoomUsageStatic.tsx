@@ -3,8 +3,9 @@ import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from 'lucide-react';
 import { WidgetProps } from '@/types/widgetTypes';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { API_URL } from '@/config/sourceConfig';
+import { useAppSelector } from '@/hooks/useAppSelector';
+import { CardCollapsible } from '@/components/ui/CardCollapsible';
 
 type Booking = {
   id: number;
@@ -34,43 +35,53 @@ function getNextFiveWeekdays(startDate = new Date()) {
   return days;
 }
 
-const GanttRoomUsage: React.FC<WidgetProps> = ({ ticketData, formData, currentDateRange }) => {
+
+
+const GanttRoomUsageStatic: React.FC<WidgetProps> = ({ ticketData, formData, currentDateRange }) => {
+  const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
+
   const [roomData, setRoomData] = useState<Booking[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string>('');
   const visibleDates = getNextFiveWeekdays();
 
-  const getData_meeting_room = () => {
-    axios.get(`${API_URL}/hots_settings/get/meetingroom`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("tokek")}`,
-      },
-    })
-      .then((res) => {
-        const rawData = res.data.data;
-
-        const formattedData: Booking[] = rawData.map((item: any) => ({
-          id: item.ticket_id,
-          room: item.room,
-          startTime: item.start_time,  // map snake_case to camelCase
-          endTime: item.end_time,
-          bookedBy: String(item.booked_by),
-          attendees: Number(item.attendees),
-          date: item.date,
-        }));
-
-        setRoomData(formattedData);
-        if (formattedData.length > 0) {
-          setSelectedRoom(formattedData[0].room);
-        }
-      })
-      .catch((err) => {
-        console.error("Error fetching meeting room data:", err);
-      });
-  };
-
   useEffect(() => {
-    getData_meeting_room();
-  }, []);
+    const fetchData = () => {
+      const dateValue = ticketDetail?.detail_rows?.[1]?.cstm_col;
+      const roomValue = ticketDetail?.detail_rows?.[0]?.cstm_col;
+
+      if (!dateValue) return; // 👈 wait until data is ready
+
+      axios
+        .get(`${API_URL}/hots_settings/get/meetingroom_static?date=${dateValue}&room=${roomValue}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("tokek")}`,
+          },
+        })
+        .then((res) => {
+          const rawData = res.data.data;
+          console.log("rawData", rawData)
+          const formattedData: Booking[] = rawData.map((item: any) => ({
+            id: item.ticket_id,
+            room: item.room,
+            startTime: item.start_time,
+            endTime: item.end_time,
+            bookedBy: String(item.booked_by),
+            attendees: Number(item.attendees),
+            date: item.date,
+          }));
+
+          setRoomData(formattedData);
+          if (formattedData.length > 0) {
+            setSelectedRoom(formattedData[0].room);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching meeting room data:", err);
+        });
+    };
+
+    fetchData();
+  }, [ticketDetail?.detail_rows]);
 
   const rooms = useMemo(() => {
     return [...new Set(roomData.map((b) => b.room))];
@@ -84,31 +95,16 @@ const GanttRoomUsage: React.FC<WidgetProps> = ({ ticketData, formData, currentDa
   };
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            <CardTitle className="text-lg pe-1">Room Usage</CardTitle>
-          </div>
 
-          <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select room" />
-            </SelectTrigger>
-            <SelectContent>
-              {rooms.map((room) => (
-                <SelectItem key={room} value={room}>
-                  {room}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {selectedRoom} — Current bookings across next 5 weekdays
-        </p>
-      </CardHeader>
+    <CardCollapsible
+
+      title={`Room ${ticketDetail.detail_rows[0].cstm_col}`}
+      description={`Booking Room Data  ${ticketDetail.detail_rows[1].cstm_col}`}
+      defaultOpen
+    >
+
+
+
 
       <CardContent className=' flex flex-col overflow-hidden h-[576px]'>
         <div className="grid" style={{ gridTemplateColumns: `80px repeat(${visibleDates.length}, 1fr)` }}>
@@ -182,8 +178,9 @@ const GanttRoomUsage: React.FC<WidgetProps> = ({ ticketData, formData, currentDa
           })}
         </div>
       </CardContent>
-    </Card>
+    </CardCollapsible>
+
   );
 };
 
-export default GanttRoomUsage;
+export default GanttRoomUsageStatic;

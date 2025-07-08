@@ -166,7 +166,6 @@ export const fetchFunctionLogs = createAsyncThunk(
         headers: { Authorization: `Bearer ${localStorage.getItem('tokek')}` }
       });
       
-      console.log('Function logs response:', response.data);
       
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch function logs');

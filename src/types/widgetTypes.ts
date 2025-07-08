@@ -26,3 +26,11 @@ export interface WidgetProps {
 export interface WidgetConfig extends WidgetPreset {
   props?: WidgetProps;
 }
+
+
+export interface meetingroomwidgetdata {
+  ticketdata?: any;
+  cstm_col?: any;
+  lbl_col?: any;
+  order_col?: any;
+}

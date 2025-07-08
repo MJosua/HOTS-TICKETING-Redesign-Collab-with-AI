@@ -77,7 +77,7 @@ const AppContentInner = () => {
   const dynamicServiceRoutes = useDynamicServiceRoutes(handleServiceSubmit);
 
   return (
-    <Router>
+    <Router basename="/hots">
       <div className="min-h-screen bg-background">
         <Routes>
           {/* Public Routes */}

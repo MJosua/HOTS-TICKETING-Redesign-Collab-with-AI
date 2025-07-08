@@ -41,7 +41,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const maxFields = useMemo(() => getMaxFormFields(), []);
   const [rowGroups, setRowGroups] = useState<RowGroup[]>(() => JSON.parse(JSON.stringify(config.rowGroups || [])));
   const [localFields, setLocalFields] = useState<FormField[]>(() => JSON.parse(JSON.stringify(config.fields || [])));
-  console.log("config",config)
   // Sync localFields with config.fields when config.fields changes
   React.useEffect(() => {
     setLocalFields(JSON.parse(JSON.stringify(config.fields || [])));
@@ -327,17 +326,20 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
       <Card>
         <CardHeader>
           <CardTitle>{config.title}</CardTitle>
-          {config.description && (
+          {config.description && !serviceId && (
             <p className="text-sm text-muted-foreground">{config.description}</p>
           )}
-          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
-            <span className="text-blue-800">
-              <strong>Form Fieldss:</strong> {currentFieldCount} of {maxFields} used
-            </span>
-            {currentFieldCount >= maxFields && (
-              <span className="text-red-600 font-medium">⚠️ Field limit reached</span>
-            )}
-          </div>
+          {config.description && !serviceId && (
+
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
+              <span className="text-blue-800">
+                <strong>Form Fields:</strong> {currentFieldCount} of {maxFields} used
+              </span>
+              {currentFieldCount >= maxFields && (
+                <span className="text-red-600 font-medium">⚠️ Field limit reached</span>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <Form {...form}>

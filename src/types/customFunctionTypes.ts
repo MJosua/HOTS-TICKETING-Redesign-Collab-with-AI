@@ -13,7 +13,7 @@ export interface ServiceCustomFunction {
   id: number;
   service_id: number;
   function_id: number;
-  trigger_event: 'on_created' | 'on_approved' | 'on_step_approved' | 'on_rejected' | 'on_final_approved';
+  trigger_event: 'on_created' | 'on_approved' | 'on_step_approved' | 'on_rejected' | 'on_final_approved' | 'on_trigger';
   execution_order: number;
   is_active: boolean;
   config: any;

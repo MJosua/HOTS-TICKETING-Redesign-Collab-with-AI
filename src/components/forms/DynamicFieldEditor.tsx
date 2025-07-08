@@ -477,7 +477,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             </p>
           </div>
         )}
-        {console.log("fieldSuggestion",field.suggestions)}
         {field.type === 'suggestion-insert' && (
           <div>
             <div className="flex items-center gap-2 mb-2">

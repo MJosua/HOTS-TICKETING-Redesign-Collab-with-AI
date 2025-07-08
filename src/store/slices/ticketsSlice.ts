@@ -116,7 +116,6 @@ export const fetchTicketDetail = createAsyncThunk(
         },
       });
       
-      console.log('Ticket Detail API Response:', response.data);
       
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch ticket detail');

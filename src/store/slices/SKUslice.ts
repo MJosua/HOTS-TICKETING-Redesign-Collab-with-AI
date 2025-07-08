@@ -31,7 +31,6 @@ export const fetchsku = createAsyncThunk(
       if (!getskures.data.success) {
         return rejectWithValue('One or more SRF fetches failed');
       }
-      console.log("getskures.data", getskures.data.results)
       return {
         skulist: getskures.data.results || [],
       };

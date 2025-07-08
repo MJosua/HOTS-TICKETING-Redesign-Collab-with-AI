@@ -56,7 +56,7 @@ export const ServiceCatalogTable: React.FC<ServiceCatalogTableProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {forms.map((form) => (
+              {forms.sort( (a,b) => b.servis_aktif - a.servis_aktif).map((form) => (
                 <TableRow key={form.id}>
                   <TableCell className="font-medium">
                     {form.title}

@@ -8,10 +8,21 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     name: "Room Usage Gantt Chart",
     description: "Display current week's room usage as a Gantt chart",
     componentPath: "widgets/GanttRoomUsage",
-    applicableTo: ["form", "ticket_detail"],
+    applicableTo: ["form"],
     dataRequirements: ["roomData", "scheduleData"],
     category: "Scheduling"
   },
+
+  gantt_room_schedule_static: {
+    id: "gantt_room_schedule_static",
+    name: "Room Usage Gantt Chart Static",
+    description: "Display current week's room usage as a Gantt chart",
+    componentPath: "widgets/GanttRoomUsageStatic",
+    applicableTo: [ "ticket_detail"],
+    dataRequirements: ["roomData", "scheduleData"],
+    category: "Scheduling"
+  },
+  
   stock_overview: {
     id: "stock_overview",
     name: "Stock Overview",

@@ -367,9 +367,22 @@ const ticketController = {
             const assigned_to = firstStep ? firstStep.assigned_user_id : null;
 
             // Create ticket with details
-            const ticketId = await ticketService.createTicketWithDetails(
-                service_id, user_id, assigned_team, assigned_to, reason, formData
-            );
+            const ticketId = await ticketService.createTicket(service_id, user_id, assigned_team, assigned_to, reason);
+
+            // Insert ticket detail rows with order_col
+            const detailInsertPromises = [];
+            for (let i = 1; i <= 16; i++) {
+                const cstmColValue = formData[`cstm_col${i}`] || '';
+                const lblColValue = formData[`lbl_col${i}`] || '';
+                if (cstmColValue || lblColValue) {
+                    detailInsertPromises.push(dbHots.promise().execute(`
+                        INSERT INTO t_ticket_detail (
+                            ticket_id, cstm_col, lbl_col, order_col
+                        ) VALUES (?, ?, ?, ?)
+                    `, [ticketId, cstmColValue, lblColValue, i]));
+                }
+            }
+            await Promise.all(detailInsertPromises);
 
             // Handle file uploads
             if (upload_ids && upload_ids.length > 0) {
@@ -403,71 +416,93 @@ const ticketController = {
     // Get Ticket Detail - Enhanced with approval fields
     getTicketDetail: (req, res) => {
         let date = new Date();
-        let timestamp = magenta + date.toLocaleDateString() + ' ' + date.toLocaleTimeString('id') + ' : ' + ' ';
-
+        let timestamp = magenta + date.toLocaleDateString() + ' ' + date.toLocaleTimeString('id') + ' : ';
+    
         let ticket_id = req.params.ticket_id;
-
+    
         if (!ticket_id) {
             return res.status(400).send({
                 success: false,
                 message: "ticket_id must be provided"
             });
         }
-
-        let queryGetTicketDetail = `
+    
+        const queryGetTicketDetail = `
             SELECT 
                 t.ticket_id,
                 t.creation_date,
                 t.service_id,
                 s.service_name,
                 t.status_id,
+                s.widget,
                 ts.status_name as status,
                 ts.color_hex as color,
                 t.assigned_to,
                 t.assigned_team,
                 tm.team_name,
                 t.last_update,
-                t.reason,
+                t.reject_reason as reason,
                 t.fulfilment_comment,
                 t.current_step,
                 CONCAT(u.firstname, ' ', u.lastname) as created_by_name,
-                d.dept_name as department_name,
-                td.cstm_col1, td.lbl_col1, td.cstm_col2, td.lbl_col2, td.cstm_col3, td.lbl_col3,
-                td.cstm_col4, td.lbl_col4, td.cstm_col5, td.lbl_col5, td.cstm_col6, td.lbl_col6,
-                td.cstm_col7, td.lbl_col7, td.cstm_col8, td.lbl_col8, td.cstm_col9, td.lbl_col9,
-                td.cstm_col10, td.lbl_col10, td.cstm_col11, td.lbl_col11, td.cstm_col12, td.lbl_col12,
-                td.cstm_col13, td.lbl_col13, td.cstm_col14, td.lbl_col14, td.cstm_col15, td.lbl_col15,
-                td.cstm_col16, td.lbl_col16,
+                dpt.department_id AS dept_id,
+                dpt.department_name AS department_name,
+                dpt.department_shortname AS dept_shortname,
+    
+                -- ✅ Dynamic Detail Rows
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'order_col', td.order_col,
+                            'cstm_col', td.cstm_col,
+                            'lbl_col', td.lbl_col
+                        )
+                        ORDER BY td.order_col
+                    )
+                    FROM t_ticket_detail td
+                    WHERE td.ticket_id = t.ticket_id
+                ) as detail_rows,
+    
+                -- ✅ Current approver info
+                (
+                    SELECT CONCAT(u3.firstname, ' ', u3.lastname)
+                    FROM t_approval_event ae3
+                    LEFT JOIN user u3 ON u3.user_id = ae3.approver_id
+                    WHERE ae3.approval_id = t.ticket_id 
+                    AND ae3.approval_order = t.current_step
+                    LIMIT 1
+                ) as current_approver_name,
+    
+                (
+                    SELECT ae3.approver_id
+                    FROM t_approval_event ae3
+                    WHERE ae3.approval_id = t.ticket_id 
+                    AND ae3.approval_order = t.current_step
+                    LIMIT 1
+                ) as current_approver_id,
+    
+                -- ✅ Approval status
                 CASE 
                     WHEN EXISTS(SELECT 1 FROM t_approval_event ae WHERE ae.approval_id = t.ticket_id AND ae.approval_status = 0) THEN 0
                     WHEN EXISTS(SELECT 1 FROM t_approval_event ae WHERE ae.approval_id = t.ticket_id AND ae.approval_status = 2) THEN 2
                     ELSE 1
                 END as approval_status,
-                (
-                    SELECT CONCAT(u3.firstname, ' ', u3.lastname)
-                    FROM t_approval_event ae3
-                    LEFT JOIN user u3 ON u3.user_id = ae3.approver_id
-                    WHERE ae3.approval_id = t.ticket_id AND ae3.approval_order = t.current_step
-                    LIMIT 1
-                ) as current_approver_name,
-                (
-                    SELECT ae4.approver_id
-                    FROM t_approval_event ae4
-                    WHERE ae4.approval_id = t.ticket_id AND ae4.approval_order = t.current_step
-                    LIMIT 1
-                ) as current_approver_id,
+    
+                -- ✅ Attachments
                 (
                     SELECT JSON_ARRAYAGG(
                         JSON_OBJECT(
-                            'upload_id', tu.upload_id,
-                            'filename', tu.filename,
-                            'path', tu.file_path,
-                            'size', tu.file_size
+                            'upload_id', f.upload_id,
+                            'filename', f.filename,
+                            'path', f.file_path,
+                            'size', f.file_size
                         )
                     )
-                    FROM t_temp_upload tu 
-                    WHERE tu.ticket_id = t.ticket_id AND tu.is_used = TRUE
+                    FROM t_file_upload f 
+                    WHERE f.ticket_id = t.ticket_id
                 ) as files,
+    
+                -- ✅ Approval event list
                 (
                     SELECT JSON_ARRAYAGG(
                         JSON_OBJECT(
@@ -475,8 +510,9 @@ const ticketController = {
                             'approver_name', CONCAT(u2.firstname, ' ', u2.lastname),
                             'approval_order', ae.approval_order,
                             'approval_status', ae.approval_status,
-                            'approval_date', ae.approve_date,
-                            'rejection_remark', ae.rejection_remark
+                            'approval_date', DATE_FORMAT(ae.approve_date, '%Y-%m-%d %H:%i:%s'),
+                            'rejection_remark', ae.rejection_remark,
+                            'approver_leader', ae.approver_leader
                         )
                     )
                     FROM t_approval_event ae
@@ -484,22 +520,23 @@ const ticketController = {
                     WHERE ae.approval_id = t.ticket_id
                     ORDER BY ae.approval_order
                 ) as list_approval,
+    
                 (
                     SELECT tm2.user_id
                     FROM m_team_member tm2
                     WHERE tm2.team_id = t.assigned_team AND tm2.team_leader = 1
                     LIMIT 1
                 ) as team_leader_id
+    
             FROM t_ticket t
             LEFT JOIN m_service s ON s.service_id = t.service_id
             LEFT JOIN m_ticket_status ts ON ts.status_id = t.status_id
             LEFT JOIN m_team tm ON tm.team_id = t.assigned_team
             LEFT JOIN user u ON u.user_id = t.created_by
-            LEFT JOIN m_department d ON d.dept_id = u.dept_id
-            LEFT JOIN t_ticket_detail td ON td.ticket_id = t.ticket_id
+            LEFT JOIN m_department dpt ON dpt.department_id = u.department_id
             WHERE t.ticket_id = ?
         `;
-
+    
         dbHots.execute(queryGetTicketDetail, [ticket_id], (err, results) => {
             if (err) {
                 console.log(timestamp, "GET TICKET DETAIL ERROR: ", err);
@@ -508,14 +545,14 @@ const ticketController = {
                     message: err
                 });
             }
-
+    
             if (!results.length) {
                 return res.status(404).send({
                     success: false,
                     message: 'Ticket not found!'
                 });
             }
-
+    
             console.log(timestamp, "GET TICKET DETAIL SUCCESS");
             return res.status(200).send({
                 success: true,
@@ -524,6 +561,7 @@ const ticketController = {
             });
         });
     },
+    
 
     // Get Ticket Attachments
     getTicketAttachments: (req, res) => {

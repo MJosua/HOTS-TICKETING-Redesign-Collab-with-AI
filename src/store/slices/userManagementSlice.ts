@@ -194,7 +194,6 @@ export const fetchUsers = createAsyncThunk(
         Authorization: `Bearer ${localStorage.getItem('tokek')}`,
       }
     });
-    // console.log("users fetch", response.data.data);
     return response.data.data;
   }
 );

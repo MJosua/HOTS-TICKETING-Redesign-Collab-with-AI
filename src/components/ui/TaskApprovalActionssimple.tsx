@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Check, X, MessageSquare } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
-import { approveTicket, rejectTicket, fetchTaskList } from '@/store/slices/ticketsSlice';
+import { approveTicket, rejectTicket, fetchTaskList, fetchTicketDetail } from '@/store/slices/ticketsSlice';
 import { toast } from '@/hooks/use-toast';
 
 interface TaskApprovalActionsProps {
@@ -24,7 +24,9 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
   canApprove,
   currentStatus,
   currentUserId,
-  assignedToId
+  assignedToId,
+  refreshticketdetail = false,
+  setRefreshticketdetail
 }) => {
   const dispatch = useAppDispatch();
   const { isSubmitting } = useAppSelector(state => state.tickets);
@@ -35,27 +37,7 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
 
   // Check if current user can approve this ticket
   const assignedToIdNumber = typeof assignedToId === 'string' ? parseInt(assignedToId) : assignedToId;
-  const userCanApprove = canApprove ;
-
-  console.log("currentUserId", currentUserId);
-  console.log("assignedToId", assignedToId);
-  console.log("assignedToIdNumber", assignedToIdNumber);
-
-  console.log('=== TASK APPROVAL ACTIONS COMPONENT ===');
-  console.log('ticketId:', ticketId);
-  console.log('approvalOrder:', approvalOrder);
-  console.log('canApprove:', canApprove);
-  console.log('currentStatus:', currentStatus);
-  console.log('currentUserId:', currentUserId);
-  console.log('assignedToId:', assignedToId);
-  console.log('userCanApprove calculation:');
-  console.log('  canApprove:', canApprove);
-  console.log('  currentStatus === 0:', currentStatus === 0);
-  console.log('  currentUserId truthy:', !!currentUserId);
-  console.log('  assignedToIdNumber truthy:', !!assignedToIdNumber);
-  console.log('  IDs match:', currentUserId === assignedToIdNumber);
-  console.log('userCanApprove result:', userCanApprove);
-  console.log('=== END TASK APPROVAL ACTIONS COMPONENT ===');
+  const userCanApprove = canApprove;
 
   if (!userCanApprove) {
     console.log('TaskApprovalActions: Not rendering because userCanApprove is false');
@@ -77,6 +59,7 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
 
       // Refresh the task list
       dispatch(fetchTaskList(1));
+      setRefreshticketdetail(true)
       setComment('');
       setShowCommentBox(false);
     } catch (error) {
