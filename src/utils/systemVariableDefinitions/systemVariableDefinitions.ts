@@ -19,13 +19,20 @@ export interface SystemVariableContext {
   srfsamplecategoryes?: { samplecat_name: string;[key: string]: any }[];
   linkeddistributors?: { company_name: string;[key: string]: any }[];
   skulist?: { product_name_complete: string;[key: string]: any }[];
+  analyst?: { name: string;[key: string]: any }[];
+  country?: { country: string;[key: string]: any }[];
+
 }
 
 export const useSystemVariableContext = (): SystemVariableContext => {
   const auth = useAppSelector(state => state.auth);
   const userManagement = useAppSelector(state => state.userManagement);
+  //srf
   const srf = useAppSelector(state => state.srf);
   const sku = useAppSelector(state => state.sku);
+  //ps
+  const analyst = useAppSelector(state => state.analyst);
+  const country = useAppSelector(state => state.country);
 
   return {
     user: auth.user,
@@ -56,6 +63,8 @@ export const useSystemVariableContext = (): SystemVariableContext => {
       ...d
     })) || [],
     skulist: sku.skulist || [],
+    analyst: analyst.data || [],
+    country: country || [],
   };
 };
 
@@ -122,11 +131,11 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
   },
   {
     key: '${factoryplants}',
-    type: 'string[]',
+    type: 'any[]',
     description: 'Factory plant objects with id and label for filtering',
     resolve: (ctx) =>
     (ctx.factoryplants?.map(f => ({
-      plan_id: f.plan_id,
+      data_id: f.plan_id,
       label: f.plant_shortname,
       description: f.plant_description,
     })) || []),
@@ -148,5 +157,22 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
     type: 'string[]',
     description: 'List All SKUs',
     resolve: (ctx) => ctx.skulist?.map(d => d.product_name_complete) || [],
+  },
+  {
+    key: '${analystlist}',
+    type: 'string[]',
+    description: 'List All Analysts',
+    resolve: (ctx) => ctx.analyst?.map(d => ({ label: d.name, data_id: d.employee_id })) || [],
+  },
+  {
+    key: '${countrylist}',
+    type: 'any[]',
+    description: 'Country objects with id and employee for filtering',
+    resolve: (ctx) =>
+    (ctx.country?.data?.map(f => ({
+      data_id: f.country_id,
+      label: f.country,
+      attribute1: f.employee_id,
+    })) || [])
   },
 ];

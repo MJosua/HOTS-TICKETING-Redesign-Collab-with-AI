@@ -1,11 +1,15 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Package, AlertTriangle, CheckCircle, Database } from 'lucide-react';
 import { WidgetProps } from '@/types/widgetTypes';
 import { API_URL } from '@/config/sourceConfig';
+import { fetchAnalyst } from '@/store/slices/analystslice';
+import { useDispatch } from 'react-redux';
+import { useAppSelector } from '@/hooks/useAppSelector';
+import { fetchCountry } from '@/store/slices/countryslice';
 
 // Sample stock data
 const downloadData = [
@@ -22,116 +26,101 @@ const Default_item_download: React.FC<WidgetProps> = ({
     const matchedFile = downloadData.find(
         (item) => item.service_id === serviceInfo?.service_id
     );
-
     const downloadUrl = matchedFile?.url || '#';
-
-
-    const getAnalyst = async () => {
-
-        axios.get(`${API_URL}/hots_Tps/analyst`, {
-            headers: {
-                Authorization: `Bearer ${"tokek", userToken}`,
-            },
-        }).then((res) => {
-            // console.log("res analyst", res.data.results)
-            setAnalystList(res.data.results)
-        })
-            .catch((err) => {
-                console.err("errorGetData", err)
-            });
-
-    }
-
+    const analystState = useAppSelector(state => state.analyst);
+    // analyst.data for data.
+    const dispatch = useDispatch()
     useEffect(() => {
-        getAnalyst()
+        dispatch(fetchAnalyst())
+        dispatch(fetchCountry())
     }, [])
 
-    const getCountry = async (AnalystID) => {
+    // const getCountry = async (AnalystID) => {
 
-        axios.get(`${API_URL}/hots_Tps/country/${AnalystID}`, {
-            headers: {
-                Authorization: `Bearer ${"tokek", userToken}`,
-            },
-        }).then((res) => {
-            // console.log("selectCountry", res.data.results)
-            setCountryList(res.data.results)
-            getRegion(res.data.results[0].country_id)
-            setCountry(res.data.results[0].country_id)
-            getDistributor(res.data.results[0].country_id)
+    //     axios.get(`${API_URL}/hots_Tps/country/${AnalystID}`, {
+    //         headers: {
+    //             Authorization: `Bearer ${"tokek", userToken}`,
+    //         },
+    //     }).then((res) => {
+    //         // console.log("selectCountry", res.data.results)
+    //         setCountryList(res.data.results)
+    //         getRegion(res.data.results[0].country_id)
+    //         setCountry(res.data.results[0].country_id)
+    //         getDistributor(res.data.results[0].country_id)
 
-        })
-            .catch((err) => {
-                console.log("errorGetData", err)
-                setCountryList([])
-                setAnalyst()
-                setCountry()
-                setRegion()
-                setRegionList([])
-                setDistributor()
-                setDistributorlist([])
-                setPort()
-                setPortlist([])
-                setSku()
-                setSkulist([])
-            });
+    //     })
+    //         .catch((err) => {
+    //             console.log("errorGetData", err)
+    //             setCountryList([])
+    //             setAnalyst()
+    //             setCountry()
+    //             setRegion()
+    //             setRegionList([])
+    //             setDistributor()
+    //             setDistributorlist([])
+    //             setPort()
+    //             setPortlist([])
+    //             setSku()
+    //             setSkulist([])
+    //         });
 
-    }
+    // }
 
-    const getRegion = async (selectedCountry) => {
+    // const getRegion = async (selectedCountry) => {
 
-        axios.get(`${API_URL}/hots_Tps/region/${selectedCountry}`, {
-            headers: {
-                Authorization: `Bearer ${"tokek", userToken}`,
-            },
-        }).then((res) => {
-            setRegionList(res.data.results)
-            // console.log("results region", ` ${selectedCountry}`, res.data.results)
-            setRegion(res.data.results[0].region_id)
-        })
-            .catch((err) => {
-                console.err("errorGetData", err)
-            });
+    //     axios.get(`${API_URL}/hots_Tps/region/${selectedCountry}`, {
+    //         headers: {
+    //             Authorization: `Bearer ${"tokek", userToken}`,
+    //         },
+    //     }).then((res) => {
+    //         setRegionList(res.data.results)
+    //         // console.log("results region", ` ${selectedCountry}`, res.data.results)
+    //         setRegion(res.data.results[0].region_id)
+    //     })
+    //         .catch((err) => {
+    //             console.err("errorGetData", err)
+    //         });
 
-    }
+    // }
 
 
 
-    const getDistributor = async (idcountry) => {
+    // const getDistributor = async (idcountry) => {
 
-        axios.get(`${API_URL}/hots_Tps/distributor/${idcountry}`, {
-            headers: {
-                Authorization: `Bearer ${"tokek", userToken}`,
-            },
-        }).then((res) => {
-            setDistributorlist(res.data.results)
-            // console.log("results distributor", ` ${idcountry}`, res.data.results)
-            setDistributor(res.data.results[0].company_id)
-            getPort(res.data.results[0].company_id)
-            getSKU(res.data.results[0].company_id)
+    //     axios.get(`${API_URL}/hots_Tps/distributor/${idcountry}`, {
+    //         headers: {
+    //             Authorization: `Bearer ${"tokek", userToken}`,
+    //         },
+    //     }).then((res) => {
+    //         setDistributorlist(res.data.results)
+    //         // console.log("results distributor", ` ${idcountry}`, res.data.results)
+    //         setDistributor(res.data.results[0].company_id)
+    //         getPort(res.data.results[0].company_id)
+    //         getSKU(res.data.results[0].company_id)
 
-        })
-            .catch((err) => {
-                console.err("errorGetData", err)
-            });
+    //     })
+    //         .catch((err) => {
+    //             console.err("errorGetData", err)
+    //         });
 
-    }
+    // }
 
-    const getPort = async (idcompany) => {
+    // const getPort = async (idcompany) => {
 
-        axios.get(`${API_URL}/hots_Tps/port/${idcompany}`, {
-            headers: {
-                Authorization: `Bearer ${"tokek", userToken}`,
-            },
-        }).then((res) => {
-            setPortlist(res.data.results)
-            // console.log("results port", ` ${idcompany}`, res.data.results)
-            setPort(res.data.results[0].harbour_id)
-        })
-            .catch((err) => {
-                console.log("errorGetData", err)
-            });
+    //     axios.get(`${API_URL}/hots_Tps/port/${idcompany}`, {
+    //         headers: {
+    //             Authorization: `Bearer ${"tokek", userToken}`,
+    //         },
+    //     }).then((res) => {
+    //         setPortlist(res.data.results)
+    //         // console.log("results port", ` ${idcompany}`, res.data.results)
+    //         setPort(res.data.results[0].harbour_id)
+    //     })
+    //         .catch((err) => {
+    //             console.log("errorGetData", err)
+    //         });
 
-    }
+    // }
 
 
     return (

@@ -7,7 +7,7 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     id: "gantt_room_schedule",
     name: "Room Usage Gantt Chart",
     description: "Display current week's room usage as a Gantt chart",
-    componentPath: "widgets/GanttRoomUsage",
+    componentPath: "GanttRoomUsage",
     applicableTo: ["form"],
     dataRequirements: ["roomData", "scheduleData"],
     category: "Scheduling"
@@ -17,7 +17,7 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     id: "gantt_room_schedule_static",
     name: "Room Usage Gantt Chart Static",
     description: "Display current week's room usage as a Gantt chart",
-    componentPath: "widgets/GanttRoomUsageStatic",
+    componentPath: "GanttRoomUsageStatic",
     applicableTo: [ "ticket_detail"],
     dataRequirements: ["roomData", "scheduleData"],
     category: "Scheduling"
@@ -27,7 +27,7 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     id: "stock_overview",
     name: "Stock Overview",
     description: "Show real-time item stock status",
-    componentPath: "widgets/StockOverview",
+    componentPath: "StockOverview",
     applicableTo: ["form"],
     dataRequirements: ["stockData"],
     category: "Inventory"
@@ -36,7 +36,7 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     id: "team_workload",
     name: "Team Workload Chart",
     description: "Display current team workload and capacity",
-    componentPath: "widgets/TeamWorkload",
+    componentPath: "TeamWorkload",
     applicableTo: ["form", "ticket_detail"],
     dataRequirements: ["teamData", "workloadData"],
     category: "Analytics"
@@ -47,7 +47,7 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     id: "default_item_download",
     name: "Default item download",
     description: "Display template for download",
-    componentPath: "widgets/Default_item_download",
+    componentPath: "Default_item_download",
     applicableTo: ["form"],
     dataRequirements: [],
     category: "Template"
@@ -57,7 +57,7 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     id: "recent_requests",
     name: "Recent Similar Requests",
     description: "Show recent requests of the same type",
-    componentPath: "widgets/RecentRequests",
+    componentPath: "RecentRequests",
     applicableTo: ["form"],
     dataRequirements: ["historyData"],
     category: "History"
