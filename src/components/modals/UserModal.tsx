@@ -46,27 +46,33 @@ const UserModal: React.FC<UserModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  onEdit,
   user,
   roles,
   departments,
 }) => {
-  const [formData, setFormData] = useState<UserType>(() => ({
-    user_name: user?.user_name || '',
-    firstname: user?.firstname || '',
-    lastname: user?.lastname || '',
-    uid: user?.uid || '',
-    email: user?.email || '',
-    role_id: user?.role_id || 1,
-    role_name: user?.role_name || '',
-    department_id: user?.department_id || 1,
-    team_name: user?.team_name || '',
-    job_title: user?.job_title || '',
-    is_active: user?.is_active ?? true,
-    is_deleted: user?.is_deleted ?? false,
-  }));
+  const emptyUser: UserType = {
+    user_name: '',
+    firstname: '',
+    lastname: '',
+    uid: '',
+    email: '',
+    role_id: roles[0]?.role_id || 1,
+    role_name: '',
+    department_id: departments[0]?.department_id || 1,
+    team_name: '',
+    job_title: '',
+    is_active: true,
+    is_deleted: false,
+  };
+
+  const [formData, setFormData] = useState<UserType>(user ?? emptyUser);
 
   useEffect(() => {
     if (user) {
+      const dept = departments.find(d => d.department_name === user.department_name);
+      const role = roles.find(r => r.role_name === user.role_name);
+
       setFormData({
         user_id: user.user_id,
         user_name: user.user_name,
@@ -74,22 +80,31 @@ const UserModal: React.FC<UserModalProps> = ({
         lastname: user.lastname,
         uid: user.uid,
         email: user.email,
-        role_id: user.role_id,
-        role_name: user.role_name || '',
-        department_id: user.department_id,
-        team_name: user.team_name || '',
-        job_title: user.job_title,
+        role_id: role?.role_id || 1,
+        role_name: role?.role_name || '',
+        department_id: dept?.department_id || departments[0]?.department_id || 1,
+        team_name: dept?.department_name || '',
+        job_title: user.job_title || '',
         is_active: user.is_active,
         is_deleted: user.is_deleted,
       });
+    } else {
+      setFormData(emptyUser);
     }
-  }, [user]);
+  }, [user, departments, roles]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-  };
+    if (user) {
+      console.log("jalan")
+      onEdit(formData);
+    }
+    else{
+      console.log("jalan2")
 
+      onSave(formData)
+    }
+  };
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -126,18 +141,6 @@ const UserModal: React.FC<UserModalProps> = ({
             <Label htmlFor="user_name">Username</Label>
             <Input
               id="user_name"
-              value={formData.user_name}
-              onChange={(e) =>
-                setFormData({ ...formData, user_name: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="uid">Employee ID</Label>
-            <Input
-              id="uid"
               value={formData.uid}
               onChange={(e) =>
                 setFormData({ ...formData, uid: e.target.value })
@@ -146,29 +149,8 @@ const UserModal: React.FC<UserModalProps> = ({
             />
           </div>
 
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              required
-            />
-          </div>
 
-          <div>
-            <Label htmlFor="job_title">Job Title</Label>
-            <Input
-              id="job_title"
-              value={formData.job_title}
-              onChange={(e) =>
-                setFormData({ ...formData, job_title: e.target.value })
-              }
-            />
-          </div>
+
 
           <div>
             <Label htmlFor="role">Role</Label>
@@ -203,7 +185,7 @@ const UserModal: React.FC<UserModalProps> = ({
           <div>
             <Label htmlFor="department">Department</Label>
             <Select
-              value={formData.department_id.toString()}
+              value={formData.department_id ? formData.department_id.toString() : '-'}
               onValueChange={(value) => {
                 const deptId = parseInt(value);
                 const dept = departments.find(

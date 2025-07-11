@@ -35,7 +35,9 @@ import {
   deleteWorkflowGroup,
   createWorkflowStep,
   fetchWorkflowSteps,
-  removeTeamMember
+  removeTeamMember,
+  updateUser,
+  createUser
 } from '@/store/slices/userManagementSlice';
 import axios from 'axios';
 import { API_URL } from '@/config/sourceConfig';
@@ -171,8 +173,9 @@ const UserManagement = () => {
     setIsUserModalOpen(true);
   };
 
-  const handleEditUser = (user: UserType) => {
+  const handleModalEditUser = (user: UserType) => {
     setSelectedUser(user);
+    console.log("user", user)
     setModalMode('edit');
     setIsUserModalOpen(true);
   };
@@ -182,8 +185,21 @@ const UserManagement = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSaveUser = (user: any) => {
-    dispatch(fetchUsers()); // Refresh data after save
+  const handleEditUser = (user: UserType) => {
+    if (!user.user_id) return; // avoid error if ID doesn't exist
+    dispatch(updateUser({ id: user.user_id, data: user }));
+    setIsUserModalOpen(false)
+    dispatch(fetchUsers()); // Refresh data
+
+  };
+
+  const handleSaveUser = (user: UserType) => {
+    console.log("user",user)
+    if (!user.uid) return; // avoid error if ID doesn't exist
+    dispatch(createUser(user));
+    setIsUserModalOpen(false)
+    dispatch(fetchUsers()); // Refresh data
+
   };
 
   // Team handlers
@@ -535,7 +551,7 @@ const UserManagement = () => {
                           <TableCell className="text-gray-600">{user.job_title || 'No title'}</TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
-                              <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
+                              <Button variant="outline" size="sm" onClick={() => handleModalEditUser(user)}>
                                 <Edit className="w-4 h-4" />
                               </Button>
                               {!user.is_deleted && user.is_active && (
@@ -671,6 +687,7 @@ const UserManagement = () => {
           roles={roles}
           departments={departments}
           onSave={handleSaveUser}
+          onEdit={handleEditUser}
         />
 
         <TeamModal

@@ -34,10 +34,10 @@ const WidgetError = ({ error, widgetName }: { error: string; widgetName: string 
   </Alert>
 );
 
-export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ 
-  config, 
-  data = {}, 
-  className = "" 
+export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
+  config,
+  data = {},
+  className = ""
 }) => {
   const LazyWidget = useMemo(() => {
     try {

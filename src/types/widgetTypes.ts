@@ -15,12 +15,14 @@ export interface ServiceWidgetAssignment {
 }
 
 export interface WidgetProps {
-  ticketData?: any;
+  serviceInfo?: any;
   formData?: any;
   userData?: any;
   serviceId?: string;
-  currentDateRange?: { start: Date; end: Date };
-  [key: string]: any;
+  currentDateRange?: {
+    start: Date;
+    end: Date;
+  };
 }
 
 export interface WidgetConfig extends WidgetPreset {

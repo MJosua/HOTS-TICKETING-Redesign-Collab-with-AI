@@ -26,7 +26,7 @@ interface DynamicFormProps {
   serviceId?: string;
 }
 
-export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serviceId }) => {
+export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, onSubmit, serviceId }) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -312,6 +312,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
           key={widget.id}
           config={widget}
           data={{
+            serviceInfo: serviceInfo,
             formData: watchedValues,
             userData: user,
             serviceId,

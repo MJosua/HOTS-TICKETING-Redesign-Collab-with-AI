@@ -221,7 +221,7 @@ export const updateUser = createAsyncThunk(
         'Content-Type': 'application/json'
       }
     });
-    // console.log("user updated", response.data);
+    console.log("user updated", response.data);
     return response.data.data || response.data;
   }
 );

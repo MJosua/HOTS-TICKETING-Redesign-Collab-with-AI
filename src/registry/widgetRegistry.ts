@@ -41,6 +41,18 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     dataRequirements: ["teamData", "workloadData"],
     category: "Analytics"
   },
+
+
+  default_item_download: {
+    id: "default_item_download",
+    name: "Default item download",
+    description: "Display template for download",
+    componentPath: "widgets/Default_item_download",
+    applicableTo: ["form"],
+    dataRequirements: [],
+    category: "Template"
+  },
+
   recent_requests: {
     id: "recent_requests",
     name: "Recent Similar Requests",

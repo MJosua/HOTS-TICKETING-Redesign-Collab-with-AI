@@ -148,12 +148,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   const getDefaultValue = () => {
     if (field.default) {
       const resolved = resolveSystemVariable(field.default, systemContext);
-      console.log('🔧 Default value resolution:', {
-        field: field.name,
-        original: field.default,
-        resolved: resolved,
-        context: systemContext
-      });
+     
       return Array.isArray(resolved) ? resolved.join(', ') : resolved;
     }
     return '';

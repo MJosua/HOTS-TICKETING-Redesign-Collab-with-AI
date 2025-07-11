@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/hooks/useAppSelector';
-import { Team, UserType, fetchTeamMembers } from '@/store/slices/userManagementSlice';
+import { Team, UserType, fetchTeamMembers, fetchUsers } from '@/store/slices/userManagementSlice';
 
 interface TeamModalProps {
   isOpen: boolean;
@@ -27,6 +27,17 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
     team_name: '',
     department_id: '',
   });
+
+
+  useEffect(() => {
+    dispatch(fetchUsers)
+  }, [dispatch])
+  
+
+  console.log("departments",departments)
+  console.log("users",users)
+  console.log("formData",formData)
+
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [teamLeader, setTeamLeader] = useState<number | null>(null);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
@@ -109,7 +120,6 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
     const isActive = user.is_active && !user.is_deleted;
     const departmentMatch =
       !formData.department_id || user.department_id === Number(formData.department_id);
-
     if (isUnique && isActive && departmentMatch) {
       seenUserIds.add(user.user_id!);
       return true;

@@ -64,7 +64,6 @@ export const loginUser = createAsyncThunk(
         uid: username,
         asin: password,
       });
-
       if (response.data.success) {
         const { tokek, userData } = response.data;
         localStorage.setItem('tokek', tokek);
@@ -138,7 +137,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.token = action.payload.token;
-        state.user = action.payload.userData;
+        state.user = action.payload.userData.uid;
         state.error = null;
         state.loginAttempts = 0;
         state.isLocked = false;
