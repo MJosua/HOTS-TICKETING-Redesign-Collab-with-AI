@@ -21,7 +21,10 @@ export interface SystemVariableContext {
   skulist?: { product_name_complete: string;[key: string]: any }[];
   analyst?: { name: string;[key: string]: any }[];
   country?: { country: string;[key: string]: any }[];
-
+  srf_purpose?: {
+    [key: string]: any;
+    purpose: string;
+  }
 }
 
 export const useSystemVariableContext = (): SystemVariableContext => {
@@ -30,9 +33,11 @@ export const useSystemVariableContext = (): SystemVariableContext => {
   //srf
   const srf = useAppSelector(state => state.srf);
   const sku = useAppSelector(state => state.sku);
+  const srf_purpose = useAppSelector(state => state.srf_purpose)
   //ps
   const analyst = useAppSelector(state => state.analyst);
   const country = useAppSelector(state => state.country);
+
 
   return {
     user: auth.user,
@@ -65,6 +70,7 @@ export const useSystemVariableContext = (): SystemVariableContext => {
     skulist: sku.skulist || [],
     analyst: analyst.data || [],
     country: country || [],
+    srf_purpose: srf_purpose || [],
   };
 };
 
@@ -174,5 +180,11 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
       label: f.country,
       attribute1: f.employee_id,
     })) || [])
+  },
+  {
+    key: '${srf_purpose}',
+    type: 'string[]',
+    description: 'List All purpose for srf',
+    resolve: (ctx) => ctx.srf_purpose.data?.map(d => ({ label: d.purpose, data_id: d.id })) || [],
   },
 ];

@@ -45,6 +45,7 @@ import { fetchTaskList, fetchTaskCount } from '@/store/slices/ticketsSlice';
 
 import { AppDispatch } from './store';
 import { useAppSelector } from "./hooks/useAppSelector";
+import { fetchSrf_Puprose } from "./store/slices/srf_purpose";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const AppContentInner = () => {
     dispatch(fetchDepartments());
     dispatch(fetchSRF());
     dispatch(fetchsku());
+    dispatch(fetchSrf_Puprose());
 
 
   }, [dispatch]);

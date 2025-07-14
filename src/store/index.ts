@@ -9,6 +9,8 @@ import srfSliceReducer from './slices/srf_slice';
 import skuSliceReducer from './slices/SKUslice';
 import analystSliceReducer from './slices/analystslice';
 import countrySliceReducer from './slices/countrySlice';
+import srf_purposeSlideRecuder from './slices/srf_purpose';
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -22,6 +24,8 @@ export const store = configureStore({
 
     analyst: analystSliceReducer,
     country: countrySliceReducer,
+
+    srf_purpose: srf_purposeSlideRecuder,
 
   },
 });
