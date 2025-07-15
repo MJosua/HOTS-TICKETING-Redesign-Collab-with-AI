@@ -62,6 +62,7 @@ const GanttRoomUsage: React.FC<WidgetProps> = ({ ticketData, formData, currentDa
         if (formattedData.length > 0) {
           setSelectedRoom(formattedData[0].room);
         }
+        console.log("rawData",rawData)
       })
       .catch((err) => {
         console.error("Error fetching meeting room data:", err);
