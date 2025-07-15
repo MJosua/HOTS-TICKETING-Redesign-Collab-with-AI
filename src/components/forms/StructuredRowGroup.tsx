@@ -1,3 +1,4 @@
+
 // StructuredRowGroup.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
@@ -74,7 +75,6 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       ];
       onUpdateRowGroup(groupIndex, defaultRow);
     }
-
   }, []);
 
   // Compute total of secondValue fields as numbers
@@ -137,43 +137,25 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     onUpdateRowGroup(groupIndex, updatedRows);
   };
 
-
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [filteredOptions, setFilteredOptions] = useState<string[]>(rowGroup.options || []);
-
 
   const resolveOptions = (options: string[]) => {
     return options.map(option => {
       const resolved = resolveSystemVariable(option, systemContext);
-      // console.log('🔧 System Variable Resolution:', {
-      //   original: option,
-      //   resolved: resolved,
-      //   context: systemContext
-      // });
-      // Instead of joining arrays into a string, flatten arrays to individual options
       return Array.isArray(resolved) ? resolved : [resolved];
     }).flat();
   };
-
-
 
   useEffect(() => {
     if (structure.firstColumn.type === 'suggestion-insert') {
       if (Array.isArray(structure?.firstColumn.options)) {
         const resolvedSuggestions = resolveOptions(structure?.firstColumn.options);
         setSuggestions(resolvedSuggestions);
-      } else if (filteredOptions.length > 0) {
-        // Use filtered options as fallback suggestions
-        setSuggestions(filteredOptions);
       } else {
-        // If nothing is available, clear suggestions
         setSuggestions([]);
       }
     }
-  }, [structure, rowGroup?.suggestions, filteredOptions]);
-
-
-
+  }, [structure]);
 
   const renderField = (
     column: 'firstColumn' | 'secondColumn' | 'thirdColumn',
@@ -182,7 +164,6 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   ) => {
     const colDef = structure[column];
     switch (colDef.type) {
-
       case 'select':
         const options =
           column === 'thirdColumn' ? resolvedThirdOptions :
@@ -214,9 +195,10 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       case 'suggestion-insert':
         return (
           <SuggestionInsertInput
-            suggestions={suggestions.map(s => (typeof s === 'object' && s !== null ? s.label || s.name || JSON.stringify(s) : s))}
+            suggestions={suggestions.map(s => s && (typeof s === 'object' && s !== null ? (s as any).label || (s as any).name || JSON.stringify(s) : s)).filter(Boolean)}
             placeholder={colDef.placeholder || "Type or select from suggestions"}
             onChange={val => onChange(val)}
+            onEnter={val => onChange(val)}
           />
         );
 
@@ -231,15 +213,6 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     }
   };
 
-  // useEffect(() => {
-  //   first
-
-  //   return () => {
-  //     second
-  //   }
-  // }, [third])
-
-
   return (
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
@@ -248,7 +221,6 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 
       <Card className="relative">
         <CardContent className="pt-4 space-y-4">
-
           {/* Header Labels */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mt-4">
             <div className="col-span-1 md:col-span-3">
@@ -261,12 +233,10 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
               <label className="text-sm font-medium mb-1 block">{structure.thirdColumn.label}</label>
             </div>
           </div>
-          {console.log("rows", rows)}
+          
           {/* Row Entries */}
           {rows.map((row, index) => (
             <div key={row.id} className="relative">
-
-
               <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-start mb-4">
                 <div className="col-span-1 md:col-span-3">
                   {renderField('firstColumn', row.firstValue, val => updateRow(row.id, 'first', val))}
@@ -294,7 +264,6 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           ))}
@@ -305,9 +274,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
             <label className="text-sm font-medium text-right flex items-center justify-end h-full">
               Total Pcs
             </label>
-
             <div className="col-span-1 md:col-span-2">
-              {/* Insert total value or field here if needed */}
               <Input readOnly value={totalSecondValueA.toString()} />
             </div>
           </div>
@@ -317,24 +284,18 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
             <label className="text-sm font-medium text-right flex items-center justify-end h-full">
               Total Ctns
             </label>
-
             <div className="col-span-1 md:col-span-2">
-              {/* Insert total value or field here if needed */}
               <Input readOnly value={totalSecondValueB.toString()} />
             </div>
           </div>
-
         </CardContent>
       </Card>
-
-
-
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={addRow}>
           <Plus className="w-4 h-4" />
         </Button>
       </div>
-    </div >
+    </div>
   );
 };

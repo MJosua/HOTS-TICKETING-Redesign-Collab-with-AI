@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { DynamicForm } from './DynamicForm';
 import { FormSkeleton } from '@/components/ui/FormSkeleton';
@@ -216,7 +215,6 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
       <DynamicForm 
         config={formConfig} 
         onSubmit={onSubmit}
-        serviceInfo={serviceInfo} 
         serviceId={serviceInfo?.service_id?.toString()}
       />
     </div>

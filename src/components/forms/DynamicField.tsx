@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,11 +39,12 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       user: systemContext.user,
       departments: systemContext.departments?.length,
       factoryplants: systemContext.factoryplants?.length,
-      // Log other context keys without flooding
       contextKeys: Object.keys(systemContext)
     });
 
     return options.map((option, index) => {
+      if (!option) return '';
+      
       const resolved = resolveSystemVariable(option, systemContext);
       console.log(`🔧 [System Variables] Option[${index}] Resolution:`, {
         original: option,
@@ -51,12 +53,11 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         length: Array.isArray(resolved) ? resolved.length : 'N/A'
       });
       
-      // Handle array results by flattening them
       if (Array.isArray(resolved)) {
         return resolved;
       }
       return [resolved];
-    }).flat();
+    }).flat().filter(Boolean);
   };
 
   // Enhanced chain link filtering with proper data value filtering
@@ -66,7 +67,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       return;
     }
 
-    const parentValue = watchedValues?.[field.dependsOn];
+    const parentValue = watchedValues?.[field.dependsOn || ''];
     const resolvedOptions = resolveOptions(field.options) || [];
     
     console.log('🔗 [Chain Link] Processing field:', {
@@ -84,24 +85,22 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       console.log('🔍 [Chain Link] Advanced filtering with key:', key);
       
       const filtered = resolvedOptions.filter((option, index) => {
+        if (!option) return false;
+        
         let dataValue: any;
         
         // Handle different option formats
         if (typeof option === 'object' && option !== null) {
-          // Direct object access
-          dataValue = option[key];
+          dataValue = (option as any)[key];
         } else if (typeof option === 'string') {
           try {
-            // Try to parse as JSON first
             const parsed = JSON.parse(option);
             dataValue = parsed[key];
           } catch {
-            // If not JSON, treat as plain string for simple matching
             dataValue = option;
           }
         }
         
-        // Perform the actual filtering based on data values
         const match = String(dataValue || '')
           .trim()
           .toLowerCase()
@@ -131,21 +130,22 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       console.log('🔗 [Chain Link] Simple filtering fallback');
       
       const fallbackFiltered = resolvedOptions.filter(option => {
+        if (!option) return false;
+        
         if (typeof option === 'string') {
           return option.toLowerCase().includes(String(parentValue).toLowerCase());
         }
-        if (typeof option === 'object' && option !== null && typeof option.label === 'string') {
-          return option.label.toLowerCase().includes(String(parentValue).toLowerCase());
+        if (typeof option === 'object' && option !== null && typeof (option as any).label === 'string') {
+          return (option as any).label.toLowerCase().includes(String(parentValue).toLowerCase());
         }
         return false;
       });
 
       setFilteredOptions(fallbackFiltered);
     } else {
-      // No filtering needed
       setFilteredOptions(resolvedOptions);
     }
-  }, [field.options, watchedValues?.[field.dependsOn], field.dependsOn, field.filterOptionsBy, systemContext]);
+  }, [field.options, watchedValues?.[field.dependsOn || ''], field.dependsOn, field.filterOptionsBy, systemContext]);
 
   // Handle suggestion-insert type
   useEffect(() => {
@@ -154,7 +154,6 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         const resolvedSuggestions = resolveOptions(field.suggestions);
         setSuggestions(resolvedSuggestions);
       } else if (filteredOptions.length > 0) {
-        // Use filtered options as suggestions
         setSuggestions(filteredOptions);
       }
     }
@@ -225,10 +224,13 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             </SelectTrigger>
             <SelectContent className="bg-white border shadow-lg z-50">
               {filteredOptions.map((option, index) => {
+                if (!option) return null;
+                
                 if (typeof option === 'object' && option !== null) {
+                  const objOption = option as any;
                   return (
-                    <SelectItem key={option.label ?? index} value={option.label}>
-                      {option.label || option.description || JSON.stringify(option)}
+                    <SelectItem key={objOption.label ?? index} value={objOption.label || ''}>
+                      {objOption.label || objOption.description || JSON.stringify(option)}
                     </SelectItem>
                   );
                 }
@@ -255,11 +257,12 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       case 'suggestion-insert':
         return (
           <SuggestionInsertInput
-            suggestions={suggestions.map(s => (typeof s === 'object' && s !== null ? s.label || s.name || JSON.stringify(s) : s))}
+            suggestions={suggestions.map(s => s && (typeof s === 'object' && s !== null ? (s as any).label || (s as any).name || JSON.stringify(s) : s)).filter(Boolean)}
             placeholder={field.placeholder || "Type or select from suggestions"}
             readOnly={field.readonly}
             defaultValue={localValue}
             onChange={handleChange}
+            onEnter={handleChange}
           />
         );
 

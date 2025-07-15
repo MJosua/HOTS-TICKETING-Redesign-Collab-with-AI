@@ -1,123 +1,140 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Check, ChevronDown } from 'lucide-react';
 
-interface SuggestionInsertInputProps {
+export interface SuggestionInsertInputProps {
   suggestions: string[];
   placeholder?: string;
-  readOnly?: boolean;
   defaultValue?: string;
-  onChange: (value: string) => void;
+  readOnly?: boolean;
+  onChange?: (value: string) => void;
+  onEnter?: (value: string) => void;
 }
 
 export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
   suggestions,
-  placeholder,
-  readOnly,
-  defaultValue,
-  onChange
+  placeholder = "Type or select suggestions",
+  defaultValue = "",
+  readOnly = false,
+  onChange = () => {},
+  onEnter = () => {},
 }) => {
-  const [inputValue, setInputValue] = useState(defaultValue || '');
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [value, setValue] = useState(defaultValue);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setInputValue(defaultValue || '');
-  }, [defaultValue]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setInputValue(value);
-    onChange(value);
-
-    if (value.length > 0) {
+    if (value.trim() === '') {
+      setFilteredSuggestions(suggestions);
+    } else {
       const filtered = suggestions.filter(suggestion =>
         suggestion.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredSuggestions(filtered);
-      setShowSuggestions(true);
-      setActiveIndex(-1);
-    } else {
-      setShowSuggestions(false);
-      setFilteredSuggestions([]);
     }
-  };
+    setSelectedIndex(-1);
+  }, [value, suggestions]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions || filteredSuggestions.length === 0) return;
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setActiveIndex(prev => 
-          prev < filteredSuggestions.length - 1 ? prev + 1 : 0
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setActiveIndex(prev => 
-          prev > 0 ? prev - 1 : filteredSuggestions.length - 1
-        );
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (activeIndex >= 0) {
-          handleSuggestionClick(activeIndex);
-        }
-        break;
-      case 'Escape':
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
-        setActiveIndex(-1);
-        break;
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+    onChange(newValue);
+    setShowSuggestions(true);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => 
+        prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIndex >= 0 && selectedIndex < filteredSuggestions.length) {
+        const selectedValue = filteredSuggestions[selectedIndex];
+        setValue(selectedValue);
+        onChange(selectedValue);
+        onEnter(selectedValue);
+        setShowSuggestions(false);
+      } else if (value.trim()) {
+        onEnter(value.trim());
+      }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      setSelectedIndex(-1);
     }
   };
 
-  const handleSuggestionClick = (index: number) => {
-    const selectedSuggestion = filteredSuggestions[index];
-    setInputValue(selectedSuggestion);
-    onChange(selectedSuggestion);
+  const handleSuggestionClick = (suggestion: string) => {
+    setValue(suggestion);
+    onChange(suggestion);
+    onEnter(suggestion);
     setShowSuggestions(false);
-    setActiveIndex(-1);
     inputRef.current?.focus();
   };
 
-  const handleBlur = () => {
-    // Delay hiding suggestions to allow click events
-    setTimeout(() => {
-      setShowSuggestions(false);
-      setActiveIndex(-1);
-    }, 150);
-  };
-
   return (
-    <div className="relative w-full">
-      <Input
-        ref={inputRef}
-        type="text"
-        placeholder={placeholder}
-        readOnly={readOnly}
-        value={inputValue}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
-        autoComplete="off"
-      />
+    <div ref={containerRef} className="relative w-full">
+      <div className="relative">
+        <Input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setShowSuggestions(true)}
+          placeholder={placeholder}
+          readOnly={readOnly}
+          className="pr-8"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="absolute right-0 top-0 h-full px-2"
+          onClick={() => setShowSuggestions(!showSuggestions)}
+          disabled={readOnly}
+        >
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </div>
+
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <ul className="absolute z-50 w-full max-h-48 overflow-auto rounded border border-gray-300 bg-white shadow-md mt-1">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
           {filteredSuggestions.map((suggestion, index) => (
-            <li
+            <div
               key={index}
-              className={`cursor-pointer px-3 py-2 hover:bg-gray-100 ${
-                index === activeIndex ? 'bg-gray-200 font-semibold' : ''
+              className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                index === selectedIndex ? 'bg-blue-100' : ''
               }`}
-              onMouseDown={() => handleSuggestionClick(index)}
+              onClick={() => handleSuggestionClick(suggestion)}
             >
-              {suggestion}
-            </li>
+              <div className="flex items-center justify-between">
+                <span>{suggestion}</span>
+                {index === selectedIndex && <Check className="h-4 w-4 text-blue-600" />}
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
