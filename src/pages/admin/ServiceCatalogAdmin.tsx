@@ -71,7 +71,7 @@ const ServiceCatalogAdmin = () => {
   }, [dispatch]);
 
   const forms: FormConfig[] = serviceCatalog.map(service => {
-    let parsedConfig = {};
+    let parsedConfig: any = {};
     try {
       if (service.form_json) {
         parsedConfig = JSON.parse(service.form_json);
@@ -83,18 +83,18 @@ const ServiceCatalogAdmin = () => {
     return {
       ...parsedConfig,
       id: service.service_id.toString(),
-      title: parsedConfig.title || service.service_name,
-      url: parsedConfig.url || `/${service.nav_link}`,
+      title: parsedConfig?.title || service.service_name,
+      url: parsedConfig?.url || `/${service.nav_link}`,
       servis_aktif: Number(service.active) || 0, // ← force DB value
       category: categoryList.find(cat => cat.category_id === service.category_id)?.category_name || 'Unknown',
-      description: parsedConfig.description || service.service_description,
-      apiEndpoint: parsedConfig.apiEndpoint || `/api/${service.nav_link}`,
-      approval: parsedConfig.approval || {
+      description: parsedConfig?.description || service.service_description,
+      apiEndpoint: parsedConfig?.apiEndpoint || `/api/${service.nav_link}`,
+      approval: parsedConfig?.approval || {
         steps: service.approval_level > 0 ? ['Manager', 'Supervisor'] : [],
         mode: 'sequential' as const
       },
-      fields: parsedConfig.fields || [],
-      rowGroups: parsedConfig.rowGroups || []
+      fields: parsedConfig?.fields || [],
+      rowGroups: parsedConfig?.rowGroups || []
     };
   });
 

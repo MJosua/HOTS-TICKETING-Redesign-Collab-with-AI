@@ -489,9 +489,9 @@ const TicketDetail = () => {
       toast({
         title: 'Error',
         description: 'Error when uploading comment.',
-        status: 'warning',
+        variant: 'destructive',
         duration: 3000,
-        isClosable: true,
+        // isClosable: true, // Not supported in shadcn toast
       });
     });
   };
@@ -590,7 +590,7 @@ const TicketDetail = () => {
   const handleImage = (e) => {
     setImage(e.target.files[0]);  // Store the actual file, not URL.createObjectURL
     setImagePreview(URL.createObjectURL(e.target.files[0]));
-    onCloseModalUploadImage();
+    // onCloseModalUploadImage(); // Function not defined
   };
   // Handle form submit to send comment and image
 
@@ -1101,7 +1101,7 @@ const TicketDetail = () => {
                             {date}
                           </div>
 
-                          {messages.map((msg) => (
+                          {(messages as any[]).map((msg) => (
                             <div
                               key={msg.id}
                               className={`flex mb-1 ${msg.sender_id === user.user_id ? 'justify-end' : 'justify-start'}`}
@@ -1161,7 +1161,7 @@ const TicketDetail = () => {
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
                           onPaste={handlePaste}
-                          disabled={isLoading || ticketDetail.status >= 2}
+                          disabled={isLoading || Number(ticketDetail.status) >= 2}
                           className="w-full px-4 py-2 min-h-[30px] max-h-[120px] resize-none border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
                         />
                       </div>
@@ -1170,7 +1170,7 @@ const TicketDetail = () => {
                         <button
                           type="button"
                           // onClick={onOpenModalUploadImage}
-                          disabled={isLoading || ticketDetail.status_id >= 2}
+                          disabled={isLoading || Number(ticketDetail.status) >= 2}
                           className="text-gray-600 hover:text-gray-800 disabled:opacity-50"
                         >
                           <Paperclip className="w-5 h-5" />
@@ -1179,7 +1179,7 @@ const TicketDetail = () => {
 
                         <button
                           type="submit"
-                          disabled={isLoading || ticketDetail.status_id >= 2}
+                          disabled={isLoading || Number(ticketDetail.status) >= 2}
                           className="text-gray-600 hover:text-blue-600 disabled:opacity-50"
                         >
                           <Send className="w-5 h-5" />
@@ -1196,7 +1196,8 @@ const TicketDetail = () => {
                               onClick={() => setImage(null)}
                               className="absolute top-0 right-0 text-gray-700 hover:text-red-500 mt-[-9px]"
                             >
-                              <IoIosCloseCircle size={20} />
+                               {/* <IoIosCloseCircle size={20} /> - Icon not imported */}
+                               <X size={20} />
                             </button>
 
                             <img

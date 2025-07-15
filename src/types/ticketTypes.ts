@@ -1,6 +1,7 @@
 
 export interface Approver {
   approver_id: number;
+  approver_leader?: string;
   approver_name: string;
   approval_order: number;
   approval_status: number;
@@ -40,6 +41,14 @@ export interface TicketDetail extends Ticket {
   department?: string;
   department_name?: string;
   requester?: string;
+  detail_rows?: Array<{
+    lbl_col?: string;
+    cstm_col?: string;
+    order_col?: number;
+  }>;
+  assigned_team?: string;
+  approver_leader?: string;
+  status_id?: number;
   items?: Array<{
     name: string;
     quantity: number;
