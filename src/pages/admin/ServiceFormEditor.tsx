@@ -480,7 +480,7 @@ const ServiceFormEditor = () => {
                               <SelectItem key={team.team_id} value={team.team_id.toString()}>
                                 <div className="flex flex-col text-start">
                                   <span className="font-medium">{team.team_name}</span>
-                                  <span className="text-sm text-gray-500">{team.department_name} </span>
+                                  <span className="text-sm text-gray-500">Dept ID: {team.department_id} </span>
                                 </div>
                               </SelectItem>
                             ))}

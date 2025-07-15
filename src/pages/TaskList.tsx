@@ -172,7 +172,7 @@ const TaskList = () => {
           return task.approvalSteps.find(
             approver =>
               approver.approval_order === task.current_step &&
-              approver.approver_id === Number(user?.user_id) && // Fixed property name and type
+              approver.approver === user?.user_id.toString() &&
               approver.status === 'pending'
           );
         };

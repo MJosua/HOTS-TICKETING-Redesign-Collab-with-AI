@@ -70,7 +70,7 @@ const countryslice = createSlice({
             })
             .addCase(fetchCountry.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload ?? 'Unknown error';
+                state.error = (action.payload as string) ?? 'Unknown error';
             });
     },
 });

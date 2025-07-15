@@ -38,7 +38,8 @@ interface UserModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (user: UserType) => void;
-  onEdit: (user: UserType) => void;
+  mode?: 'add' | 'edit';
+  onEdit?: (user: UserType) => void;
   user?: UserType | null;
   roles: Array<{ role_id: number; role_name: string }>;
   departments: Array<{ department_id: number; department_name: string }>;
@@ -48,7 +49,7 @@ const UserModal: React.FC<UserModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  onEdit,
+  onEdit = onSave,
   user,
   roles,
   departments,

@@ -154,7 +154,16 @@ const TicketDetail = () => {
   useEffect(() => {
     if (ticketDetail) {
       if (ticketDetail?.service_id.toLocaleString() === "6") {
-        setSelectedToEmails(ticketDetail.detail_rows.cstm_col)
+        try {
+          const cstmCol = ticketDetail.detail_rows?.[0]?.cstm_col;
+          if (cstmCol) {
+            const parsed = JSON.parse(cstmCol);
+            setSelectedToEmails(Array.isArray(parsed) ? parsed : []);
+          }
+        } catch (err) {
+          console.error("Failed to parse cstm_col:", err);
+          setSelectedToEmails([]);
+        }
       }
     }
   }, [dispatch])
@@ -1046,14 +1055,14 @@ const TicketDetail = () => {
                     .filter((a) => {
                       if (!user?.user_id) {
                         // user not loaded yet: fallback to only show leaders
-                        return a.approver_leader === 1;
+                        return Number(a.approver_leader) === 1;
                       }
 
                       const userIsApprover = approvalSteps.some((x) =>
                         x.id.startsWith(`${user.user_id}-`)
                       );
 
-                      return userIsApprover || a.approver_leader === 1;
+                      return userIsApprover || Number(a.approver_leader) === 1;
                     })
                     .sort((a, b) => a.order - b.order)
                     .map((step, index) => (

@@ -606,7 +606,7 @@ const UserManagement = () => {
                           <Badge variant="outline">{team.member_count || 0} members</Badge>
                         </TableCell>
                         <TableCell>
-                          {team.head_fullname || " - "}
+                          {team.leader_name || " - "}
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(team)}

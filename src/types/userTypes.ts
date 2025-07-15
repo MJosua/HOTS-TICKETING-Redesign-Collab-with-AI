@@ -47,8 +47,10 @@ export interface Team {
   team_id: number;
   team_name: string;
   department_id: number;
+  department_name?: string;
   creation_date: string;
   finished_date?: string | null;
   member_count: number;
   leader_name?: string;
+  head_fullname?: string;
 }

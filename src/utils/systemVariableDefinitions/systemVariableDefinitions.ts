@@ -1,6 +1,6 @@
 import { useAppSelector } from '@/hooks/useAppSelector';
 
-export type VariableType = 'string' | 'string[]';
+export type VariableType = 'string' | 'string[]' | 'array';
 
 export interface SystemVariableContext {
   user?: {
@@ -69,8 +69,8 @@ export const useSystemVariableContext = (): SystemVariableContext => {
     })) || [],
     skulist: sku.skulist || [],
     analyst: analyst.data || [],
-    country: country || [],
-    srf_purpose: srf_purpose || [],
+    country: (country as any)?.data || [],
+    srf_purpose: (srf_purpose as any)?.data || {},
   };
 };
 
@@ -137,14 +137,9 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
   },
   {
     key: '${factoryplants}',
-    type: 'any[]',
+    type: 'string[]',
     description: 'Factory plant objects with id and label for filtering',
-    resolve: (ctx) =>
-    (ctx.factoryplants?.map(f => ({
-      data_id: f.plan_id,
-      label: f.plant_shortname,
-      description: f.plant_description,
-    })) || []),
+    resolve: (ctx) => ctx.factoryplants?.map(f => `${f.plan_id}:${f.plant_shortname}`) || [],
   },
   {
     key: '${srfsamplecategoryes}',
@@ -168,23 +163,18 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
     key: '${analystlist}',
     type: 'string[]',
     description: 'List All Analysts',
-    resolve: (ctx) => ctx.analyst?.map(d => ({ label: d.name, data_id: d.employee_id })) || [],
+    resolve: (ctx) => ctx.analyst?.map(d => `${d.employee_id}:${d.name}`) || [],
   },
   {
     key: '${countrylist}',
-    type: 'any[]',
+    type: 'string[]',
     description: 'Country objects with id and employee for filtering',
-    resolve: (ctx) =>
-    (ctx.country?.data?.map(f => ({
-      data_id: f.country_id,
-      label: f.country,
-      attribute1: f.employee_id,
-    })) || [])
+    resolve: (ctx) => ctx.country?.map(f => `${f.country_id}:${f.country}`) || [],
   },
   {
     key: '${srf_purpose}',
     type: 'string[]',
     description: 'List All purpose for srf',
-    resolve: (ctx) => ctx.srf_purpose.data?.map(d => ({ label: d.purpose, data_id: d.id })) || [],
+    resolve: (ctx) => Array.isArray(ctx.srf_purpose) ? ctx.srf_purpose.map(d => d.purpose) : [],
   },
 ];

@@ -31,8 +31,8 @@ const Default_item_download: React.FC<WidgetProps> = ({
     // analyst.data for data.
     const dispatch = useDispatch()
     useEffect(() => {
-        dispatch(fetchAnalyst())
-        dispatch(fetchCountry())
+        dispatch(fetchAnalyst() as any)
+        dispatch(fetchCountry() as any)
     }, [])
 
     // const getCountry = async (AnalystID) => {
