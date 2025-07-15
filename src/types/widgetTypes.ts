@@ -19,6 +19,9 @@ export interface WidgetProps {
   formData?: any;
   userData?: any;
   serviceId?: string;
+  widgetId?: string;
+  widgetName?: string;
+  ticketData?: any;
   currentDateRange?: {
     start: Date;
     end: Date;

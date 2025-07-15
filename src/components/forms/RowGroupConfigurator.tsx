@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, GripVertical, Settings, Save, X } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, Trash2, GripVertical, Settings, Save, X, Info } from 'lucide-react';
 import { RowGroup, RowData } from '@/types/formTypes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -315,7 +316,6 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                     </Select>
                   </div>
                   <div>
-                    {console.log("localRowGroup", localRowGroup)}
                     {(localRowGroup.structure?.firstColumn?.type === 'select' || localRowGroup.structure?.firstColumn?.type === 'suggestion-insert') && (
                       <div>
                         <Label>Options (one per line)</Label>

@@ -8,7 +8,7 @@ import customFunctionReducer from './slices/customFunctionSlice';
 import srfSliceReducer from './slices/srf_slice';
 import skuSliceReducer from './slices/SKUslice';
 import analystSliceReducer from './slices/analystslice';
-import countrySliceReducer from './slices/countrySlice';
+import countrySliceReducer from './slices/countryslice';
 import srf_purposeSlideRecuder from './slices/srf_purpose';
 
 export const store = configureStore({

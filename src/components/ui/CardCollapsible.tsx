@@ -16,6 +16,7 @@ export const CardCollapsible = ({
     children?: React.ReactNode;
     defaultOpen?: boolean;
     className?: string;
+    color?: string;
 }) => {
     const [open, setOpen] = React.useState(defaultOpen);
 

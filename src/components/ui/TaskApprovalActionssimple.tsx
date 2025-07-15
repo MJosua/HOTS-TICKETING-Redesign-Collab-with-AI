@@ -16,6 +16,8 @@ interface TaskApprovalActionsProps {
   currentStatus: number;
   currentUserId?: number;
   assignedToId?: string | number;
+  refreshticketdetail?: boolean;
+  setRefreshticketdetail?: (value: boolean) => void;
 }
 
 const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
@@ -26,7 +28,7 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
   currentUserId,
   assignedToId,
   refreshticketdetail = false,
-  setRefreshticketdetail
+  setRefreshticketdetail = () => {}
 }) => {
   const dispatch = useAppDispatch();
   const { isSubmitting } = useAppSelector(state => state.tickets);
