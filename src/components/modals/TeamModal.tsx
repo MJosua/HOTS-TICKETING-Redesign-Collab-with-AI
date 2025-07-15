@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,12 +27,10 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
     department_id: '',
   });
 
-
   useEffect(() => {
-    dispatch(fetchUsers)
-  }, [dispatch])
+    dispatch(fetchUsers());
+  }, [dispatch]);
   
-
   console.log("departments",departments)
   console.log("users",users)
   console.log("formData",formData)
@@ -44,13 +41,11 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
 
   useEffect(() => {
     if (team && mode === 'edit') {
-      // console.log('Editing team:', team);
       setFormData({
         team_name: team.team_name,
         department_id: team.department_id.toString(),
       });
 
-      // Load existing team members
       if (team.team_id) {
         setIsLoadingMembers(true);
         dispatch(fetchTeamMembers(team.team_id))
@@ -58,10 +53,6 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
             if (result.payload && Array.isArray(result.payload)) {
               const memberUserIds = result.payload.map((member: any) => member.user_id);
               const leader = result.payload.find((member: any) => member.team_leader);
-
-              // console.log('Loaded team members:', result.payload);
-              // console.log('Member user IDs:', memberUserIds);
-              // console.log('Team leader:', leader);
 
               setSelectedUsers(memberUserIds);
               setTeamLeader(leader ? leader.user_id : null);
@@ -75,7 +66,6 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
           });
       }
     } else {
-      // Reset for add mode
       setFormData({
         team_name: '',
         department_id: '',
@@ -86,12 +76,10 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
   }, [team, mode, isOpen, dispatch]);
 
   const handleUserSelection = (userId: number, checked: boolean) => {
-    // console.log('User selection changed:', userId, checked);
     if (checked) {
       setSelectedUsers(prev => [...prev, userId]);
     } else {
       setSelectedUsers(prev => prev.filter(id => id !== userId));
-      // Remove as leader if unchecked
       if (teamLeader === userId) {
         setTeamLeader(null);
       }
@@ -99,10 +87,6 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
   };
 
   const handleSave = () => {
-    // console.log("Submitting team data:", formData);
-    // console.log("Selected users:", selectedUsers);
-    // console.log("Team leader:", teamLeader);
-
     const teamToSave = {
       ...formData,
       department_id: parseInt(formData.department_id),
@@ -138,7 +122,6 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Basic Team Information */}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="team_name">Team Name</Label>
@@ -157,7 +140,6 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
                 value={formData.department_id}
                 onValueChange={(value) => {
                   setFormData({ ...formData, department_id: value });
-                  // Clear selected users when department changes
                   setSelectedUsers([]);
                   setTeamLeader(null);
                 }}
@@ -176,7 +158,6 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
             </div>
           </div>
 
-          {/* Team Members Section */}
           {formData.department_id && (
             <Card>
               <CardHeader>
@@ -226,7 +207,6 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
             </Card>
           )}
 
-          {/* Selected Team Leader */}
           {teamLeader && (
             <div className="p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -37,6 +38,7 @@ interface UserModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (user: UserType) => void;
+  onEdit: (user: UserType) => void;
   user?: UserType | null;
   roles: Array<{ role_id: number; role_name: string }>;
   departments: Array<{ department_id: number; department_name: string }>;
@@ -70,8 +72,8 @@ const UserModal: React.FC<UserModalProps> = ({
 
   useEffect(() => {
     if (user) {
-      const dept = departments.find(d => d.department_name === user.department_name);
-      const role = roles.find(r => r.role_name === user.role_name);
+      const dept = departments.find(d => d.department_id === user.department_id);
+      const role = roles.find(r => r.role_id === user.role_id);
 
       setFormData({
         user_id: user.user_id,
@@ -105,6 +107,7 @@ const UserModal: React.FC<UserModalProps> = ({
       onSave(formData)
     }
   };
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -148,9 +151,6 @@ const UserModal: React.FC<UserModalProps> = ({
               required
             />
           </div>
-
-
-
 
           <div>
             <Label htmlFor="role">Role</Label>

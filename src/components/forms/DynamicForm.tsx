@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,7 @@ interface DynamicFormProps {
   serviceId?: string;
 }
 
-export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, onSubmit, serviceId }) => {
+export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serviceId }) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -41,16 +40,15 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
   const maxFields = useMemo(() => getMaxFormFields(), []);
   const [rowGroups, setRowGroups] = useState<RowGroup[]>(() => JSON.parse(JSON.stringify(config.rowGroups || [])));
   const [localFields, setLocalFields] = useState<FormField[]>(() => JSON.parse(JSON.stringify(config.fields || [])));
-  // Sync localFields with config.fields when config.fields changes
+
   React.useEffect(() => {
     setLocalFields(JSON.parse(JSON.stringify(config.fields || [])));
   }, [config.fields]);
 
-  // Get widgets from database for this service
   const serviceWidgetIds = useAppSelector(state =>
     serviceId ? selectServiceWidgets(state, parseInt(serviceId)) : []
   );
-  // Get widget configurations from registry
+  
   const assignedWidgets: WidgetConfig[] = useMemo(() => {
     const ids = Array.isArray(serviceWidgetIds)
       ? serviceWidgetIds
@@ -82,7 +80,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
       if (rg.isStructuredInput) {
         return acc + (structuredRowCounts[index] || 1);
       }
-      // For legacy row groups that contain FormField arrays
       return acc + (Array.isArray(rg.rowGroup) ? rg.rowGroup.length : 0);
     }, 0);
     return regularFields + rowGroupFields;
@@ -196,12 +193,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
     }
   };
 
-  // Helper function to get nested property value by path string, e.g. "linkeddistributors.plant_description"
   const getNestedProperty = (obj: any, path: string): any => {
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
   };
 
-  // Improved helper function to filter options of dependent fields based on filterOptionsBy key
   const filterDependentFieldOptions = (field: FormField, dependsOnValue: any): string[] => {
     if (!field.options || !field.filterOptionsBy) {
       console.log(`[filterDependentFieldOptions] No filterOptionsBy — return original options`);
@@ -214,7 +209,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
     let optionsArray: any[] = [];
 
     try {
-      // Try to parse JSON strings
       optionsArray = typeof field.options[0] === 'string' && field.options[0].startsWith('{')
         ? field.options.map(opt => JSON.parse(opt))
         : field.options;
@@ -238,9 +232,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
 
     console.log(`[filterDependentFieldOptions] Final mapped result:`, result);
 
-    return result.filter(Boolean); // remove null/undefined
+    return result.filter(Boolean);
   };
-
 
   const renderFieldsInRows = (fields: FormField[]) => {
     return (
@@ -249,7 +242,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
           const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
           if (!shouldShowField(field, watchedValues)) return null;
 
-          // For dependent fields, use filtered options
           let fieldToRender = field;
           if (field.dependsOn && watchedValues[field.dependsOn]) {
             const filteredOptions = filterDependentFieldOptions(field, watchedValues[field.dependsOn]);
@@ -263,14 +255,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
                 value={form.watch(fieldKey)}
                 onChange={(value) => {
                   form.setValue(fieldKey, value);
-                  // console.log('Field value changed:', fieldKey, value);
-                  // Update current field value
                   setWatchedValues(prev => {
                     const newValues = { ...prev, [fieldKey]: value };
                     return newValues;
                   });
 
-                  // Update dependent fields options based on new value
                   const updatedFields = (config.fields || []).map(f => {
                     if (f.dependsOn === field.name) {
                       const filteredOptions = filterDependentFieldOptions(f, value);
@@ -280,7 +269,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
                     return f;
                   });
 
-                  // Update config fields with filtered options
                   if (updatedFields.some(f => f.dependsOn === field.name)) {
                     console.log('Setting local fields with updated options');
                     setLocalFields(updatedFields);
@@ -296,7 +284,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
     );
   };
 
-  // Helper function to check if a row group is legacy (contains FormField[])
   const isLegacyRowGroup = (rg: RowGroup): rg is RowGroup & { rowGroup: FormField[] } => {
     return !rg.isStructuredInput &&
       Array.isArray(rg.rowGroup) &&
@@ -306,13 +293,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Render widgets from database configuration */}
       {assignedWidgets.map(widget => (
         <WidgetRenderer
           key={widget.id}
           config={widget}
           data={{
-            serviceInfo: serviceInfo,
             formData: watchedValues,
             userData: user,
             serviceId,
@@ -381,7 +366,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ serviceInfo, config, o
                       onUpdateRowGroup={handleUpdateRowGroup}
                     />
                   ) : (
-                    // Handle legacy row groups that contain FormField arrays
                     isLegacyRowGroup(rowGroup) ? (
                       <RowGroupField
                         rowGroup={rowGroup.rowGroup}
