@@ -177,6 +177,11 @@ export const getWidgetDataConfig = (serviceId: number, widgetId: string) => {
   return serviceConfig?.dataConfigs[widgetId];
 };
 
+// Widgets that should be excluded from dynamic data fetching
+export const excludedWidgets = new Set([
+  'default_item_download', // Handles its own data with Redux
+]);
+
 // Default widget data configuration for widgets without specific service configuration
 export const defaultWidgetDataConfig = {
   dataSources: [],

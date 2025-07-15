@@ -9,6 +9,8 @@ import { useDispatch } from 'react-redux';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import { fetchCountry } from '@/store/slices/countryslice';
 import { Skeleton } from '@/components/ui/skeleton';
+import { resolveSystemVariable } from '@/utils/systemVariableResolver';
+import { useSystemVariableContext } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
 
 // Sample stock data
 const downloadData = [
@@ -26,6 +28,14 @@ const Default_item_download: React.FC<WidgetProps> = ({
 }) => {
     const dispatch = useDispatch();
     const analystState = useAppSelector(state => state.analyst);
+    const countryState = useAppSelector(state => state.country);
+    
+    // Set up system variable context for template resolution
+    const systemVariableContext = useSystemVariableContext();
+    
+    // Update context with current data
+    systemVariableContext.analyst = analystState.data;
+    systemVariableContext.country = countryState.data;
 
     // Memoize the download data lookup to prevent unnecessary re-renders
     const downloadInfo = useMemo(() => {
@@ -53,8 +63,18 @@ const Default_item_download: React.FC<WidgetProps> = ({
         }
     }, [dispatch, serviceInfo?.service_id, formData]);
 
-    // Show loading state
-    if (isLoading) {
+    // Create resolved template URL 
+    const resolvedUrl = useMemo(() => {
+        if (!downloadInfo.available || !downloadInfo.url) return '#';
+        
+        // Resolve any system variables in the URL template
+        const resolvedTemplate = resolveSystemVariable(downloadInfo.url, systemVariableContext);
+        // Ensure we return a string, not an array
+        return Array.isArray(resolvedTemplate) ? resolvedTemplate.join('') : resolvedTemplate;
+    }, [downloadInfo.url, downloadInfo.available, systemVariableContext]);
+
+    // Show loading state only for Redux data fetching
+    if (analystState.loading || (serviceInfo?.service_id === 11 && countryState.loading)) {
         return (
             <Card className="mb-6">
                 <CardHeader>
@@ -184,7 +204,7 @@ const Default_item_download: React.FC<WidgetProps> = ({
                     {/* Download button on the right */}
                     <div className="flex items-center">
                         <a
-                            href={downloadInfo.url}
+                            href={resolvedUrl}
                             download
                             className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded transition ${downloadInfo.available
                                 ? 'bg-green-600 text-white hover:bg-green-700'

@@ -7,6 +7,7 @@ import { createLazyWidget } from '@/utils/loadWidgetComponent';
 import { WidgetConfig, WidgetProps } from '@/types/widgetTypes';
 import { useServiceWidgetData } from '@/hooks/useServiceWidgetData';
 import { DataContext } from '@/types/widgetDataTypes';
+import { excludedWidgets } from '@/config/widgetDataConfigurations';
 
 interface WidgetRendererProps {
   config: WidgetConfig;
@@ -54,7 +55,10 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     }
   }, [config.componentPath, config.name]);
 
-  // Use dynamic data fetching if serviceId and context are provided
+  // Check if this widget should be excluded from dynamic data fetching
+  const isExcluded = excludedWidgets.has(config.id);
+
+  // Use dynamic data fetching if serviceId and context are provided and not excluded
   const {
     data: widgetData,
     loading: isDataLoading,
@@ -64,15 +68,15 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     serviceId: serviceId || 0,
     widgetId: config.id,
     context: context || {},
-    enabled: !!(serviceId && context),
+    enabled: !!(serviceId && context && !isExcluded),
   });
 
   if (!LazyWidget) {
     return <WidgetError error="Component creation failed" widgetName={config.name} />;
   }
 
-  // Show loading state while data is being fetched
-  if (isDataLoading && serviceId && context) {
+  // Show loading state while data is being fetched (only for non-excluded widgets)
+  if (isDataLoading && serviceId && context && !isExcluded) {
     return <WidgetSkeleton />;
   }
 
