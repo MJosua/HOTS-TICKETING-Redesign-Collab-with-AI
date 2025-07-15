@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,14 +27,20 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
   };
 
   const handleSave = () => {
-    const updatedField = { ...localField, filterOptionsBy: filterInput || undefined };
-    console.log('🔧 Field Editor - Saving field:', {
+    // Apply the filter input when saving (prevents focus loss during typing)
+    const updatedField = { 
+      ...localField, 
+      filterOptionsBy: filterInput.trim() || undefined 
+    };
+    
+    console.log('🔧 [Field Editor] Saving field:', {
       fieldName: updatedField.name,
       fieldType: updatedField.type,
       dependsOn: updatedField.dependsOn,
       filterOptionsBy: updatedField.filterOptionsBy,
       hasChainLink: !!updatedField.dependsOn
     });
+    
     onUpdate(updatedField);
   };
 
@@ -96,7 +101,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
                 setFilterInput('');
               }
               
-              console.log('🔗 Chain Link - Parent field changed:', {
+              console.log('🔗 [Chain Link] Parent field changed:', {
                 childField: localField.name,
                 parentField: dependsOn,
                 action: dependsOn ? 'linked' : 'unlinked'
@@ -143,7 +148,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             <Input
               value={filterInput}
               onChange={(e) => {
-                // Only update local state, don't trigger field updates during typing
+                // Only update local state during typing to prevent focus loss
                 setFilterInput(e.target.value);
               }}
               placeholder="e.g., category.name or plant_description"
@@ -153,7 +158,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
               <p>• For simple matching: use property name like "category"</p>
               <p>• For nested objects: use dot notation like "plant.description"</p>
               <p>• Leave empty for basic string includes matching</p>
-              <p className="text-blue-600">• Changes will be applied when you click Save</p>
+              <p className="text-blue-600 font-medium">• Changes will be applied when you click Save</p>
             </div>
           </div>
         )}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,90 +31,121 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const systemContext = useSystemVariableContext();
 
-  // Resolve system variables for options
+  // Enhanced system variable resolution with logging
   const resolveOptions = (options: string[]) => {
-    return options.map(option => {
+    console.log('🔧 [System Variables] Starting resolution for options:', options);
+    console.log('🔧 [System Variables] Context available:', {
+      user: systemContext.user,
+      departments: systemContext.departments?.length,
+      factoryplants: systemContext.factoryplants?.length,
+      // Log other context keys without flooding
+      contextKeys: Object.keys(systemContext)
+    });
+
+    return options.map((option, index) => {
       const resolved = resolveSystemVariable(option, systemContext);
-      // console.log('🔧 System Variable Resolution:', {
-      //   original: option,
-      //   resolved: resolved,
-      //   context: systemContext
-      // });
-      // Instead of joining arrays into a string, flatten arrays to individual options
-      return Array.isArray(resolved) ? resolved : [resolved];
+      console.log(`🔧 [System Variables] Option[${index}] Resolution:`, {
+        original: option,
+        resolved: resolved,
+        type: Array.isArray(resolved) ? 'array' : typeof resolved,
+        length: Array.isArray(resolved) ? resolved.length : 'N/A'
+      });
+      
+      // Handle array results by flattening them
+      if (Array.isArray(resolved)) {
+        return resolved;
+      }
+      return [resolved];
     }).flat();
   };
-  // Handle chain link filtering
+
+  // Enhanced chain link filtering with proper data value filtering
   useEffect(() => {
-    if (!field.options) return setFilteredOptions([]);
-  
+    if (!field.options) {
+      setFilteredOptions([]);
+      return;
+    }
+
     const parentValue = watchedValues?.[field.dependsOn];
     const resolvedOptions = resolveOptions(field.options) || [];
-  
-    // 🔍 When `filterOptionsBy` is present, perform filtering
+    
+    console.log('🔗 [Chain Link] Processing field:', {
+      fieldName: field.name,
+      dependsOn: field.dependsOn,
+      parentValue: parentValue,
+      filterOptionsBy: field.filterOptionsBy,
+      resolvedOptionsCount: resolvedOptions.length
+    });
+
+    // When filterOptionsBy is present, perform advanced filtering
     if (parentValue && field.dependsOn && field.filterOptionsBy) {
       const key = field.filterOptionsBy;
-  
-      console.log('🔗 [ChainLink Filter] Filtering Using filterOptionsBy');
-      console.log('➡️ Field:', field.name);
-      console.log('➡️ Depends on:', field.dependsOn);
-      console.log('➡️ Parent Value:', parentValue);
-      console.log('➡️ Filter Key:', key);
-  
+      
+      console.log('🔍 [Chain Link] Advanced filtering with key:', key);
+      
       const filtered = resolvedOptions.filter((option, index) => {
-        let value: any;
-  
+        let dataValue: any;
+        
+        // Handle different option formats
         if (typeof option === 'object' && option !== null) {
-          value = option[key];
-        } else {
+          // Direct object access
+          dataValue = option[key];
+        } else if (typeof option === 'string') {
           try {
+            // Try to parse as JSON first
             const parsed = JSON.parse(option);
-            value = parsed[key];
+            dataValue = parsed[key];
           } catch {
-            return false;
+            // If not JSON, treat as plain string for simple matching
+            dataValue = option;
           }
         }
-  
-        const match = String(value || '')
+        
+        // Perform the actual filtering based on data values
+        const match = String(dataValue || '')
           .trim()
           .toLowerCase()
           .includes(String(parentValue).trim().toLowerCase());
-  
-        console.log(`🔍 [Match Check] Option[${index}]`, {
-          value,
-          match,
-          option,
+        
+        console.log(`🔍 [Chain Link] Filter Check[${index}]:`, {
+          option: typeof option === 'string' ? option.substring(0, 50) + '...' : option,
+          extractedValue: dataValue,
+          parentValue: parentValue,
+          match: match
         });
-  
+        
         return match;
       });
-  
+
+      console.log('🔗 [Chain Link] Filtering complete:', {
+        original: resolvedOptions.length,
+        filtered: filtered.length
+      });
+      
       setFilteredOptions(filtered);
       return;
     }
-  
-    // ✅ Fallback when no filterOptionsBy (normal label match)
+
+    // Fallback filtering for simple string matching
     if (parentValue && field.dependsOn) {
+      console.log('🔗 [Chain Link] Simple filtering fallback');
+      
       const fallbackFiltered = resolvedOptions.filter(option => {
         if (typeof option === 'string') {
           return option.toLowerCase().includes(String(parentValue).toLowerCase());
         }
-        if (typeof option === 'object' && typeof option.label === 'string') {
+        if (typeof option === 'object' && option !== null && typeof option.label === 'string') {
           return option.label.toLowerCase().includes(String(parentValue).toLowerCase());
         }
         return false;
       });
-  
+
       setFilteredOptions(fallbackFiltered);
     } else {
+      // No filtering needed
       setFilteredOptions(resolvedOptions);
     }
-  }, [onChange, watchedValues?.[field.dependsOn]]);
-  
-  
-
-
-
+  }, [field.options, watchedValues?.[field.dependsOn], field.dependsOn, field.filterOptionsBy, systemContext]);
 
   // Handle suggestion-insert type
   useEffect(() => {
@@ -134,21 +164,20 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
     setLocalValue(newValue);
     onChange(newValue);
 
-    // console.log('📝 Field value changed:', field.name, newValue);
-    if (field.dependsOn) {
-      // console.log('🔗 Chain Link field changed:', {
-      //   fieldName: field.name,
-      //   newValue: newValue,
-      //   parentField: field.dependsOn,
-      //   parentValue: watchedValues[field.dependsOn]
-      // });
-    }
+    console.log('📝 [Field Change]:', {
+      fieldName: field.name,
+      newValue: newValue,
+      hasChainLink: !!field.dependsOn
+    });
   };
 
   const getDefaultValue = () => {
     if (field.default) {
       const resolved = resolveSystemVariable(field.default, systemContext);
-     
+      console.log('🔧 [Default Value] Resolution:', {
+        original: field.default,
+        resolved: resolved
+      });
       return Array.isArray(resolved) ? resolved.join(', ') : resolved;
     }
     return '';
@@ -194,7 +223,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             <SelectTrigger className={error ? 'border-red-500' : ''}>
               <SelectValue placeholder={field.placeholder} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border shadow-lg z-50">
               {filteredOptions.map((option, index) => {
                 if (typeof option === 'object' && option !== null) {
                   return (
@@ -329,7 +358,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         {field.required && <span className="text-red-500">*</span>}
         {field.dependsOn && (
           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-            Linked to: {field.dependsOn}
+            🔗 Linked to: {field.dependsOn}
           </span>
         )}
       </Label>

@@ -8,7 +8,6 @@ interface SuggestionInsertInputProps {
   readOnly?: boolean;
   defaultValue?: string;
   onChange: (value: string) => void;
-  onEnter?: (value: string) => void;
 }
 
 export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
@@ -16,9 +15,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
   placeholder,
   readOnly,
   defaultValue,
-  onChange,
-  onEnter,
-  ...rest
+  onChange
 }) => {
   const [inputValue, setInputValue] = useState(defaultValue || '');
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
@@ -34,6 +31,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
     const value = e.target.value;
     setInputValue(value);
     onChange(value);
+
     if (value.length > 0) {
       const filtered = suggestions.filter(suggestion =>
         suggestion.toLowerCase().includes(value.toLowerCase())
@@ -48,28 +46,18 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions || filteredSuggestions.length === 0) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (onEnter) {
-          onEnter(inputValue);
-          setShowSuggestions(false);
-          setActiveIndex(-1);
-        }
-      }
-      return;
-    }
+    if (!showSuggestions || filteredSuggestions.length === 0) return;
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setActiveIndex(prev =>
+        setActiveIndex(prev => 
           prev < filteredSuggestions.length - 1 ? prev + 1 : 0
         );
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setActiveIndex(prev =>
+        setActiveIndex(prev => 
           prev > 0 ? prev - 1 : filteredSuggestions.length - 1
         );
         break;
@@ -96,7 +84,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
   };
 
   const handleBlur = () => {
-    // Delay hiding suggestions to allow for clicks
+    // Delay hiding suggestions to allow click events
     setTimeout(() => {
       setShowSuggestions(false);
       setActiveIndex(-1);
@@ -115,15 +103,15 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         autoComplete="off"
-        {...rest}
       />
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <ul className="absolute z-10 w-full max-h-48 overflow-auto rounded border border-gray-300 bg-white shadow-md">
+        <ul className="absolute z-50 w-full max-h-48 overflow-auto rounded border border-gray-300 bg-white shadow-md mt-1">
           {filteredSuggestions.map((suggestion, index) => (
             <li
               key={index}
-              className={`cursor-pointer px-3 py-1 hover:bg-gray-200 ${index === activeIndex ? 'bg-gray-300 font-semibold' : ''
-                }`}
+              className={`cursor-pointer px-3 py-2 hover:bg-gray-100 ${
+                index === activeIndex ? 'bg-gray-200 font-semibold' : ''
+              }`}
               onMouseDown={() => handleSuggestionClick(index)}
             >
               {suggestion}
