@@ -1,15 +1,14 @@
 
-import React, { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Package, AlertTriangle, CheckCircle, Database } from 'lucide-react';
+import React, { useEffect, useMemo } from 'react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, Download } from 'lucide-react';
 import { WidgetProps } from '@/types/widgetTypes';
 import { API_URL } from '@/config/sourceConfig';
 import { fetchAnalyst } from '@/store/slices/analystslice';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import { fetchCountry } from '@/store/slices/countryslice';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Sample stock data
 const downloadData = [
@@ -20,20 +19,56 @@ const downloadData = [
 const Default_item_download: React.FC<WidgetProps> = ({
     formData,
     serviceId,
-    serviceInfo
+    serviceInfo,
+    widgetData,
+    isLoading,
+    error
 }) => {
-
-    const matchedFile = downloadData.find(
-        (item) => item.service_id === serviceInfo?.service_id
-    );
-    const downloadUrl = matchedFile?.url || '#';
+    const dispatch = useDispatch();
     const analystState = useAppSelector(state => state.analyst);
-    // analyst.data for data.
-    const dispatch = useDispatch()
+
+    // Memoize the download data lookup to prevent unnecessary re-renders
+    const downloadInfo = useMemo(() => {
+        const matchedFile = downloadData.find(
+            (item) => item.service_id === serviceInfo?.service_id
+        );
+        return {
+            url: matchedFile?.url || '#',
+            available: !!matchedFile
+        };
+    }, [serviceInfo?.service_id]);
+
+    // Only fetch analyst and country data once on mount
     useEffect(() => {
-        dispatch(fetchAnalyst() as any)
-        dispatch(fetchCountry() as any)
-    }, [])
+        if (!analystState.data || analystState.data.length === 0) {
+            dispatch(fetchAnalyst() as any);
+        }
+    }, [dispatch, analystState.data]);
+
+    // Only fetch country data if it's needed for this specific service
+    useEffect(() => {
+        // Only fetch if this service actually needs country data
+        if (serviceInfo?.service_id === 11 && formData) {
+            dispatch(fetchCountry() as any);
+        }
+    }, [dispatch, serviceInfo?.service_id, formData]);
+
+    // Show loading state
+    if (isLoading) {
+        return (
+            <Card className="mb-6">
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div className="flex flex-col space-y-2 flex-1">
+                            <Skeleton className="h-6 w-48" />
+                            <Skeleton className="h-4 w-64" />
+                        </div>
+                        <Skeleton className="h-9 w-24" />
+                    </div>
+                </CardHeader>
+            </Card>
+        );
+    }
 
     // const getCountry = async (AnalystID) => {
 
@@ -149,14 +184,15 @@ const Default_item_download: React.FC<WidgetProps> = ({
                     {/* Download button on the right */}
                     <div className="flex items-center">
                         <a
-                            href={downloadUrl}
+                            href={downloadInfo.url}
                             download
-                            className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded transition ${matchedFile
+                            className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded transition ${downloadInfo.available
                                 ? 'bg-green-600 text-white hover:bg-green-700'
                                 : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                                 }`}
-                            {...(!matchedFile && { onClick: (e) => e.preventDefault() })}
+                            {...(!downloadInfo.available && { onClick: (e) => e.preventDefault() })}
                         >
+                            <Download className="w-4 h-4 mr-1" />
                             Download
                         </a>
                     </div>

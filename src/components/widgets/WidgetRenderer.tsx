@@ -5,11 +5,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { createLazyWidget } from '@/utils/loadWidgetComponent';
 import { WidgetConfig, WidgetProps } from '@/types/widgetTypes';
+import { useServiceWidgetData } from '@/hooks/useServiceWidgetData';
+import { DataContext } from '@/types/widgetDataTypes';
 
 interface WidgetRendererProps {
   config: WidgetConfig;
   data?: WidgetProps;
   className?: string;
+  serviceId?: number;
+  context?: DataContext;
 }
 
 const WidgetSkeleton = () => (
@@ -37,7 +41,9 @@ const WidgetError = ({ error, widgetName }: { error: string; widgetName: string 
 export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
   config,
   data = {},
-  className = ""
+  className = "",
+  serviceId,
+  context
 }) => {
   const LazyWidget = useMemo(() => {
     try {
@@ -48,8 +54,31 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     }
   }, [config.componentPath, config.name]);
 
+  // Use dynamic data fetching if serviceId and context are provided
+  const {
+    data: widgetData,
+    loading: isDataLoading,
+    error: dataError,
+    hasData,
+  } = useServiceWidgetData({
+    serviceId: serviceId || 0,
+    widgetId: config.id,
+    context: context || {},
+    enabled: !!(serviceId && context),
+  });
+
   if (!LazyWidget) {
     return <WidgetError error="Component creation failed" widgetName={config.name} />;
+  }
+
+  // Show loading state while data is being fetched
+  if (isDataLoading && serviceId && context) {
+    return <WidgetSkeleton />;
+  }
+
+  // Show error if data fetching failed
+  if (dataError) {
+    return <WidgetError error={dataError} widgetName={config.name} />;
   }
 
   const widgetProps: WidgetProps = {
@@ -57,6 +86,10 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     ...config.props,
     widgetId: config.id,
     widgetName: config.name,
+    // Pass the dynamically fetched data
+    widgetData: hasData ? widgetData : undefined,
+    isLoading: isDataLoading,
+    error: dataError,
   };
 
   return (

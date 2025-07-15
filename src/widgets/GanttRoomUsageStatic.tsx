@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { CardContent } from '@/components/ui/card';
 import { WidgetProps } from '@/types/widgetTypes';
-import { API_URL } from '@/config/sourceConfig';
 import { useAppSelector } from '@/hooks/useAppSelector';
 import { CardCollapsible } from '@/components/ui/CardCollapsible';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type Booking = {
   id: number;
@@ -37,55 +36,88 @@ function getNextFiveWeekdays(startDate = new Date()) {
 
 
 
-const GanttRoomUsageStatic: React.FC<WidgetProps> = ({ ticketData, formData, currentDateRange }) => {
-  const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
-
-  const [roomData, setRoomData] = useState<Booking[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<string>('');
+const GanttRoomUsageStatic: React.FC<WidgetProps> = ({ 
+  ticketData, 
+  formData, 
+  currentDateRange, 
+  widgetData, 
+  isLoading, 
+  error 
+}) => {
+  const { ticketDetail } = useAppSelector(state => state.tickets);
   const visibleDates = getNextFiveWeekdays();
 
-  useEffect(() => {
-    const fetchData = () => {
-      const dateValue = ticketDetail?.detail_rows?.[1]?.cstm_col;
-      const roomValue = ticketDetail?.detail_rows?.[0]?.cstm_col;
-
-      if (!dateValue) return; // 👈 wait until data is ready
-
-      axios
-        .get(`${API_URL}/hots_settings/get/meetingroom_static?date=${dateValue}&room=${roomValue}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("tokek")}`,
-          },
-        })
-        .then((res) => {
-          const rawData = res.data.data;
-          console.log("rawData", rawData)
-          const formattedData: Booking[] = rawData.map((item: any) => ({
-            id: item.ticket_id,
-            room: item.room,
-            startTime: item.start_time,
-            endTime: item.end_time,
-            bookedBy: String(item.booked_by),
-            attendees: Number(item.attendees),
-            date: item.date,
-          }));
-
-          setRoomData(formattedData);
-          if (formattedData.length > 0) {
-            setSelectedRoom(formattedData[0].room);
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching meeting room data:", err);
-        });
-    };
-
-    fetchData();
-  }, [ticketDetail?.detail_rows]);
+  // Get booking data from the dynamic data system
+  const roomData: Booking[] = widgetData?.meetingRoomBookings || [];
+  
+  const selectedRoom = useMemo(() => {
+    // Get room from ticket detail or use first room from data
+    const roomFromTicket = ticketDetail?.detail_rows?.[0]?.cstm_col;
+    if (roomFromTicket) return roomFromTicket;
+    
+    if (roomData.length > 0) {
+      return roomData[0].room;
+    }
+    
+    return '';
+  }, [ticketDetail?.detail_rows, roomData]);
 
   const rooms = useMemo(() => {
     return [...new Set(roomData.map((b) => b.room))];
   }, [roomData]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <CardCollapsible
+        title="Loading Room Schedule..."
+        description="Fetching booking data"
+        defaultOpen
+      >
+        <CardContent className="flex flex-col space-y-4">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </CardContent>
+      </CardCollapsible>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <CardCollapsible
+        title="Room Schedule"
+        description="Unable to load booking data"
+        defaultOpen
+      >
+        <CardContent>
+          <Alert className="border-orange-200 bg-orange-50">
+            <AlertDescription className="text-orange-800">
+              {error}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </CardCollapsible>
+    );
+  }
+
+  // Show empty state if no data
+  if (!roomData || roomData.length === 0) {
+    return (
+      <CardCollapsible
+        title={`Room ${selectedRoom || 'Schedule'}`}
+        description="No booking data available"
+        defaultOpen
+      >
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            No bookings found for the selected date and room.
+          </div>
+        </CardContent>
+      </CardCollapsible>
+    );
+  }
 
   const timeToIndex = (time?: string) => {
     if (!time || typeof time !== 'string') return 0;
@@ -95,11 +127,9 @@ const GanttRoomUsageStatic: React.FC<WidgetProps> = ({ ticketData, formData, cur
   };
 
   return (
-
     <CardCollapsible
-
-      title={`Room ${ticketDetail.detail_rows[0].cstm_col}`}
-      description={`Booking Room Data  ${ticketDetail.detail_rows[1].cstm_col}`}
+      title={`Room ${selectedRoom}`}
+      description={`Booking Room Data ${ticketDetail?.detail_rows?.[1]?.cstm_col || ''}`}
       defaultOpen
     >
 

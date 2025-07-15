@@ -26,6 +26,11 @@ export interface WidgetProps {
     start: Date;
     end: Date;
   };
+  // Dynamic data passed from the data management system
+  widgetData?: Record<string, any>;
+  // Loading and error states
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 export interface WidgetConfig extends WidgetPreset {
