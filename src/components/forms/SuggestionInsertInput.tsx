@@ -45,6 +45,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
+        setSelectedIndex(-1);
       }
     };
 
@@ -57,17 +58,47 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
     setValue(newValue);
     onChange(newValue);
     setShowSuggestions(true);
+    setSelectedIndex(-1);
+    
+    console.log('🔧 [SuggestionInput] Input changed:', {
+      value: newValue,
+      showSuggestions: true,
+      filteredCount: filteredSuggestions.length
+    });
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    console.log('🔧 [SuggestionInput] Key pressed:', {
+      key: e.key,
+      showSuggestions,
+      selectedIndex,
+      filteredCount: filteredSuggestions.length
+    });
+
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex(prev => 
-        prev < filteredSuggestions.length - 1 ? prev + 1 : prev
-      );
+      
+      // Show dropdown if not visible
+      if (!showSuggestions) {
+        setShowSuggestions(true);
+        setSelectedIndex(0);
+        console.log('🔧 [SuggestionInput] ArrowDown - Opening dropdown');
+        return;
+      }
+      
+      // Navigate down
+      const newIndex = selectedIndex < filteredSuggestions.length - 1 ? selectedIndex + 1 : selectedIndex;
+      setSelectedIndex(newIndex);
+      console.log('🔧 [SuggestionInput] ArrowDown - New index:', newIndex);
+      
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+      
+      // Navigate up
+      const newIndex = selectedIndex > 0 ? selectedIndex - 1 : -1;
+      setSelectedIndex(newIndex);
+      console.log('🔧 [SuggestionInput] ArrowUp - New index:', newIndex);
+      
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (selectedIndex >= 0 && selectedIndex < filteredSuggestions.length) {
@@ -76,17 +107,34 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
         onChange(selectedValue);
         onEnter(selectedValue);
         setShowSuggestions(false);
+        setSelectedIndex(-1);
+        console.log('🔧 [SuggestionInput] Enter - Selected:', selectedValue);
       } else if (value.trim()) {
         onEnter(value.trim());
+        console.log('🔧 [SuggestionInput] Enter - Current value:', value.trim());
       }
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
       setSelectedIndex(-1);
+      console.log('🔧 [SuggestionInput] Escape - Closing dropdown');
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      if (showSuggestions && filteredSuggestions.length > 0) {
+        setSelectedIndex(0);
+        console.log('🔧 [SuggestionInput] Home - First item selected');
+      }
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      if (showSuggestions && filteredSuggestions.length > 0) {
+        setSelectedIndex(filteredSuggestions.length - 1);
+        console.log('🔧 [SuggestionInput] End - Last item selected');
+      }
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    // Prevent event from bubbling up
+  const handleSuggestionClick = (suggestion: string, index: number) => {
+    console.log('🔧 [SuggestionInput] Suggestion clicked:', { suggestion, index });
+    
     setValue(suggestion);
     onChange(suggestion);
     onEnter(suggestion);
@@ -95,15 +143,36 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
     setShowSuggestions(false);
     setSelectedIndex(-1);
     
-    // Focus back to input after a small delay to ensure dropdown is closed
+    // Focus back to input
     setTimeout(() => {
       inputRef.current?.focus();
     }, 0);
   };
 
-  // Handle mousedown on dropdown to prevent input blur
-  const handleDropdownMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent input from losing focus
+  const handleInputFocus = () => {
+    setShowSuggestions(true);
+    console.log('🔧 [SuggestionInput] Input focused - showing suggestions');
+  };
+
+  const handleDropdownToggle = () => {
+    const newShowState = !showSuggestions;
+    setShowSuggestions(newShowState);
+    setSelectedIndex(-1);
+    
+    console.log('🔧 [SuggestionInput] Dropdown toggled:', newShowState);
+    
+    if (newShowState) {
+      inputRef.current?.focus();
+    }
+  };
+
+  // Handle mousedown on dropdown items to prevent input blur but allow selection  
+  const handleDropdownMouseDown = (e: React.MouseEvent, suggestion: string, index: number) => {
+    // Prevent the input from losing focus
+    e.preventDefault();
+    
+    // Handle the selection
+    handleSuggestionClick(suggestion, index);
   };
 
   return (
@@ -115,7 +184,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
           value={value}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => setShowSuggestions(true)}
+          onFocus={handleInputFocus}
           placeholder={placeholder}
           readOnly={readOnly}
           className="pr-8"
@@ -125,7 +194,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
           variant="ghost"
           size="sm"
           className="absolute right-0 top-0 h-full px-2"
-          onClick={() => setShowSuggestions(!showSuggestions)}
+          onClick={handleDropdownToggle}
           disabled={readOnly}
         >
           <ChevronDown className="h-4 w-4" />
@@ -136,7 +205,6 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
         <div 
           ref={dropdownRef}
           className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
-          onMouseDown={handleDropdownMouseDown}
         >
           {filteredSuggestions.map((suggestion, index) => (
             <div
@@ -144,7 +212,8 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
               className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
                 index === selectedIndex ? 'bg-accent text-accent-foreground' : ''
               }`}
-              onClick={() => handleSuggestionClick(suggestion)}
+              onMouseDown={(e) => handleDropdownMouseDown(e, suggestion, index)}
+              onMouseEnter={() => setSelectedIndex(index)}
             >
               <div className="flex items-center justify-between">
                 <span>{suggestion}</span>
