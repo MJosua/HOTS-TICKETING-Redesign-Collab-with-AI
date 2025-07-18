@@ -27,6 +27,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (value.trim() === '') {
@@ -85,11 +86,24 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    // Prevent event from bubbling up
     setValue(suggestion);
     onChange(suggestion);
     onEnter(suggestion);
+    
+    // Close dropdown immediately
     setShowSuggestions(false);
-    inputRef.current?.focus();
+    setSelectedIndex(-1);
+    
+    // Focus back to input after a small delay to ensure dropdown is closed
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  };
+
+  // Handle mousedown on dropdown to prevent input blur
+  const handleDropdownMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent input from losing focus
   };
 
   return (
@@ -119,18 +133,22 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
       </div>
 
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+        <div 
+          ref={dropdownRef}
+          className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+          onMouseDown={handleDropdownMouseDown}
+        >
           {filteredSuggestions.map((suggestion, index) => (
             <div
               key={index}
-              className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
-                index === selectedIndex ? 'bg-blue-100' : ''
+              className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                index === selectedIndex ? 'bg-accent text-accent-foreground' : ''
               }`}
               onClick={() => handleSuggestionClick(suggestion)}
             >
               <div className="flex items-center justify-between">
                 <span>{suggestion}</span>
-                {index === selectedIndex && <Check className="h-4 w-4 text-blue-600" />}
+                {index === selectedIndex && <Check className="h-4 w-4 text-primary" />}
               </div>
             </div>
           ))}

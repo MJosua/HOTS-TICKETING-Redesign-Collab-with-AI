@@ -1,4 +1,3 @@
-
 import { WidgetConfig } from '@/types/widgetTypes';
 
 // Widget registry - all available widgets are listed here
@@ -18,7 +17,7 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     name: "Room Usage Gantt Chart Static",
     description: "Display current week's room usage as a Gantt chart",
     componentPath: "GanttRoomUsageStatic",
-    applicableTo: [ "ticket_detail"],
+    applicableTo: ["ticket_detail"],
     dataRequirements: ["roomData", "scheduleData"],
     category: "Scheduling"
   },

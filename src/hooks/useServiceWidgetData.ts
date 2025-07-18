@@ -19,17 +19,36 @@ export const useServiceWidgetData = ({
 }: UseServiceWidgetDataOptions) => {
   // Get widget configuration for this service
   const widgetConfig = useMemo(() => {
-    return getWidgetDataConfig(serviceId, widgetId) || defaultWidgetDataConfig;
+    const config = getWidgetDataConfig(serviceId, widgetId) || defaultWidgetDataConfig;
+    
+    // Debug logging
+    console.log('🔧 [Widget Data] Configuration lookup:', {
+      serviceId,
+      widgetId,
+      configFound: !!getWidgetDataConfig(serviceId, widgetId),
+      config: config,
+      enabled: config.enabled
+    });
+    
+    return config;
   }, [serviceId, widgetId]);
 
   // Prepare data sources with resolved parameters
   const resolvedDataSources = useMemo(() => {
-    if (!enabled || !widgetConfig.enabled) return [];
+    if (!enabled || !widgetConfig.enabled) {
+      console.log('🔧 [Widget Data] Skipping data sources - disabled:', { enabled, configEnabled: widgetConfig.enabled });
+      return [];
+    }
 
-    return widgetConfig.dataSources.map(source => {
+    const resolved = widgetConfig.dataSources.map(source => {
       // Check condition if specified
       if (source.condition) {
         const conditionValue = resolveParams({ condition: source.condition }, context).condition;
+        console.log('🔧 [Widget Data] Condition check:', {
+          condition: source.condition,
+          resolved: conditionValue,
+          passed: !!conditionValue
+        });
         if (!conditionValue) return null;
       }
 
@@ -41,6 +60,12 @@ export const useServiceWidgetData = ({
         const hasAllDependencies = source.dependencies.every(dep => {
           const resolved = resolveParams({ [dep]: `{${dep}}` }, context);
           return resolved[dep] !== undefined && resolved[dep] !== null;
+        });
+        
+        console.log('🔧 [Widget Data] Dependencies check:', {
+          dependencies: source.dependencies,
+          hasAll: hasAllDependencies,
+          context: context
         });
         
         if (!hasAllDependencies) return null;
@@ -56,6 +81,12 @@ export const useServiceWidgetData = ({
       // Get data transformer
       const transformer = getDataTransformer(source.transform);
 
+      console.log('🔧 [Widget Data] Data source resolved:', {
+        endpoint: source.endpoint,
+        params: resolvedParams,
+        cacheKey: resolvedCacheKey
+      });
+
       return {
         endpoint: source.endpoint,
         method: source.method || 'GET',
@@ -65,6 +96,13 @@ export const useServiceWidgetData = ({
         dependencies: source.dependencies,
       };
     }).filter(Boolean);
+
+    console.log('🔧 [Widget Data] Final resolved data sources:', {
+      count: resolved.length,
+      sources: resolved.map(s => ({ endpoint: s?.endpoint, params: s?.params }))
+    });
+
+    return resolved;
   }, [widgetConfig, context, enabled]);
 
   // Use the generic widget data hook
@@ -86,6 +124,12 @@ export const useServiceWidgetData = ({
       if (cacheKey && result.data[cacheKey]) {
         transformed[source.id] = result.data[cacheKey];
       }
+    });
+
+    console.log('🔧 [Widget Data] Transformed data:', {
+      originalKeys: Object.keys(result.data),
+      transformedKeys: Object.keys(transformed),
+      hasData: Object.keys(transformed).length > 0
     });
 
     return transformed;

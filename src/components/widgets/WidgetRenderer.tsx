@@ -58,6 +58,15 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
   // Check if this widget should be excluded from dynamic data fetching
   const isExcluded = excludedWidgets.has(config.id);
 
+  // Debug logging for widget data fetching
+  console.log('🔧 [Widget Renderer] Processing widget:', {
+    widgetId: config.id,
+    serviceId,
+    hasContext: !!context,
+    isExcluded,
+    shouldFetchData: !!(serviceId && context && !isExcluded)
+  });
+
   // Use dynamic data fetching if serviceId and context are provided and not excluded
   const {
     data: widgetData,
@@ -77,11 +86,13 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
 
   // Show loading state while data is being fetched (only for non-excluded widgets)
   if (isDataLoading && serviceId && context && !isExcluded) {
+    console.log('🔧 [Widget Renderer] Showing loading state for:', config.id);
     return <WidgetSkeleton />;
   }
 
   // Show error if data fetching failed
   if (dataError) {
+    console.error('🔧 [Widget Renderer] Data error for widget:', config.id, dataError);
     return <WidgetError error={dataError} widgetName={config.name} />;
   }
 
@@ -95,6 +106,13 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     isLoading: isDataLoading,
     error: dataError,
   };
+
+  console.log('🔧 [Widget Renderer] Final widget props:', {
+    widgetId: config.id,
+    hasWidgetData: !!widgetProps.widgetData,
+    widgetDataKeys: widgetProps.widgetData ? Object.keys(widgetProps.widgetData) : [],
+    isLoading: widgetProps.isLoading
+  });
 
   return (
     <div className={`widget-container ${className}`} data-widget-id={config.id}>
