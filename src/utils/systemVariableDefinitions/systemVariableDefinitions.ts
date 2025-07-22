@@ -139,7 +139,7 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
     key: '${factoryplants}',
     type: 'string[]',
     description: 'Factory plant objects with id and label for filtering',
-    resolve: (ctx) => ctx.factoryplants?.map(f => `${f.plan_id}:${f.plant_shortname}`) || [],
+    resolve: (ctx) => ctx.factoryplants?.map(f => `${f.plant_shortname}`) || [],
   },
   {
     key: '${srfsamplecategoryes}',

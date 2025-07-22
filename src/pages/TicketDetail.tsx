@@ -103,6 +103,7 @@ const TicketDetail = () => {
       .filter(widget => widget.applicableTo.includes('ticket_detail'));
   }, [ticketDetail]);
 
+
   console.log("assignedWidgets", assignedWidgets);
 
   useEffect(() => {
@@ -149,7 +150,6 @@ const TicketDetail = () => {
     }
   };
 
-  console.log("ticketDetail", ticketDetail)
 
   useEffect(() => {
     if (ticketDetail) {
@@ -171,7 +171,6 @@ const TicketDetail = () => {
   const handleUpdateTicketDetail = async () => {
     if (!ticketDetail || !id) {
 
-      console.log("!ticketDetail")
       return;
     }
 
@@ -223,7 +222,6 @@ const TicketDetail = () => {
 
   const handleExecuteCustomFunction = async (functionId: number) => {
     if (!ticketDetail || !id) {
-      console.log("!ticketDetail");
       return;
     }
 
@@ -392,6 +390,7 @@ const TicketDetail = () => {
         });
       });
   };
+
 
 
 
@@ -656,7 +655,19 @@ const TicketDetail = () => {
 
   const isFullyApproved = approvalSteps.length > 0 && approvedCount === approvalSteps.length;
 
+  const filteredSteps = approvalSteps
+    .filter((step) => {
+      if (!user?.user_id) {
+        return Number(step.approver_leader) === 1;
+      }
 
+      const userIsApprover = approvalSteps.some((x) =>
+        x.id.startsWith(`${user.user_id}-`)
+      );
+
+      return userIsApprover || Number(step.approver_leader) === 1;
+    })
+    .sort((a, b) => a.approval_order - b.approval_order);
 
   if (
     !hasFetchedUsersRef.current &&
@@ -756,7 +767,7 @@ const TicketDetail = () => {
                     </Badge>
                   </div>
                 </div>
-                
+
               </div>
 
               {ticketDetail.reason && (
@@ -912,7 +923,7 @@ const TicketDetail = () => {
                 <CardCollapsible
                   title="Service Config"
                   color="bg-white"
-                  description="Details about the current progress"
+                  description="Details about the current Service"
                   defaultOpen
                 >
 
@@ -1043,7 +1054,7 @@ const TicketDetail = () => {
                   )}
                   <div className="flex justify-between text-sm">
                     <span>Progress</span>
-                    <span>{approvedCount}/{approvalSteps.length} approved</span>
+                    <span>{filteredSteps.filter(s => s.status === 'approved').length}/{filteredSteps.length} approved</span>
                   </div>
                   <Progress value={progressPercentage} className="h-2" />
                 </div>
@@ -1094,7 +1105,7 @@ const TicketDetail = () => {
             <CardCollapsible
               title="Discussion"
               color="bg-white"
-              description="Details about the current progress"
+              description="Discuss about current ticket"
               defaultOpen
             >
               <CardContent className="p-0">
@@ -1205,8 +1216,8 @@ const TicketDetail = () => {
                               onClick={() => setImage(null)}
                               className="absolute top-0 right-0 text-gray-700 hover:text-red-500 mt-[-9px]"
                             >
-                               {/* <IoIosCloseCircle size={20} /> - Icon not imported */}
-                               <X size={20} />
+                              {/* <IoIosCloseCircle size={20} /> - Icon not imported */}
+                              <X size={20} />
                             </button>
 
                             <img

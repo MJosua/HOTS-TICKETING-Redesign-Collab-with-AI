@@ -16,6 +16,8 @@ import { convertTicketToDisplayFormat, getStatusColor, getPriorityColor } from '
 import { TicketPagination } from '@/components/ui/TicketPagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
+import dateFormater from '../utils/dateformater.ts';
+
 const MyTickets = () => {
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -38,7 +40,6 @@ const MyTickets = () => {
 
     return statusFilter && priorityFilter && searchFilter;
   });
-
   const handleRowClick = (ticketId: string) => {
     navigate(`/ticket/${ticketId}`);
   };
@@ -71,6 +72,7 @@ const MyTickets = () => {
             <TableHeader>
               <TableRow className="bg-muted/50 border-b border-border">
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Ticket ID</TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground uppercase">Date</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Type</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Priority</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Progress</TableHead>
@@ -90,6 +92,9 @@ const MyTickets = () => {
                   >
                     <TableCell className="font-medium text-primary">
                       {renderHighlightedText(ticket.id)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {renderHighlightedText(dateFormater(ticket.created))}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {renderHighlightedText(ticket.type)}

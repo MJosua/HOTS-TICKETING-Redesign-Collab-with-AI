@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,63 +32,43 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const systemContext = useSystemVariableContext();
 
-  // Enhanced system variable resolution with logging
-  const resolveOptions = (options: string[]) => {
-    console.log('🔧 [System Variables] Starting resolution for options:', options);
-    console.log('🔧 [System Variables] Context available:', {
-      user: systemContext.user,
-      departments: systemContext.departments?.length,
-      factoryplants: systemContext.factoryplants?.length,
-      contextKeys: Object.keys(systemContext)
-    });
-
-    return options.map((option, index) => {
+  // Memoize resolvedOptions to avoid recalculations and infinite loops
+  const resolvedOptions = useMemo(() => {
+    if (!field.options) return [];
+    return field.options.map((option, index) => {
       if (!option) return '';
-      
+
       const resolved = resolveSystemVariable(option, systemContext);
-      console.log(`🔧 [System Variables] Option[${index}] Resolution:`, {
-        original: option,
-        resolved: resolved,
-        type: Array.isArray(resolved) ? 'array' : typeof resolved,
-        length: Array.isArray(resolved) ? resolved.length : 'N/A'
-      });
-      
+
       if (Array.isArray(resolved)) {
         return resolved;
       }
       return [resolved];
     }).flat().filter(Boolean);
-  };
+  }, [field.options, systemContext]);
 
   // Enhanced chain link filtering with proper data value filtering
   useEffect(() => {
     if (!field.options) {
-      setFilteredOptions([]);
+      if (filteredOptions.length !== 0) {
+        setFilteredOptions([]);
+      }
       return;
     }
 
     const parentValue = watchedValues?.[field.dependsOn || ''];
-    const resolvedOptions = resolveOptions(field.options) || [];
-    
-    console.log('🔗 [Chain Link] Processing field:', {
-      fieldName: field.name,
-      dependsOn: field.dependsOn,
-      parentValue: parentValue,
-      filterOptionsBy: field.filterOptionsBy,
-      resolvedOptionsCount: resolvedOptions.length
-    });
 
     // When filterOptionsBy is present, perform advanced filtering
     if (parentValue && field.dependsOn && field.filterOptionsBy) {
       const key = field.filterOptionsBy;
-      
+
       console.log('🔍 [Chain Link] Advanced filtering with key:', key);
-      
+
       const filtered = resolvedOptions.filter((option, index) => {
         if (!option) return false;
-        
+
         let dataValue: any;
-        
+
         // Handle different option formats
         if (typeof option === 'object' && option !== null) {
           dataValue = (option as any)[key];
@@ -100,19 +80,19 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             dataValue = option;
           }
         }
-        
+
         const match = String(dataValue || '')
           .trim()
           .toLowerCase()
           .includes(String(parentValue).trim().toLowerCase());
-        
+
         console.log(`🔍 [Chain Link] Filter Check[${index}]:`, {
           option: typeof option === 'string' ? option.substring(0, 50) + '...' : option,
           extractedValue: dataValue,
           parentValue: parentValue,
           match: match
         });
-        
+
         return match;
       });
 
@@ -120,18 +100,20 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         original: resolvedOptions.length,
         filtered: filtered.length
       });
-      
-      setFilteredOptions(filtered);
+
+      if (JSON.stringify(filtered) !== JSON.stringify(filteredOptions)) {
+        setFilteredOptions(filtered);
+      }
       return;
     }
 
     // Fallback filtering for simple string matching
     if (parentValue && field.dependsOn) {
       console.log('🔗 [Chain Link] Simple filtering fallback');
-      
+
       const fallbackFiltered = resolvedOptions.filter(option => {
         if (!option) return false;
-        
+
         if (typeof option === 'string') {
           return option.toLowerCase().includes(String(parentValue).toLowerCase());
         }
@@ -141,23 +123,33 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         return false;
       });
 
-      setFilteredOptions(fallbackFiltered);
+      if (JSON.stringify(fallbackFiltered) !== JSON.stringify(filteredOptions)) {
+        setFilteredOptions(fallbackFiltered);
+      }
     } else {
-      setFilteredOptions(resolvedOptions);
-    }
-  }, [field.options, watchedValues?.[field.dependsOn || ''], field.dependsOn, field.filterOptionsBy, systemContext]);
-
-  // Handle suggestion-insert type
-  useEffect(() => {
-    if (field.type === 'suggestion-insert') {
-      if (field.suggestions) {
-        const resolvedSuggestions = resolveOptions(field.suggestions);
-        setSuggestions(resolvedSuggestions);
-      } else if (filteredOptions.length > 0) {
-        setSuggestions(filteredOptions);
+      if (JSON.stringify(resolvedOptions) !== JSON.stringify(filteredOptions)) {
+        setFilteredOptions(resolvedOptions);
       }
     }
+  }, [resolvedOptions, watchedValues?.[field.dependsOn || ''], field.dependsOn, field.filterOptionsBy]);
+
+  // Memoize suggestions to avoid unnecessary updates
+  const memoizedSuggestions = useMemo(() => {
+    if (field.type === 'suggestion-insert') {
+      if (field.suggestions) {
+        return resolveOptions(field.suggestions);
+      } else if (filteredOptions.length > 0) {
+        return filteredOptions;
+      }
+    }
+    return [];
   }, [field.type, field.suggestions, filteredOptions]);
+
+  useEffect(() => {
+    if (JSON.stringify(memoizedSuggestions) !== JSON.stringify(suggestions)) {
+      setSuggestions(memoizedSuggestions);
+    }
+  }, [memoizedSuggestions, suggestions]);
 
   const handleChange = (newValue: any) => {
     setLocalValue(newValue);
@@ -185,10 +177,12 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   useEffect(() => {
     if (!value && field.default) {
       const defaultValue = getDefaultValue();
-      setLocalValue(defaultValue);
-      onChange(defaultValue);
+      if (localValue !== defaultValue) {
+        setLocalValue(defaultValue);
+        onChange(defaultValue);
+      }
     }
-  }, [field.default, systemContext]);
+  }, [field.default, value, localValue]);
 
   const renderField = () => {
     switch (field.type) {
@@ -216,6 +210,10 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           />
         );
 
+
+
+
+
       case 'select':
         return (
           <Select value={localValue} onValueChange={handleChange} disabled={field.readonly}>
@@ -225,27 +223,41 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             <SelectContent className="bg-white border shadow-lg z-50">
               {filteredOptions.map((option, index) => {
                 if (!option) return null;
-                
-                if (typeof option === 'object' && option !== null) {
-                  const objOption = option as any;
-                  return (
-                    <SelectItem key={objOption.label ?? index} value={objOption.label || ''}>
-                      {objOption.label || objOption.description || JSON.stringify(option)}
-                    </SelectItem>
-                  );
-                }
 
                 try {
                   const parsed = JSON.parse(option);
+                  console.log("parsed", parsed)
                   return (
                     <SelectItem key={index} value={parsed.plan_id ?? option}>
-                      {parsed.label || parsed.name || option}
+                      { parsed.label ||parsed.name || option}
                     </SelectItem>
                   );
                 } catch {
+
+                  let key = `option-${index}`;
+                  let value = ''; let label = '';
+
+                  if (typeof option === 'object' && option !== null) {
+                    const objOption = option as any;
+                    value = objOption.value || objOption.label || objOption.description || JSON.stringify(objOption);
+                    label = objOption.label || objOption.description || value;
+                    key = `${value}-${index}`;
+                  } else {
+                    try {
+                      const parsed = JSON.parse(option);
+                      value = parsed.plan_id ?? parsed.label ?? parsed.name ?? option;
+                      label = parsed.label ?? parsed.name ?? option;
+                      key = `${value}-${index}`;
+                    } catch {
+                      value = option;
+                      label = option;
+                      key = `fallback-${index}`; // 👈 unique fallback key
+                    }
+                  }
+
                   return (
-                    <SelectItem key={index} value={option}>
-                      {option}
+                    <SelectItem key={key} value={value}>
+                      {label}
                     </SelectItem>
                   );
                 }

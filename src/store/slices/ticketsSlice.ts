@@ -49,7 +49,7 @@ export const fetchMyTickets = createAsyncThunk(
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch my tickets');
       }
-      
+        console.log("response.data",response.data)
       return { ...response.data, currentPage: page };
     } catch (error: any) {
       console.error('My Tickets API Error:', error);

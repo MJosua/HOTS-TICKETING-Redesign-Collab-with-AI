@@ -6,6 +6,7 @@ export const convertTicketToDisplayFormat = (ticket: Ticket) => {
   const approvalSteps = ticket.list_approval?.map((approver: Approver, index: number) => ({
     id: approver.approver_id.toString(),
     name: approver.approver_name,
+    approver_leader: approver.approver_leader,
     approval_order: approver.approval_order,
     status: approver.approval_status === 1 ? 'approved' as const : 
             approver.approval_status === 2 ? 'rejected' as const : 
