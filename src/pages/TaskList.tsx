@@ -231,16 +231,7 @@ const TaskList = () => {
                     {new Date(originalTicket?.creation_date || '').toLocaleDateString()}
                   </span>
                 </div>
-                {canApprove && (
-                  <TaskApprovalActions
-                    ticketId={task.id}
-                    approvalOrder={task.current_step || 1}
-                    canApprove={canApprove}
-                    currentStatus={currentApprover?.status === 'pending' ? 0 : 1}
-                    currentUserId={user?.user_id}
-                    assignedToId={user?.user_id}
-                  />
-                )}
+              
               </CardContent>
             </Card>
           </div>

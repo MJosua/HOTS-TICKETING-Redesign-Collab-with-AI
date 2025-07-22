@@ -60,11 +60,11 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
     setShowSuggestions(true);
     setSelectedIndex(-1);
     
-    console.log('🔧 [SuggestionInput] Input changed:', {
-      value: newValue,
-      showSuggestions: true,
-      filteredCount: filteredSuggestions.length
-    });
+    // console.log('🔧 [SuggestionInput] Input changed:', {
+    //   value: newValue,
+    //   showSuggestions: true,
+    //   filteredCount: filteredSuggestions.length
+    // });
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -82,14 +82,14 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
       if (!showSuggestions) {
         setShowSuggestions(true);
         setSelectedIndex(0);
-        console.log('🔧 [SuggestionInput] ArrowDown - Opening dropdown');
+        // console.log('🔧 [SuggestionInput] ArrowDown - Opening dropdown');
         return;
       }
       
       // Navigate down
       const newIndex = selectedIndex < filteredSuggestions.length - 1 ? selectedIndex + 1 : selectedIndex;
       setSelectedIndex(newIndex);
-      console.log('🔧 [SuggestionInput] ArrowDown - New index:', newIndex);
+      // console.log('🔧 [SuggestionInput] ArrowDown - New index:', newIndex);
       
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -97,7 +97,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
       // Navigate up
       const newIndex = selectedIndex > 0 ? selectedIndex - 1 : -1;
       setSelectedIndex(newIndex);
-      console.log('🔧 [SuggestionInput] ArrowUp - New index:', newIndex);
+      // console.log('🔧 [SuggestionInput] ArrowUp - New index:', newIndex);
       
     } else if (e.key === 'Enter') {
       e.preventDefault();
@@ -108,32 +108,32 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
         onEnter(selectedValue);
         setShowSuggestions(false);
         setSelectedIndex(-1);
-        console.log('🔧 [SuggestionInput] Enter - Selected:', selectedValue);
+        // console.log('🔧 [SuggestionInput] Enter - Selected:', selectedValue);
       } else if (value.trim()) {
         onEnter(value.trim());
-        console.log('🔧 [SuggestionInput] Enter - Current value:', value.trim());
+        // console.log('🔧 [SuggestionInput] Enter - Current value:', value.trim());
       }
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
       setSelectedIndex(-1);
-      console.log('🔧 [SuggestionInput] Escape - Closing dropdown');
+      // console.log('🔧 [SuggestionInput] Escape - Closing dropdown');
     } else if (e.key === 'Home') {
       e.preventDefault();
       if (showSuggestions && filteredSuggestions.length > 0) {
         setSelectedIndex(0);
-        console.log('🔧 [SuggestionInput] Home - First item selected');
+        // console.log('🔧 [SuggestionInput] Home - First item selected');
       }
     } else if (e.key === 'End') {
       e.preventDefault();
       if (showSuggestions && filteredSuggestions.length > 0) {
         setSelectedIndex(filteredSuggestions.length - 1);
-        console.log('🔧 [SuggestionInput] End - Last item selected');
+        // console.log('🔧 [SuggestionInput] End - Last item selected');
       }
     }
   };
 
   const handleSuggestionClick = (suggestion: string, index: number) => {
-    console.log('🔧 [SuggestionInput] Suggestion clicked:', { suggestion, index });
+    // console.log('🔧 [SuggestionInput] Suggestion clicked:', { suggestion, index });
     
     setValue(suggestion);
     onChange(suggestion);
@@ -151,7 +151,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
 
   const handleInputFocus = () => {
     setShowSuggestions(true);
-    console.log('🔧 [SuggestionInput] Input focused - showing suggestions');
+    // console.log('🔧 [SuggestionInput] Input focused - showing suggestions');
   };
 
   const handleDropdownToggle = () => {
@@ -159,7 +159,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
     setShowSuggestions(newShowState);
     setSelectedIndex(-1);
     
-    console.log('🔧 [SuggestionInput] Dropdown toggled:', newShowState);
+    // console.log('🔧 [SuggestionInput] Dropdown toggled:', newShowState);
     
     if (newShowState) {
       inputRef.current?.focus();

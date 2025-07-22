@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -31,6 +31,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const navigate = useNavigate();
   const form = useForm();
   const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
+  
+  // Memoize watchedValues to avoid unnecessary re-renders
+  const memoizedWatchedValues = useMemo(() => watchedValues, [watchedValues]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [structuredRowCounts, setStructuredRowCounts] = useState<Record<number, number>>({});
@@ -250,33 +253,36 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
           return (
             <div key={fieldKey} className={getColSpanClass(field.columnSpan || 1)}>
-              <DynamicField
-                field={fieldToRender}
-                value={form.watch(fieldKey)}
-                onChange={(value) => {
-                  form.setValue(fieldKey, value);
-                  setWatchedValues(prev => {
-                    const newValues = { ...prev, [fieldKey]: value };
-                    return newValues;
-                  });
+                  <DynamicField
+                    field={fieldToRender}
+                    value={form.watch(fieldKey)}
+                    onChange={useCallback((value) => {
+                      form.setValue(fieldKey, value);
+                      setWatchedValues(prev => {
+                        if (prev[fieldKey] === value) {
+                          return prev;
+                        }
+                        const newValues = { ...prev, [fieldKey]: value };
+                        return newValues;
+                      });
 
-                  const updatedFields = (config.fields || []).map(f => {
-                    if (f.dependsOn === field.name) {
-                      const filteredOptions = filterDependentFieldOptions(f, value);
-                      console.log('Updating dependent field options:', f.name, filteredOptions);
-                      return { ...f, options: filteredOptions };
-                    }
-                    return f;
-                  });
+                      const updatedFields = (config.fields || []).map(f => {
+                        if (f.dependsOn === field.name) {
+                          const filteredOptions = filterDependentFieldOptions(f, value);
+                          console.log('Updating dependent field options:', f.name, filteredOptions);
+                          return { ...f, options: filteredOptions };
+                        }
+                        return f;
+                      });
 
-                  if (updatedFields.some(f => f.dependsOn === field.name)) {
-                    console.log('Setting local fields with updated options');
-                    setLocalFields(updatedFields);
-                  }
-                }}
-                watchedValues={watchedValues}
-                error={form.formState.errors[fieldKey]?.message as string}
-              />
+                      if (updatedFields.some(f => f.dependsOn === field.name)) {
+                        console.log('Setting local fields with updated options');
+                        setLocalFields(updatedFields);
+                      }
+                    }, [field.name, config.fields, filterDependentFieldOptions, form, setLocalFields, setWatchedValues])}
+                    watchedValues={memoizedWatchedValues}
+                    error={form.formState.errors[fieldKey]?.message as string}
+                  />
             </div>
           );
         })}

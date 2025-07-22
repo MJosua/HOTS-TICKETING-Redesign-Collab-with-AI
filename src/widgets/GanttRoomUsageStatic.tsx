@@ -49,6 +49,8 @@ const GanttRoomUsageStatic: React.FC<WidgetProps> = ({
 
   // Get booking data from the dynamic data system
   const roomData: Booking[] = widgetData?.meetingRoomBookings || [];
+
+  console.log("roomData",widgetData)
   
   const selectedRoom = useMemo(() => {
     // Get room from ticket detail or use first room from data

@@ -62,7 +62,7 @@ const GanttRoomUsage: React.FC<WidgetProps> = ({ ticketData, formData, currentDa
         if (formattedData.length > 0) {
           setSelectedRoom(formattedData[0].room);
         }
-        console.log("rawData",rawData)
+        console.log("rawData", rawData)
       })
       .catch((err) => {
         console.error("Error fetching meeting room data:", err);
@@ -98,11 +98,15 @@ const GanttRoomUsage: React.FC<WidgetProps> = ({ ticketData, formData, currentDa
               <SelectValue placeholder="Select room" />
             </SelectTrigger>
             <SelectContent>
-              {rooms.map((room) => (
-                <SelectItem key={room} value={room}>
-                  {room}
-                </SelectItem>
-              ))}
+              <SelectItem key={1} value="ANZPAC">
+                ANZPAC
+              </SelectItem>
+              <SelectItem key={2} value="ASIA">
+                ASIA
+              </SelectItem>
+              <SelectItem key={3} value="SNACK">
+                SNACK
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>

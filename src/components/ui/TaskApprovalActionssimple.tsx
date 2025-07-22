@@ -28,7 +28,7 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
   currentUserId,
   assignedToId,
   refreshticketdetail = false,
-  setRefreshticketdetail = () => {}
+  setRefreshticketdetail = () => { }
 }) => {
   const dispatch = useAppDispatch();
   const { isSubmitting } = useAppSelector(state => state.tickets);
@@ -113,6 +113,8 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
     setShowRejectBox(false);
   };
 
+
+ 
   return (
     <Card className='w-full h-full  items-center justify-center'>
       <CardContent >
