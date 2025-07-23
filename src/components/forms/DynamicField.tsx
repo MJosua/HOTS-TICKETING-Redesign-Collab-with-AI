@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/types/formTypes';
 import { resolveSystemVariable } from '@/utils/systemVariableResolver';
 import { useSystemVariableContext } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
+import { evaluateConditionalRules } from '@/utils/conditionalLogic';
 import { SuggestionInsertInput } from './SuggestionInsertInput';
 
 interface DynamicFieldProps {
@@ -31,6 +31,18 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   const [filteredOptions, setFilteredOptions] = useState<string[]>(field.options || []);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const systemContext = useSystemVariableContext();
+
+  // Evaluate conditional logic
+  const isVisible = useMemo(() => {
+    if (!field.showWhen || field.showWhen.length === 0) return true;
+    return evaluateConditionalRules(field.showWhen, watchedValues);
+  }, [field.showWhen, watchedValues]);
+
+  const isDisabled = useMemo(() => {
+    if (field.readonly) return true;
+    if (!field.disabledWhen || field.disabledWhen.length === 0) return false;
+    return evaluateConditionalRules(field.disabledWhen, watchedValues);
+  }, [field.disabledWhen, field.readonly, watchedValues]);
 
   // Memoize resolvedOptions to avoid recalculations and infinite loops
   const resolvedOptions = useMemo(() => {
@@ -158,7 +170,9 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
     console.log('📝 [Field Change]:', {
       fieldName: field.name,
       newValue: newValue,
-      hasChainLink: !!field.dependsOn
+      hasChainLink: !!field.dependsOn,
+      isVisible: isVisible,
+      isDisabled: isDisabled
     });
   };
 
@@ -184,6 +198,11 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
     }
   }, [field.default, value, localValue]);
 
+  // Don't render if field is not visible
+  if (!isVisible) {
+    return null;
+  }
+
   const renderField = () => {
     switch (field.type) {
       case 'text':
@@ -194,7 +213,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             value={localValue}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
-            readOnly={field.readonly}
+            readOnly={isDisabled}
+            disabled={isDisabled}
             className={error ? 'border-red-500' : ''}
           />
         );
@@ -205,18 +225,15 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             value={localValue}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
-            readOnly={field.readonly}
+            readOnly={isDisabled}
+            disabled={isDisabled}
             className={error ? 'border-red-500' : ''}
           />
         );
 
-
-
-
-
       case 'select':
         return (
-          <Select value={localValue} onValueChange={handleChange} disabled={field.readonly}>
+          <Select value={localValue} onValueChange={handleChange} disabled={isDisabled}>
             <SelectTrigger className={error ? 'border-red-500' : ''}>
               <SelectValue placeholder={field.placeholder} />
             </SelectTrigger>
@@ -271,7 +288,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           <SuggestionInsertInput
             suggestions={suggestions.map(s => s && (typeof s === 'object' && s !== null ? (s as any).label || (s as any).name || JSON.stringify(s) : s)).filter(Boolean)}
             placeholder={field.placeholder || "Type or select from suggestions"}
-            readOnly={field.readonly}
+            readOnly={isDisabled}
+            disabled={isDisabled}
             defaultValue={localValue}
             onChange={handleChange}
             onEnter={handleChange}
@@ -280,11 +298,11 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
       case 'radio':
         return (
-          <RadioGroup value={localValue} onValueChange={handleChange} disabled={field.readonly}>
+          <RadioGroup value={localValue} onValueChange={handleChange} disabled={isDisabled}>
             {filteredOptions.map((option, index) => (
               <div key={index} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={`${field.name}-${index}`} />
-                <Label htmlFor={`${field.name}-${index}`}>{option}</Label>
+                <RadioGroupItem value={option} id={`${field.name}-${index}`} disabled={isDisabled} />
+                <Label htmlFor={`${field.name}-${index}`} className={isDisabled ? 'text-muted-foreground' : ''}>{option}</Label>
               </div>
             ))}
           </RadioGroup>
@@ -296,9 +314,9 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             <Checkbox
               checked={localValue}
               onCheckedChange={handleChange}
-              disabled={field.readonly}
+              disabled={isDisabled}
             />
-            <Label>{field.placeholder}</Label>
+            <Label className={isDisabled ? 'text-muted-foreground' : ''}>{field.placeholder}</Label>
           </div>
         );
 
@@ -308,9 +326,9 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             <Switch
               checked={localValue}
               onCheckedChange={handleChange}
-              disabled={field.readonly}
+              disabled={isDisabled}
             />
-            <Label>{field.placeholder}</Label>
+            <Label className={isDisabled ? 'text-muted-foreground' : ''}>{field.placeholder}</Label>
           </div>
         );
 
@@ -320,7 +338,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             type="date"
             value={localValue}
             onChange={(e) => handleChange(e.target.value)}
-            readOnly={field.readonly}
+            readOnly={isDisabled}
+            disabled={isDisabled}
             className={error ? 'border-red-500' : ''}
           />
         );
@@ -331,7 +350,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             type="time"
             value={localValue}
             onChange={(e) => handleChange(e.target.value)}
-            readOnly={field.readonly}
+            readOnly={isDisabled}
+            disabled={isDisabled}
             className={error ? 'border-red-500' : ''}
           />
         );
@@ -348,7 +368,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             }}
             accept={field.accept?.join(',')}
             multiple={field.multiple}
-            disabled={field.readonly}
+            disabled={isDisabled}
             className={error ? 'border-red-500' : ''}
           />
         );
@@ -359,7 +379,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             value={localValue}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
-            readOnly={field.readonly}
+            readOnly={isDisabled}
+            disabled={isDisabled}
             className={error ? 'border-red-500' : ''}
           />
         );
@@ -376,10 +397,21 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             🔗 Linked to: {field.dependsOn}
           </span>
         )}
+        {isDisabled && (
+          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+            🔒 Disabled
+          </span>
+        )}
       </Label>
       {renderField()}
       {error && <p className="text-sm text-red-500">{error}</p>}
       {field.note && <p className="text-sm text-gray-500">{field.note}</p>}
     </div>
   );
+};
+
+// Helper function to resolve options (keep existing implementation)
+const resolveOptions = (options: string[]) => {
+  // This is a simplified version - you might want to implement proper system variable resolution
+  return options;
 };

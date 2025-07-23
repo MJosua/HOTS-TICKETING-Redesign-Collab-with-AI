@@ -97,6 +97,123 @@ const FormBuilder = () => {
     }
   };
 
+  // Enhanced Conditional Form Example
+  const conditionalFormExample: FormConfig = {
+    url: "/conditional-form-example",
+    title: "Enhanced Conditional Form Example",
+    category: "Demo",
+    fields: [
+      {
+        name: "userType",
+        label: "User Type *",
+        type: "radio",
+        options: ["Employee", "Contractor", "Visitor"],
+        required: true,
+        columnSpan: 1
+      },
+      {
+        name: "employeeId",
+        label: "Employee ID *",
+        type: "text",
+        placeholder: "Enter your employee ID",
+        required: true,
+        columnSpan: 1,
+        showWhen: [
+          { field: "userType", operator: "equals", value: "Employee" }
+        ]
+      },
+      {
+        name: "contractorCompany",
+        label: "Contractor Company *",
+        type: "text",
+        placeholder: "Enter your company name",
+        required: true,
+        columnSpan: 1,
+        showWhen: [
+          { field: "userType", operator: "equals", value: "Contractor" }
+        ]
+      },
+      {
+        name: "visitorHost",
+        label: "Host Employee *",
+        type: "text",
+        placeholder: "Enter host employee name",
+        required: true,
+        columnSpan: 1,
+        showWhen: [
+          { field: "userType", operator: "equals", value: "Visitor" }
+        ]
+      },
+      {
+        name: "accessLevel",
+        label: "Access Level *",
+        type: "select",
+        options: ["Basic", "Standard", "Premium"],
+        required: true,
+        columnSpan: 1
+      },
+      {
+        name: "specialPermissions",
+        label: "Special Permissions",
+        type: "textarea",
+        placeholder: "Describe any special permissions needed",
+        columnSpan: 2,
+        showWhen: [
+          { field: "accessLevel", operator: "equals", value: "Premium" }
+        ]
+      },
+      {
+        name: "emergencyContact",
+        label: "Emergency Contact",
+        type: "text",
+        placeholder: "Enter emergency contact",
+        columnSpan: 1,
+        disabledWhen: [
+          { field: "userType", operator: "equals", value: "Visitor" }
+        ]
+      },
+      {
+        name: "duration",
+        label: "Access Duration (days) *",
+        type: "number",
+        placeholder: "Enter number of days",
+        required: true,
+        columnSpan: 1
+      },
+      {
+        name: "extensionReason",
+        label: "Extension Reason",
+        type: "textarea",
+        placeholder: "Explain why you need extended access",
+        columnSpan: 2,
+        showWhen: [
+          { field: "duration", operator: "greater_than", value: 30 }
+        ]
+      },
+      {
+        name: "approvalRequired",
+        label: "Manager Approval Required",
+        type: "checkbox",
+        columnSpan: 1,
+        showWhen: [
+          { field: "accessLevel", operator: "equals", value: "Premium" },
+          { field: "duration", operator: "greater_than", value: 7, logicalOperator: "OR" }
+        ]
+      },
+      {
+        name: "managerEmail",
+        label: "Manager Email *",
+        type: "text",
+        placeholder: "Enter manager's email",
+        required: true,
+        columnSpan: 1,
+        showWhen: [
+          { field: "approvalRequired", operator: "equals", value: true }
+        ]
+      }
+    ]
+  };
+
   // Sample Request Form with System Variables and Structured Input
   const sampleRequestFormV1: FormConfig = {
     url: "/sample-request-enhanced",
@@ -245,8 +362,6 @@ const FormBuilder = () => {
   };
 
   // Sample Request Form Configuration V2
- 
-
   const itSupportForm: FormConfig = {
     url: "/it-support",
     title: "IT Support Request",
@@ -401,6 +516,7 @@ const FormBuilder = () => {
   };
 
   const formOptions = [
+    { id: 'conditional-form-example', name: 'Enhanced Conditional Form (NEW)', config: conditionalFormExample },
     { id: 'asset-request-enhanced', name: 'Enhanced Asset Request (with Variables)', config: assetRequestFormV1 },
     { id: 'sample-request-enhanced', name: 'Enhanced Sample Request (Structured)', config: sampleRequestFormV1 },
     { id: 'it-support', name: 'IT Support Request', config: itSupportForm },

@@ -13,6 +13,7 @@ import { FormConfig, FormField, RowGroup, FormSection, RowData } from '@/types/f
 import { WidgetConfig } from '@/types/widgetTypes';
 import { getWidgetById } from '@/registry/widgetRegistry';
 import { mapFormDataToTicketColumns, getMaxFormFields } from '@/utils/formFieldMapping';
+import { evaluateConditionalRules, validateConditionalRules } from '@/utils/conditionalLogic';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
 import { createTicket, uploadFiles } from '@/store/slices/ticketsSlice';
 import { selectServiceWidgets } from '@/store/slices/catalogSlice';
@@ -173,6 +174,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   };
 
   const shouldShowField = (field: FormField, values: Record<string, any>) => {
+    // Enhanced conditional logic using the new system
+    if (field.showWhen && field.showWhen.length > 0) {
+      return evaluateConditionalRules(field.showWhen, values);
+    }
+    
+    // Legacy uiCondition support
     if (!field.uiCondition) return true;
     if (field.uiCondition.includes('toggle is on')) {
       const toggleFields = Object.keys(values).filter(key =>
@@ -239,6 +246,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   };
 
   const renderFieldsInRows = (fields: FormField[]) => {
+    // Add validation for conditional rules
+    const validationErrors = validateConditionalRules(fields);
+    if (validationErrors.length > 0) {
+      console.warn('Conditional logic validation errors:', validationErrors);
+    }
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {fields.map((field, fieldIndex) => {
@@ -253,36 +266,36 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
           return (
             <div key={fieldKey} className={getColSpanClass(field.columnSpan || 1)}>
-                  <DynamicField
-                    field={fieldToRender}
-                    value={form.watch(fieldKey)}
-                    onChange={useCallback((value) => {
-                      form.setValue(fieldKey, value);
-                      setWatchedValues(prev => {
-                        if (prev[fieldKey] === value) {
-                          return prev;
-                        }
-                        const newValues = { ...prev, [fieldKey]: value };
-                        return newValues;
-                      });
+              <DynamicField
+                field={fieldToRender}
+                value={form.watch(fieldKey)}
+                onChange={useCallback((value) => {
+                  form.setValue(fieldKey, value);
+                  setWatchedValues(prev => {
+                    if (prev[fieldKey] === value) {
+                      return prev;
+                    }
+                    const newValues = { ...prev, [fieldKey]: value };
+                    return newValues;
+                  });
 
-                      const updatedFields = (config.fields || []).map(f => {
-                        if (f.dependsOn === field.name) {
-                          const filteredOptions = filterDependentFieldOptions(f, value);
-                          console.log('Updating dependent field options:', f.name, filteredOptions);
-                          return { ...f, options: filteredOptions };
-                        }
-                        return f;
-                      });
+                  const updatedFields = (config.fields || []).map(f => {
+                    if (f.dependsOn === field.name) {
+                      const filteredOptions = filterDependentFieldOptions(f, value);
+                      console.log('Updating dependent field options:', f.name, filteredOptions);
+                      return { ...f, options: filteredOptions };
+                    }
+                    return f;
+                  });
 
-                      if (updatedFields.some(f => f.dependsOn === field.name)) {
-                        console.log('Setting local fields with updated options');
-                        setLocalFields(updatedFields);
-                      }
-                    }, [field.name, config.fields, filterDependentFieldOptions, form, setLocalFields, setWatchedValues])}
-                    watchedValues={memoizedWatchedValues}
-                    error={form.formState.errors[fieldKey]?.message as string}
-                  />
+                  if (updatedFields.some(f => f.dependsOn === field.name)) {
+                    console.log('Setting local fields with updated options');
+                    setLocalFields(updatedFields);
+                  }
+                }, [field.name, config.fields, filterDependentFieldOptions, form, setLocalFields, setWatchedValues])}
+                watchedValues={memoizedWatchedValues}
+                error={form.formState.errors[fieldKey]?.message as string}
+              />
             </div>
           );
         })}

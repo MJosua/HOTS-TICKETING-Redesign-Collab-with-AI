@@ -57,6 +57,16 @@ export interface FormField {
   systemVariable?: string;
   dependsOn?: string; // field name this field depends on
   filterOptionsBy?: string; // key or expression to filter options based on dependsOn field's value
+  // Enhanced conditional logic
+  showWhen?: ConditionalRule[];
+  disabledWhen?: ConditionalRule[];
+}
+
+export interface ConditionalRule {
+  field: string;
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'empty' | 'not_empty' | 'greater_than' | 'less_than';
+  value?: string | number | boolean;
+  logicalOperator?: 'AND' | 'OR';
 }
 
 export interface RowData {
