@@ -9,6 +9,7 @@ export interface SuggestionInsertInputProps {
   placeholder?: string;
   defaultValue?: string;
   readOnly?: boolean;
+  disabled?: boolean;
   onChange?: (value: string) => void;
   onEnter?: (value: string) => void;
 }
@@ -18,6 +19,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
   placeholder = "Type or select suggestions",
   defaultValue = "",
   readOnly = false,
+  disabled = false,
   onChange = () => {},
   onEnter = () => {},
 }) => {
@@ -150,11 +152,15 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
   };
 
   const handleInputFocus = () => {
-    setShowSuggestions(true);
-    // console.log('🔧 [SuggestionInput] Input focused - showing suggestions');
+    if (!disabled) {
+      setShowSuggestions(true);
+      // console.log('🔧 [SuggestionInput] Input focused - showing suggestions');
+    }
   };
 
   const handleDropdownToggle = () => {
+    if (disabled) return;
+    
     const newShowState = !showSuggestions;
     setShowSuggestions(newShowState);
     setSelectedIndex(-1);
@@ -187,6 +193,7 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
           onFocus={handleInputFocus}
           placeholder={placeholder}
           readOnly={readOnly}
+          disabled={disabled}
           className="pr-8"
         />
         <Button
@@ -195,13 +202,13 @@ export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
           size="sm"
           className="absolute right-0 top-0 h-full px-2"
           onClick={handleDropdownToggle}
-          disabled={readOnly}
+          disabled={readOnly || disabled}
         >
           <ChevronDown className="h-4 w-4" />
         </Button>
       </div>
 
-      {showSuggestions && filteredSuggestions.length > 0 && (
+      {showSuggestions && filteredSuggestions.length > 0 && !disabled && (
         <div 
           ref={dropdownRef}
           className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
