@@ -328,6 +328,7 @@ const TicketDetail = () => {
       approver_leader: approver.approver_leader,
       date: approver.approval_date || null,
       order: approver.approval_order,
+      approval_order: approver.approval_order,
       assigned_team: ticketDetail.assigned_team
 
     }));
