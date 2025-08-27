@@ -135,7 +135,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       row.id === rowId ? { ...row, [`${field}Value`]: value } : row
     );
 
-    
+
     onUpdateRowGroup(groupIndex, updatedRows);
   };
 
@@ -187,36 +187,71 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
         );
 
       case 'number': {
-        const maxValue = structure.secondColumn.maxnumber !== undefined ? structure.secondColumn.maxnumber : undefined;
+        const maxValue =
+          structure.secondColumn.maxnumber !== undefined
+            ? structure.secondColumn.maxnumber
+            : undefined;
+
         const rounding = structure.secondColumn.rounding || false;
-        console.log("structure",structure)
+
+        const formatNumber = (num) => {
+          if (num === null || num === undefined || num === "") return "";
+          return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          // 👆 "1,000" format. Change "," to "." for Indonesian.
+        };
+
         const handleNumberChange = (value) => {
-          let val = value;
-          let numVal = Number(val);
+          let raw = value.replace(/,/g, ""); // remove commas before parsing
+          let numVal = Number(raw);
+
           if (!isNaN(numVal)) {
             if (maxValue !== undefined && numVal > maxValue) {
-              numVal = maxValue ;
+              numVal = maxValue;
             }
+
             if (rounding) {
-              numVal = Math.max(rounding, Math.round(numVal / rounding) * rounding);
+              numVal = Math.max(
+                rounding,
+                Math.round(numVal / rounding) * rounding
+              );
             }
-            val = numVal.toString();
+
+            onChange(numVal); // pass numeric value upward
+            return formatNumber(numVal); // formatted for display
           }
-          onChange(val);
+
+          onChange(""); // invalid → clear
+          return "";
         };
+
+        const handleBlur = (e) => {
+          const formatted = handleNumberChange(e.target.value);
+          setDisplay(formatted);
+        };
+
+        const [display, setDisplay] = React.useState(
+          formatNumber(value) // keep display state
+        );
+
+        React.useEffect(() => {
+          setDisplay(formatNumber(value));
+        }, [value]);
 
         return (
           <Input
-            type="number"
-            value={value}
-            onBlur={(e) => handleNumberChange(e.target.value)}
-            onChange={(e) => onChange(e.target.value)}
+            type="text"
+            value={display}
+            onChange={(e) => {
+              // let user type
+              setDisplay(e.target.value);
+            }}
+            onBlur={handleBlur}
             placeholder={structure.placeholder}
-            max={maxValue}
             readOnly={structure.readonly}
           />
         );
-      }
+      };
+
 
       case 'suggestion-insert':
         return (
