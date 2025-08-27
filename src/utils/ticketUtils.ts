@@ -25,6 +25,7 @@ export const convertTicketToDisplayFormat = (ticket: Ticket) => {
 
   return {
     id: ticket.ticket_id.toString(),
+    status_id: ticket.status_id,
     type: ticket.service_name,
     requester: ticket.created_by_name || "Current User",
     department: ticket.department_name || "Unknown Department",

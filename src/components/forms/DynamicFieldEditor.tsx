@@ -480,7 +480,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         {field.type === 'suggestion-insert' && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Label>Suggestionsxsxsx</Label>
+              <Label>Suggestion</Label>
               <SystemVariableHelper />
             </div>
             <Textarea

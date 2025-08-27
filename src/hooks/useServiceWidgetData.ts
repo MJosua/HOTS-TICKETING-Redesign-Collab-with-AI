@@ -36,7 +36,7 @@ export const useServiceWidgetData = ({
   // Prepare data sources with resolved parameters
   const resolvedDataSources = useMemo(() => {
     if (!enabled || !widgetConfig.enabled) {
-      console.log('🔧 [Widget Data] Skipping data sources - disabled:', { enabled, configEnabled: widgetConfig.enabled });
+      // console.log('🔧 [Widget Data] Skipping data sources - disabled:', { enabled, configEnabled: widgetConfig.enabled });
       return [];
     }
 

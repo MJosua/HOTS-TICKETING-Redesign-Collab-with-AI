@@ -126,7 +126,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         variant: "destructive",
       });
 
-      console.log("config", mappedData)
       return;
     }
     setIsSubmitting(true);

@@ -132,7 +132,7 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                   <Input
                     type="number"
                     value={localRowGroup.maxRows || 10}
-                    onChange={(e) => updateRowGroup({ maxRows: parseInt(e.target.value) || 10 })}
+                    onChange={(e) => updateRowGroup({ maxRows: parseInt(e.target.value) || 10 }), console.log("localRowGroup",localRowGroup)}
                     min="1"
                     max="50"
                   />
@@ -417,6 +417,73 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                         <SelectItem value="select">Select</SelectItem>
                       </SelectContent>
                     </Select>
+
+
+                    {(localRowGroup.structure?.secondColumn?.type === 'number') && (
+                      <div>
+                        <Label>Options (one per line)</Label>
+                        <div>
+                          <Label>Max Number</Label>
+                          <Input
+                            value={localRowGroup.structure?.secondColumn?.maxnumber || ''}
+                            onChange={(e) => updateRowGroup({
+                              structure: {
+                                ...localRowGroup.structure,
+                                secondColumn: {
+                                  ...localRowGroup.structure?.secondColumn,
+                                  maxnumber: e.target.value
+                                }
+                              }
+                            })}
+                            placeholder="Placeholder text"
+                            className="bg-white"
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Min Number</Label>
+                          <Input
+                            value={localRowGroup.structure?.secondColumn?.minnumber || ''}
+                            onChange={(e) => updateRowGroup({
+                              structure: {
+                                ...localRowGroup.structure,
+                                secondColumn: {
+                                  ...localRowGroup.structure?.secondColumn,
+                                  minnumber: e.target.value
+                                }
+                              }
+                            })}
+                            placeholder="Placeholder text"
+                            className="bg-white"
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Rounding</Label>
+                          <Input
+                            value={localRowGroup.structure?.secondColumn?.rounding || ''}
+                            onChange={(e) => updateRowGroup({
+                              structure: {
+                                ...localRowGroup.structure,
+                                secondColumn: {
+                                  ...localRowGroup.structure?.secondColumn,
+                                  rounding: e.target.value
+                                }
+                              }
+                            })}
+                            placeholder="Placeholder text"
+                            className="bg-white"
+                          />
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 space-y-1">
+                          <p>• Enter each option on a new line</p>
+                          <p>• For JSON objects, enter valid JSON on each line</p>
+                          <p>• System variables like ${'{factoryplants}'} will be resolved automatically</p>
+
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 </div>
 

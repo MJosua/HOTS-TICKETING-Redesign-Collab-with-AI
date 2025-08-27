@@ -157,6 +157,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
     console.log('📝 [Field Change]:', {
       fieldName: field.name,
+      fieldAttribute: field,
       newValue: newValue,
       hasChainLink: !!field.dependsOn
     });
@@ -186,18 +187,48 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
   const renderField = () => {
     switch (field.type) {
-      case 'text':
-      case 'number':
+      case 'text': {
         return (
           <Input
-            type={field.type}
             value={localValue}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
             readOnly={field.readonly}
             className={error ? 'border-red-500' : ''}
           />
+        )
+      }
+      case 'number': {
+        const maxValue = field.maxnumber !== undefined ? field.maxnumber : undefined;
+        const rounding = field.rounding || false;
+
+        const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          let val = e.target.value;
+          let numVal = Number(val);
+          if (!isNaN(numVal)) {
+            if (maxValue !== undefined && numVal > maxValue) {
+              numVal = maxValue ;
+            }
+            if (rounding) {
+              numVal = Math.round(numVal / 25) * 25;
+            }
+            val = numVal.toString();
+          }
+          handleChange(val);
+        };
+
+        return (
+          <Input
+            type="number"
+            value={localValue}
+            onChange={handleNumberChange}
+            placeholder={field.placeholder}
+            max={maxValue}
+            readOnly={field.readonly}
+            className={error ? 'border-red-500' : ''}
+          />
         );
+      }
 
       case 'textarea':
         return (
@@ -226,10 +257,9 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
                 try {
                   const parsed = JSON.parse(option);
-                  console.log("parsed", parsed)
                   return (
                     <SelectItem key={index} value={parsed.plan_id ?? option}>
-                      { parsed.label ||parsed.name || option}
+                      {parsed.label || parsed.name || option}
                     </SelectItem>
                   );
                 } catch {

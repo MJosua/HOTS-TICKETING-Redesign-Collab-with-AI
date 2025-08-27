@@ -134,6 +134,8 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     const updatedRows = rows.map(row =>
       row.id === rowId ? { ...row, [`${field}Value`]: value } : row
     );
+
+    
     onUpdateRowGroup(groupIndex, updatedRows);
   };
 
@@ -156,6 +158,8 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       }
     }
   }, [structure]);
+
+
 
   const renderField = (
     column: 'firstColumn' | 'secondColumn' | 'thirdColumn',
@@ -182,15 +186,37 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
           </Select>
         );
 
-      case 'number':
+      case 'number': {
+        const maxValue = structure.secondColumn.maxnumber !== undefined ? structure.secondColumn.maxnumber : undefined;
+        const rounding = structure.secondColumn.rounding || false;
+        console.log("structure",structure)
+        const handleNumberChange = (value) => {
+          let val = value;
+          let numVal = Number(val);
+          if (!isNaN(numVal)) {
+            if (maxValue !== undefined && numVal > maxValue) {
+              numVal = maxValue ;
+            }
+            if (rounding) {
+              numVal = Math.max(rounding, Math.round(numVal / rounding) * rounding);
+            }
+            val = numVal.toString();
+          }
+          onChange(val);
+        };
+
         return (
           <Input
             type="number"
             value={value}
-            onChange={e => onChange(e.target.value)}
-            placeholder={colDef.placeholder}
+            onBlur={(e) => handleNumberChange(e.target.value)}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={structure.placeholder}
+            max={maxValue}
+            readOnly={structure.readonly}
           />
         );
+      }
 
       case 'suggestion-insert':
         return (
@@ -233,7 +259,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
               <label className="text-sm font-medium mb-1 block">{structure.thirdColumn.label}</label>
             </div>
           </div>
-          
+
           {/* Row Entries */}
           {rows.map((row, index) => (
             <div key={row.id} className="relative">

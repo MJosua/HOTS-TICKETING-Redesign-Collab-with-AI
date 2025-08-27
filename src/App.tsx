@@ -73,7 +73,7 @@ const AppContentInner = () => {
 
 
   const handleServiceSubmit = useCallback((data: any) => {
-    console.log("Service form submitted:", data);
+    // console.log("Service form submitted:", data);
   }, []);
 
   const dynamicServiceRoutes = useDynamicServiceRoutes(handleServiceSubmit);

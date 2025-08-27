@@ -62,7 +62,6 @@ export const ServiceWidgetManager: React.FC<ServiceWidgetManagerProps> = ({
 
   const renderWidgetCard = (widget: WidgetConfig) => {
     const isSelected = selectedWidgets.includes(widget.id);
-    console.log("isSelected",isSelected)
     return (
       <Card key={widget.id} className={`transition-all ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
         <CardHeader className="pb-3">

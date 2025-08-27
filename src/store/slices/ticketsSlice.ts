@@ -92,7 +92,6 @@ export const fetchTaskList = createAsyncThunk(
         },
       });
       
-      console.log('Task List API Response:', response.data);
       
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch task list');
@@ -193,7 +192,6 @@ export const fetchTaskCount = createAsyncThunk(
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch task count');
       }
-      console.log('Task Count API Response:', response.data);
       
       return response.data.count || 0;
     } catch (error: any) {

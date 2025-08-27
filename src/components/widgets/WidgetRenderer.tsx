@@ -59,13 +59,13 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
   const isExcluded = excludedWidgets.has(config.id);
 
   // Debug logging for widget data fetching
-  console.log('🔧 [Widget Renderer] Processing widget:', {
-    widgetId: config.id,
-    serviceId,
-    hasContext: !!context,
-    isExcluded,
-    shouldFetchData: !!(serviceId && context && !isExcluded)
-  });
+  // console.log('🔧 [Widget Renderer] Processing widget:', {
+  //   widgetId: config.id,
+  //   serviceId,
+  //   hasContext: !!context,
+  //   isExcluded,
+  //   shouldFetchData: !!(serviceId && context && !isExcluded)
+  // });
 
   // Use dynamic data fetching if serviceId and context are provided and not excluded
   const {
@@ -107,12 +107,12 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     error: dataError,
   };
 
-  console.log('🔧 [Widget Renderer] Final widget props:', {
-    widgetId: config.id,
-    hasWidgetData: !!widgetProps.widgetData,
-    widgetDataKeys: widgetProps.widgetData ? Object.keys(widgetProps.widgetData) : [],
-    isLoading: widgetProps.isLoading
-  });
+  // console.log('🔧 [Widget Renderer] Final widget props:', {
+  //   widgetId: config.id,
+  //   hasWidgetData: !!widgetProps.widgetData,
+  //   widgetDataKeys: widgetProps.widgetData ? Object.keys(widgetProps.widgetData) : [],
+  //   isLoading: widgetProps.isLoading
+  // });
 
   return (
     <div className={`widget-container ${className}`} data-widget-id={config.id}>

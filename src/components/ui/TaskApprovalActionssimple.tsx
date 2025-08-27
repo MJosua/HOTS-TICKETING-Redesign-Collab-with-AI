@@ -46,6 +46,8 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
     return null;
   }
 
+
+
   const handleApprove = async () => {
     try {
       await dispatch(approveTicket({
@@ -61,6 +63,8 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
 
       // Refresh the task list
       dispatch(fetchTaskList(1));
+      dispatch(fetchTicketDetail(ticketId));
+
       setRefreshticketdetail(true)
       setComment('');
       setShowCommentBox(false);
@@ -97,6 +101,7 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
 
       // Refresh the task list
       dispatch(fetchTaskList(1));
+      dispatch(fetchTicketDetail(ticketId));
       setRejectionRemark('');
       setShowRejectBox(false);
     } catch (error) {
@@ -114,7 +119,7 @@ const TaskApprovalActionsSimple: React.FC<TaskApprovalActionsProps> = ({
   };
 
 
- 
+
   return (
     <Card className='w-full h-full  items-center justify-center'>
       <CardContent >

@@ -28,19 +28,21 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
 
   const handleSave = () => {
     // Apply the filter input when saving (prevents focus loss during typing)
-    const updatedField = { 
-      ...localField, 
-      filterOptionsBy: filterInput.trim() || undefined 
+    const updatedField = {
+      ...localField,
+      filterOptionsBy: filterInput.trim() || undefined
     };
-    
+
     console.log('🔧 [Field Editor] Saving field:', {
       fieldName: updatedField.name,
       fieldType: updatedField.type,
       dependsOn: updatedField.dependsOn,
       filterOptionsBy: updatedField.filterOptionsBy,
-      hasChainLink: !!updatedField.dependsOn
+      hasChainLink: !!updatedField.dependsOn,
+      maxnumber: updatedField.maxnumber,
+      minnumber: updatedField.minnumber,
     });
-    
+
     onUpdate(updatedField);
   };
 
@@ -92,7 +94,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             value={localField.dependsOn ?? "none"}
             onValueChange={(value) => {
               const dependsOn = value === "none" ? undefined : value;
-              updateField({ 
+              updateField({
                 dependsOn,
                 // Clear filterOptionsBy if removing dependency
                 filterOptionsBy: dependsOn ? localField.filterOptionsBy : undefined
@@ -100,7 +102,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
               if (!dependsOn) {
                 setFilterInput('');
               }
-              
+
               console.log('🔗 [Chain Link] Parent field changed:', {
                 childField: localField.name,
                 parentField: dependsOn,
@@ -289,6 +291,43 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
             )}
           </div>
         </div>
+      )}
+
+      {(localField.type === 'number') && (
+
+        <>
+          <div>
+            <Label>Max Number</Label>
+            <Input
+              value={localField.maxnumber || ''}
+              onChange={(e) => updateField({ maxnumber: e.target.value })}
+              placeholder="Placeholder text"
+              className="bg-white"
+            />
+          </div>
+
+          <div>
+            <Label>Min Number</Label>
+            <Input
+              value={localField.minnumber || ''}
+              onChange={(e) => updateField({ minnumber: e.target.value })}
+              placeholder="Placeholder text"
+              className="bg-white"
+            />
+          </div>
+
+          <div>
+            <Label>Rounding</Label>
+            <Input
+              value={localField.rounding || ''}
+              onChange={(e) => updateField({ rounding: e.target.value })}
+              placeholder="Placeholder text"
+              className="bg-white"
+            />
+          </div>
+
+        </>
+
       )}
 
       <div>

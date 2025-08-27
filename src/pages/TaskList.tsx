@@ -34,7 +34,6 @@ const TaskList = () => {
   }, [dispatch]);
 
   const tasks = taskList.data.map(convertTicketToDisplayFormat);
-  console.log('myTickets.data',taskList.data)
 
   const filteredTasks = tasks.filter(task => {
     const statusFilter = filterStatus === 'all' || task.status === filterStatus;
@@ -93,11 +92,16 @@ const TaskList = () => {
 
   // Sort: yang bisa approve muncul dulu
   const sortedTasks = [...filteredTasks].sort((a, b) => {
+
+    if (a.status_id !== b.status_id) {
+      return a.status_id - b.status_id; // lower number first
+    }
+
     const aCan = canUserApprove(a);
     const bCan = canUserApprove(b);
     return (aCan === bCan) ? 0 : aCan ? -1 : 1;
   });
-
+  console.log("filteredTasks",filteredTasks)
   const TableView = () => (
     <Card className="border-border shadow-sm">
       <CardContent className="p-0">

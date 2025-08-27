@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2, Download, Paperclip, PlaneIcon, Group, CheckCheck } from 'lucide-react';
+import { ArrowLeft, CheckSquare, X, Send, Calendar, User, DollarSign, Loader2, Download, Paperclip, PlaneIcon, Group, CheckCheck, Trash } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import RejectModal from "@/components/modals/RejectModal";
@@ -18,7 +18,7 @@ import { fetchTicketDetail, approveTicket, rejectTicket, clearTicketDetail } fro
 import { fetchGeneratedDocuments, fetchFunctionLogs } from '@/store/slices/customFunctionSlice';
 import { useToast } from '@/hooks/use-toast';
 import { API_URL } from '@/config/sourceConfig';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Eye, FileText } from 'lucide-react';
 import ExcelPreview from '@/components/ExcelPreview';
 import TaskApprovalActionsSimple from '@/components/ui/TaskApprovalActionssimple';
@@ -34,6 +34,8 @@ import { fetchUsers } from '@/store/slices/userManagementSlice';
 import { SuggestionInsertInputWrapper } from '@/components/forms/SuggestionInsertInputWrapper';
 import axios from 'axios';
 import { socket } from '@/lib/socket';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -43,38 +45,115 @@ const TicketDetail = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [refreshticketdetail, setRefreshticketdetail] = useState(false)
-  const [selectedEmail, setSelectedEmail] = useState('');
-  const [selectedToEmails, setSelectedToEmails] = useState<string[]>([]);
-  const [selectedCcEmails, setSelectedCcEmails] = useState<string[]>([]);
-  const [toInputValue, setToInputValue] = useState('');
-  const [ccInputValue, setCcInputValue] = useState('');
+  const [selectedToEmails, setSelectedToEmails] = useState("");
 
   const { ticketDetail, isLoadingDetail, detailError, isSubmitting } = useAppSelector(state => state.tickets);
 
 
+  const [isDeleteTicketOpen, setIsDeleteTicketOpen] = useState(false);
+  const [isCloseTicketOpen, setIsCloseTicketOpen] = useState(false);
 
-  useEffect(() => {
-    if (ticketDetail) {
-      if (ticketDetail?.service_id?.toString() === "6") {
-        const toField = Array.isArray(ticketDetail.detail_rows)
-          ? ticketDetail.detail_rows.find(
-            (row) => row.lbl_col === "To" || row.order_col === 998
-          )
-          : null;
+  const handleDeleteTicket = async () => {
+    if (!ticketDetail || !id) {
 
-        if (toField?.cstm_col) {
-          try {
-            const parsed = JSON.parse(toField.cstm_col);
-            if (Array.isArray(parsed)) {
-              setSelectedToEmails(parsed);
-            }
-          } catch (err) {
-            console.error("Failed to parse cstm_col as JSON:", err);
-          }
-        }
-      }
+      return;
     }
-  }, [ticketDetail]);
+
+
+
+    try {
+      const response = await fetch(`${API_URL}/hots_ticket/close/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`
+        },
+      });
+      console.log("response", response)
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update ticket detail');
+      } else {
+        setIsDeleteTicketOpen(false)
+        dispatch(fetchTicketDetail(id));
+
+        toast({
+          title: "Success",
+          description: "Ticket detail updated successfully",
+          variant: "default",
+        });
+
+      }
+
+
+
+
+
+    } catch (error: any) {
+      console.log("error", error)
+      toast({
+        title: "Close Ticket Error",
+        description: error.message || "Failed to update ticket detail",
+        variant: "destructive",
+      });
+    }
+  }
+
+  const handleCloseTicket = async () => {
+    if (!ticketDetail || !id) {
+
+      return;
+    }
+
+
+
+    try {
+      const response = await fetch(`${API_URL}/hots_ticket/closeservice/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('tokek')}`
+        },
+      });
+      console.log("response", response)
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update ticket detail');
+      } else {
+        setIsCloseTicketOpen(false)
+        dispatch(fetchTicketDetail(id));
+
+        toast({
+          title: "Success",
+          description: "Ticket detail updated successfully",
+          variant: "default",
+        });
+
+      }
+
+
+
+
+
+    } catch (error: any) {
+      console.log("error", error)
+      toast({
+        title: "Close Ticket Error",
+        description: error.message || "Failed to update ticket detail",
+        variant: "destructive",
+      });
+    }
+  }
+
+  const closeDeleteTicketModal = () => {
+
+    setIsDeleteTicketOpen(false)
+  }
+
+  const closeCloseTicketModal = () => {
+
+    setIsCloseTicketOpen(false)
+  }
 
   const { generatedDocuments, functionLogs, isLoading: isLoadingCustomFunction } = useAppSelector(state => state.customFunction);
   const { user } = useAppSelector(state => state.auth);
@@ -104,7 +183,6 @@ const TicketDetail = () => {
   }, [ticketDetail]);
 
 
-  console.log("assignedWidgets", assignedWidgets);
 
   useEffect(() => {
     if (id) {
@@ -151,22 +229,7 @@ const TicketDetail = () => {
   };
 
 
-  useEffect(() => {
-    if (ticketDetail) {
-      if (ticketDetail?.service_id.toLocaleString() === "6") {
-        try {
-          const cstmCol = ticketDetail.detail_rows?.[0]?.cstm_col;
-          if (cstmCol) {
-            const parsed = JSON.parse(cstmCol);
-            setSelectedToEmails(Array.isArray(parsed) ? parsed : []);
-          }
-        } catch (err) {
-          console.error("Failed to parse cstm_col:", err);
-          setSelectedToEmails([]);
-        }
-      }
-    }
-  }, [dispatch])
+
 
   const handleUpdateTicketDetail = async () => {
     if (!ticketDetail || !id) {
@@ -177,15 +240,10 @@ const TicketDetail = () => {
     if (ticketDetail.service_id.toLocaleString() === "6") {
       const detailFields = [
         {
-          cstm_col: JSON.stringify(selectedToEmails),
-          lbl_col: "EmailTo",
-          order_col: 998
-        },
-        {
-          cstm_col: JSON.stringify(selectedCcEmails),
-          lbl_col: "EmailCC",
+          cstm_col: selectedToEmails,
+          lbl_col: "Invoice",
           order_col: 999
-        }
+        },
       ];
 
       try {
@@ -199,8 +257,17 @@ const TicketDetail = () => {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to update ticket detail');
+          const rawText = await response.text(); // read once
+
+          let errorMessage = 'Failed to update ticket detail';
+          try {
+            const errorData = JSON.parse(rawText); // try to parse as JSON
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            errorMessage = rawText || errorMessage; // fallback to plain text
+          }
+
+          throw new Error(errorMessage);
         }
 
         toast({
@@ -211,6 +278,7 @@ const TicketDetail = () => {
 
         dispatch(fetchTicketDetail(id));
       } catch (error: any) {
+        console.log("selectedToEmails", selectedToEmails)
         toast({
           title: "Update Error",
           description: error.message || "Failed to update ticket detail",
@@ -321,7 +389,7 @@ const TicketDetail = () => {
       id: `${approver.approver_id}-${index}`,
       name: approver.approver_name,
       status: approver.approval_status === 1 ? 'approved' as const :
-        approver.approval_status === 2 ? 'rejected' as const :
+        approver.approval_status === 4 ? 'rejected' as const :
           approver.approval_order === ticketDetail.current_step ? 'pending' as const :
             'waiting' as const,
       approver: approver.approver_name,
@@ -441,7 +509,7 @@ const TicketDetail = () => {
 
   const hasFetchedUsersRef = useRef(false);
 
-
+  console.log("ticket_detail", ticketDetail)
 
 
   const [comment, setComment] = useState("");
@@ -708,8 +776,6 @@ const TicketDetail = () => {
   );
 
 
-
-
   return (
     <AppLayout>
       <div className="space-y-6 relative z-0">
@@ -735,8 +801,9 @@ const TicketDetail = () => {
               title="Request Information"
               description="Details about the current request"
               defaultOpen
+              color={ticketDetail.status_id === 7 && "bg-red-400"}
             >
-              <div className="grid grid-cols-2 gap-4">
+              <div className={user && user.user_id === ticketDetail.user_id ? "grid grid-cols-3 gap-4" : "grid grid-cols-2 gap-4"}>
                 <div className="flex items-center space-x-2">
                   <User className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -751,13 +818,25 @@ const TicketDetail = () => {
                     <p className="font-medium">{new Date(ticketDetail.creation_date).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Group className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Department</p>
-                    <p className="font-medium">{ticketDetail.department_name || ticketDetail.team_name || 'Unknown'}</p>
+                {user && ticketDetail.current_step < 2 && user.user_id === ticketDetail.user_id &&
+                  <div className="flex items-center justify-end  space-x-2">
+                    <div className='text-center'>
+                      <p className="text-sm text-muted-foreground">Action</p>
+                      <p className="font-medium">
+                        <Button
+                          variant='outline'
+                          id="delete ticket button"
+                          className='bg-red-100'
+                          disabled={ticketDetail.status_id === 7}
+                          onClick={() => { setIsDeleteTicketOpen(true) }}
+                        >
+                          <Trash />
+                        </Button>
+
+                      </p>
+                    </div>
                   </div>
-                </div>
+                }
                 <div className="flex items-center space-x-2">
                   <CheckCheck className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -765,6 +844,13 @@ const TicketDetail = () => {
                     <Badge style={{ backgroundColor: ticketDetail.color, color: 'white' }}>
                       {ticketDetail.status}
                     </Badge>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Group className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Department</p>
+                    <p className="font-medium">{ticketDetail.department_name || ticketDetail.team_name || 'Unknown'}</p>
                   </div>
                 </div>
 
@@ -895,7 +981,6 @@ const TicketDetail = () => {
                   ) : generatedDocuments && generatedDocuments.length > 0 ? (
                     <div className="space-y-3">
                       {(() => {
-                        console.log("generatedDocuments", generatedDocuments);
                         return null;
                       })()}
                       {generatedDocuments.map((document) => (
@@ -921,105 +1006,45 @@ const TicketDetail = () => {
             {isFullyApproved &&
               user?.team_id_linked?.toString() === ticketDetail?.assigned_team?.toString() && (
                 <CardCollapsible
-                  title="Service Config"
+                  title="Ticket Service"
                   color="bg-white"
-                  description="Details about the current Service"
+                  description="Details about the Ticket Service"
                   defaultOpen
                 >
 
                   <CardContent className="p-4 space-y-4">
                     {ticketDetail?.service_id?.toString() === "6" && (
                       <>
-                        <div>
-                          <p className="font-semibold">Document Generation</p>
-                        </div>
+
 
                         <div>
-                          <Label className="block mb-1 font-medium">To:</Label>
-                          <SuggestionInsertInputWrapper
-                            suggestions={users.filter(u => u.email && u.email.trim() !== '').map(u => `${u.firstname} ${u.lastname}`)}
-                            placeholder="Type or select from suggestions then enter"
-                            onAdd={(value) => {
-                              const trimmedValue = value.trim().toLowerCase();
-                              const selectedUser = users.find(u => `${u.firstname} ${u.lastname}`.toLowerCase() === trimmedValue);
-                              if (selectedUser && !selectedToEmails.includes(selectedUser.email)) {
-                                setSelectedToEmails([...selectedToEmails, selectedUser.email]);
-                              } else if (!selectedToEmails.includes(value)) {
-                                setSelectedToEmails([...selectedToEmails, value]);
-                              }
-                              setToInputValue('');
-                            }}
-                          >
-
-                          </SuggestionInsertInputWrapper>
-                          {selectedToEmails?.length > 0 && (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {selectedToEmails.map((email) => (
-                                <span
-                                  key={email}
-                                  className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700"
-                                >
-                                  {email}
-                                  <button
-                                    type="button"
-                                    className="ml-2 rounded-full hover:bg-blue-200 p-0.5"
-                                    onClick={() => setSelectedToEmails(selectedToEmails.filter(e => e !== email))}
-                                  >
-                                    &times;
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        <div>
-                          <Label className="block mb-1 font-medium">CC:</Label>
-                          <SuggestionInsertInputWrapper
-                            suggestions={users.filter(u => u.email && u.email.trim() !== '').map(u => `${u.firstname} ${u.lastname}`)}
-                            placeholder="Type or select from suggestions then enter"
-                            onAdd={(value) => {
-                              const trimmedValue = value.trim().toLowerCase();
-                              const selectedUser = users.find(u => `${u.firstname} ${u.lastname}`.toLowerCase() === trimmedValue);
-                              if (selectedUser && !selectedCcEmails.includes(selectedUser.email)) {
-                                setSelectedCcEmails([...selectedCcEmails, selectedUser.email]);
-                              } else if (!selectedCcEmails.includes(value)) {
-                                setSelectedCcEmails([...selectedCcEmails, value]);
-                              }
-                              setCcInputValue('');
-                            }}
+                          <Label className="block mb-1 font-medium">Invoice number:</Label>
+                          <Input
+                            value={Array.isArray(selectedToEmails) ? selectedToEmails.join(', ') : selectedToEmails}
+                            onChange={(e) => setSelectedToEmails(e.target.value)}
                           />
-                          {selectedCcEmails?.length > 0 && (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {selectedCcEmails.map((email) => (
-                                <span
-                                  key={email}
-                                  className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700"
-                                >
-                                  {email}
-                                  <button
-                                    type="button"
-                                    className="ml-2 rounded-full hover:bg-blue-200 p-0.5"
-                                    onClick={() => setSelectedCcEmails(selectedCcEmails.filter(e => e !== email))}
-                                  >
-                                    &times;
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
-                          )}
+
                         </div>
+
+
 
                         <div className=" border-t flex justify-between items-center">
-                          <Button onClick={() => { handleUpdateTicketDetail() }}>
-                            Update Email
+                          <Button className='w-full' onClick={() => { handleUpdateTicketDetail() }}>
+                            Add Invoice to Ticket Detail
                           </Button>
-                          <Button variant="outline"
-                            onClick={() => { handleExecuteCustomFunction(5) }}
-                            disabled={selectedToEmails?.length === 0}
+
+
+
+                        </div>
+                        <div className=" border-t flex justify-between items-center">
+
+
+                          <Button variant="outline" className='w-full bg'
+                            onClick={() => { setIsCloseTicketOpen(true) }}
                           >
-                            Generate Document
-                          </Button >
+                            Close Ticket
+                          </Button>
+
                         </div>
 
                       </>
@@ -1035,6 +1060,8 @@ const TicketDetail = () => {
               color="bg-white"
               description="Details about the current progress"
               defaultOpen
+              color={ticketDetail.status_id === 7 && "bg-red-400"}
+
             >
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -1061,7 +1088,6 @@ const TicketDetail = () => {
 
                 <div className="space-y-3">
 
-
                   {approvalSteps
                     .filter((a) => {
                       if (!user?.user_id) {
@@ -1078,6 +1104,7 @@ const TicketDetail = () => {
                     .sort((a, b) => a.order - b.order)
                     .map((step, index) => (
                       <div key={step.id} className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30">
+
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${step.status === 'approved' ? 'bg-green-500 text-white' :
                           step.status === 'rejected' ? 'bg-red-500 text-white' :
                             step.status === 'pending' ? 'bg-yellow-500 text-white' :
@@ -1240,13 +1267,60 @@ const TicketDetail = () => {
         </div>
       </div>
 
+
+      <Dialog open={isDeleteTicketOpen} onOpenChange={setIsDeleteTicketOpen}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Warning, action could not be reversed ! </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+
+
+            Are you sure to delete this ticket ?
+
+
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDeleteTicketModal}>
+              Cancel
+            </Button>
+            <Button className='bg-red-500' onClick={handleDeleteTicket} disabled={isLoading}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCloseTicketOpen} onOpenChange={setIsCloseTicketOpen}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Warning, action could not be reversed ! </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+
+
+            Are you sure to Close this ticket ?
+
+
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeCloseTicketModal}>
+              Cancel
+            </Button>
+            <Button className='bg-gray-500' onClick={handleCloseTicket} disabled={isLoading}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <RejectModal
         isOpen={isRejectModalOpen}
         onClose={() => setIsRejectModalOpen(false)}
         onReject={handleReject}
         taskId={ticketDetail?.ticket_id.toString() || ''}
       />
-    </AppLayout>
+    </AppLayout >
   );
 };
 
