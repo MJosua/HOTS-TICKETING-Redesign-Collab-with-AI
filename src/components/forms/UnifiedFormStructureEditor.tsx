@@ -201,57 +201,127 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     if (!result.destination) return;
 
     const { source, destination } = result;
-    console.log('🔄 Drag operation:', { source, destination });
-    
-    // Handle reordering within main structure
+
+    // Case 1: reorder items in main structure
     if (source.droppableId === 'unified-structure' && destination.droppableId === 'unified-structure') {
       const newItems = [...items];
       const [reorderedItem] = newItems.splice(source.index, 1);
       newItems.splice(destination.index, 0, reorderedItem);
-      
-      // Update orders
+
       newItems.forEach((item, index) => {
         item.order = index;
       });
-      
-      console.log('📋 Reordered main structure:', newItems.map(i => `${i.type}:${i.id}`));
+
       onUpdate(newItems);
       return;
     }
 
-    // Handle moving field within section
+    // Case 2: moving within same section
     if (source.droppableId.startsWith('section-') && destination.droppableId.startsWith('section-')) {
       const sourceSectionId = source.droppableId.replace('section-', '');
       const destSectionId = destination.droppableId.replace('section-', '');
-      
+
+      // same section reordering
       if (sourceSectionId === destSectionId) {
-        // Reordering within same section
-        const section = items.find(item => item.id === sourceSectionId);
+        const section = items.find(i => i.id === sourceSectionId);
         if (section && section.type === 'section') {
           const sectionData = section.data as FormSection;
           const fields = [...(sectionData.fields || [])];
           const [movedField] = fields.splice(source.index, 1);
           fields.splice(destination.index, 0, movedField);
-          
-          const updatedItems = items.map(item => {
-            if (item.id === sourceSectionId) {
-              return {
-                ...item,
-                data: {
-                  ...sectionData,
-                  fields
-                }
-              };
-            }
-            return item;
-          });
-          
-          console.log('🔄 Reordered fields within section:', sourceSectionId, fields.map(f => f.name));
+
+          const updatedItems = items.map(i =>
+            i.id === section.id ? { ...i, data: { ...sectionData, fields } } : i
+          );
+
           onUpdate(updatedItems);
         }
+        return;
       }
+
+      // moving between two different sections
+      const newItems = items.map(i => {
+        if (i.id === source.droppableId.replace('section-', '') && i.type === 'section') {
+          const sectionData = i.data as FormSection;
+          const fields = [...(sectionData.fields || [])];
+          fields.splice(source.index, 1);
+          return { ...i, data: { ...sectionData, fields } };
+        }
+        if (i.id === destination.droppableId.replace('section-', '') && i.type === 'section') {
+          const sectionData = i.data as FormSection;
+          const fields = [...(sectionData.fields || [])];
+          const sourceSection = items.find(s => s.id === sourceSectionId)!;
+          const movedField = (sourceSection.data as FormSection).fields![source.index];
+          fields.splice(destination.index, 0, movedField);
+          return { ...i, data: { ...sectionData, fields } };
+        }
+        return i;
+      });
+
+      onUpdate(newItems);
+      return;
+    }
+
+    // Case 3: moving OUT of a section into main structure
+    if (source.droppableId.startsWith('section-') && destination.droppableId === 'unified-structure') {
+      const sectionId = source.droppableId.replace('section-', '');
+      const section = items.find(i => i.id === sectionId) as FormStructureItem;
+
+      if (section && section.type === 'section') {
+        const sectionData = section.data as FormSection;
+        const fields = [...(sectionData.fields || [])];
+        const [movedField] = fields.splice(source.index, 1);
+
+        const newItems: FormStructureItem[] = items.map(i =>
+          i.id === sectionId ? { ...i, data: { ...sectionData, fields } } : i
+        );
+
+        const newFieldItem: FormStructureItem = {
+          id: `field-${Date.now()}`,
+          type: 'field',
+          order: destination.index,
+          data: movedField,
+        };
+
+        newItems.splice(destination.index, 0, newFieldItem);
+
+        newItems.forEach((i, idx) => (i.order = idx));
+        onUpdate(newItems);
+      }
+      return;
+    }
+
+    // Case 4: moving INTO a section from main structure
+    if (source.droppableId === 'unified-structure' && destination.droppableId.startsWith('section-')) {
+      const sourceItem = items[source.index];
+      if (sourceItem.type !== 'field') return;
+
+      const destSectionId = destination.droppableId.replace('section-', '');
+      const newItems = items.filter((_, idx) => idx !== source.index);
+
+      const destSectionIndex = newItems.findIndex(i => i.id === destSectionId);
+      const destSection = newItems[destSectionIndex] as FormStructureItem;
+      const sectionData = destSection.data as FormSection;
+
+      const updatedSection: FormStructureItem = {
+        ...destSection,
+        data: {
+          ...sectionData,
+          fields: [
+            ...(sectionData.fields || []),
+            sourceItem.data as FormField
+          ]
+        }
+      };
+
+      newItems[destSectionIndex] = updatedSection;
+
+      newItems.forEach((i, idx) => (i.order = idx));
+      onUpdate(newItems);
+      return;
     }
   };
+
 
   const getAllFields = () => {
     const allFields: FormField[] = [];
@@ -302,33 +372,48 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
 
   const renderUnifiedStructure = () => {
     let dbColumnIndex = 1;
-    
+
     return (
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="unified-structure">
+        <Droppable droppableId="unified-structure" type="field">
           {(provided, snapshot) => (
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className={`space-y-3 min-h-[200px] p-4 rounded-lg border-2 border-dashed transition-colors ${
-                snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
-              }`}
+              className={`space-y-3 min-h-[200px] p-4 rounded-lg border-2 border-dashed transition-colors ${snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
+                }`}
             >
-              {items.map((item, index) => (
-                <Draggable key={item.id} draggableId={item.id} index={index}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className={`${snapshot.isDragging ? 'transform rotate-1 z-50 shadow-lg' : ''}`}
-                    >
-                      {renderUnifiedItem(item, index, dbColumnIndex, provided.dragHandleProps)}
-                    </div>
-                  )}
-                </Draggable>
-              ))}
+              {items.map((item, index) => {
+                // prepare dbColumnIndex logic
+                let currentDbIndex = dbColumnIndex;
+
+                if (item.type === "field") {
+                  dbColumnIndex += 1;
+                } else if (item.type === "section") {
+                  const sectionData = item.data as FormSection;
+                  dbColumnIndex += (sectionData.fields?.length || 0) + 1; // +1 for section header
+                } else if (item.type === "rowgroup") {
+                  dbColumnIndex += 1; // just reserve one column for row group JSON
+                }
+
+                // render inside Draggable
+                return (
+                  <Draggable key={item.id} draggableId={item.id} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className={`${snapshot.isDragging ? "transform rotate-1 z-50 shadow-lg" : ""}`}
+                      >
+                        {renderUnifiedItem(item, index, currentDbIndex, provided.dragHandleProps)}
+                      </div>
+                    )}
+                  </Draggable>
+                );
+              })}
+
               {provided.placeholder}
-              
+
               {items.length === 0 && (
                 <div className="text-center py-12 text-gray-400">
                   <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -354,7 +439,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       const field = item.data as FormField;
       const dbColumn = `cstm_col${dbColumnStart}`;
       const lblColumn = `lbl_col${dbColumnStart}`;
-      
+
       return (
         <div className="p-4 bg-white border-l-4 border-l-blue-500 rounded-lg shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
@@ -407,7 +492,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
               </Button>
             </div>
           </div>
-          
+
           {editingItem === item.id && (
             <div className="mt-3 p-3 border-t bg-gray-50 rounded-b-lg">
               <FieldEditor
@@ -427,9 +512,9 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       const sectionData = item.data as FormSection;
       const isExpanded = expandedSections.has(item.id);
       const sectionDbColumn = `cstm_col${dbColumnStart}`;
-      
+
       return (
-        <div className="p-4 bg-purple-50 border-l-4 border-l-purple-500 rounded-lg shadow-sm">
+        <div className="p-4 b bg-purple-50 border-l-4 border-l-purple-500 rounded-lg shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div {...dragHandleProps} className="cursor-move">
@@ -490,9 +575,9 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
               </Button>
             </div>
           </div>
-          
+
           {isExpanded && renderSectionFields(sectionData, item.id, dbColumnStart)}
-          
+
           {editingItem === item.id && (
             <div className="mt-3 p-3 border-t bg-white rounded-lg">
               <div className="space-y-4">
@@ -537,7 +622,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
     } else if (item.type === 'rowgroup') {
       const rowGroupData = item.data as RowGroup;
       const dbColumn = `cstm_col${dbColumnStart}`;
-      
+
       return (
         <div className="p-4 bg-orange-50 border-l-4 border-l-orange-500 rounded-lg shadow-sm">
           <div className="flex items-center justify-between">
@@ -594,7 +679,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
               </Button>
             </div>
           </div>
-          
+
           {editingItem === item.id && (
             <div className="mt-3 p-3 border-t bg-white rounded-lg">
               <div className="space-y-4">
@@ -639,22 +724,21 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
         </div>
       );
     }
-    
+
     return null;
   };
 
   const renderSectionFields = (sectionData: FormSection, sectionId: string, dbColumnStart: number) => {
     let fieldDbIndex = dbColumnStart + 1; // Section fields start after section header
-    
+
     return (
       <Droppable droppableId={`section-${sectionId}`} type="field">
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`space-y-2 min-h-[60px] p-4 rounded-lg border-2 border-dashed transition-colors ${
-              snapshot.isDraggingOver ? 'border-purple-400 bg-purple-100' : 'border-purple-300 bg-white'
-            }`}
+            className={`space-y-2 min-h-[60px] p-4 rounded-lg border-2 border-dashed transition-colors ${snapshot.isDraggingOver ? 'border-purple-400 bg-purple-100' : 'border-purple-300 bg-white'
+              }`}
           >
             <div className="flex justify-between items-center mb-3">
               <div className="text-xs text-purple-700 font-medium">
@@ -670,20 +754,19 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                 Add Field
               </Button>
             </div>
-            
+
             {sectionData.fields?.map((field: FormField, index: number) => {
               const currentDbColumn = `cstm_col${fieldDbIndex + index}`;
               const currentLblColumn = `lbl_col${fieldDbIndex + index}`;
-              
+
               return (
                 <Draggable key={`section-field-${index}`} draggableId={`section-field-${sectionId}-${index}`} index={index}>
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
-                      className={`p-3 bg-white border rounded-lg shadow-sm transition-shadow ${
-                        snapshot.isDragging ? 'shadow-lg border-purple-300 transform rotate-1' : 'border-purple-200'
-                      }`}
+                      className={`p-3 bg-white border rounded-lg shadow-sm transition-shadow ${snapshot.isDragging ? 'shadow-lg border-purple-300 transform rotate-1' : 'border-purple-200'
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 flex-1">
@@ -727,7 +810,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                           </Button>
                         </div>
                       </div>
-                      
+
                       {editingItem === `${sectionId}-field-${index}` && (
                         <div className="mt-3 p-3 border-t bg-gray-50 rounded-b-lg">
                           <FieldEditor
@@ -747,7 +830,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
               );
             })}
             {provided.placeholder}
-            
+
             {(!sectionData.fields || sectionData.fields.length === 0) && (
               <div className="text-center text-purple-400 text-sm py-6">
                 <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />

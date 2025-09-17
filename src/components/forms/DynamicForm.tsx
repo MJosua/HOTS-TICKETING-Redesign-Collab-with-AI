@@ -88,7 +88,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
       };
     });
 
-    
+
   };
 
   const currentFieldCount = useMemo(() => {
@@ -399,16 +399,26 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
                         case 'section': {
                           const section = item.data as FormSection;
                           return (
-                            <div key={item.id} className="col-span-1 md:col-span-3 space-y-4">
-                              <h3 className="text-lg font-medium">{section.title}</h3>
-                              {section.description && (
-                                <p className="text-sm text-muted-foreground">{section.description}</p>
-                              )}
-                              {section.repeatable ? (
-                                <RepeatingSection section={section} form={form} />
-                              ) : (
-                                renderFieldsInRows(section.fields)
-                              )}
+                            <div
+                              key={item.id}
+                              className="col-span-1 md:col-span-3"
+                            >
+                              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-2 mb-2 space-y-4">
+                                <div>
+                                  <h3 className="text-lg font-semibold text-gray-800">{section.title}</h3>
+                                  {section.description && (
+                                    <p className="text-sm text-gray-500 mt-1">{section.description}</p>
+                                  )}
+                                </div>
+
+                                <div>
+                                  {section.repeatable ? (
+                                    <RepeatingSection section={section} form={form} />
+                                  ) : (
+                                    renderFieldsInRows(section.fields)
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           );
                         }
