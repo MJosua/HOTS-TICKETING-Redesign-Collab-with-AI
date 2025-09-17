@@ -1,9 +1,10 @@
-
 export interface FormConfig {
   id?: string;
   title: string;
   description?: string;
   category?: string; // Make category optional
+  items?: FormItem[]; // Unified array for fields, sections, and rowgroups
+  // Legacy support - these will be deprecated
   fields?: FormField[];
   rowGroups?: RowGroup[];
   sections?: FormSection[];
@@ -19,6 +20,13 @@ export interface FormConfig {
   };
   apiEndpoint?: string;
   active?: number;
+}
+
+export interface FormItem {
+  id: string;
+  type: 'field' | 'section' | 'rowgroup';
+  order: number;
+  data: FormField | FormSection | RowGroup;
 }
 
 export interface FormSection {
@@ -97,7 +105,7 @@ export interface RowGroup {
   };
 }
 
-// Add the missing FormStructureItem type
+// Legacy type - kept for backward compatibility
 export interface FormStructureItem {
   id: string;
   type: 'field' | 'section' | 'rowgroup';

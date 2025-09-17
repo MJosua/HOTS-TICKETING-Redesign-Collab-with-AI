@@ -214,6 +214,7 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
       </div>
       <DynamicForm 
         config={formConfig} 
+        setConfig={setFormConfig}
         onSubmit={onSubmit}
         serviceId={serviceInfo?.service_id?.toString()}
       />

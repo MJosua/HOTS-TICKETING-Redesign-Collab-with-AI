@@ -214,40 +214,7 @@ const exampleServiceCatalog: ServiceCatalogItem[] = [
           columnSpan: 3
         }
       ],
-      sections: [
-        {
-          title: "Items",
-          repeatable: true,
-          addButton: "Add Item",
-          summary: {
-            label: "Total Items",
-            type: "number",
-            calculated: true
-          },
-          fields: [
-            {
-              label: "Item Name",
-              name: "item_name",
-              type: "text",
-              required: true,
-              columnSpan: 2
-            },
-            {
-              label: "Quantity",
-              name: "quantity",
-              type: "number",
-              required: true,
-              columnSpan: 1
-            },
-            {
-              label: "Description",
-              name: "description",
-              type: "textarea",
-              columnSpan: 3
-            }
-          ]
-        }
-      ],
+      
       submit: {
         label: "Submit",
         type: "button",

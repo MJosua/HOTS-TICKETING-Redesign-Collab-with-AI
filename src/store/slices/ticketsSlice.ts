@@ -119,7 +119,7 @@ export const fetchTicketDetail = createAsyncThunk(
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch ticket detail');
       }
-      
+      console.log("response.data.data",response.data.data)
       return response.data.data;
     } catch (error: any) {
       console.error('Ticket Detail API Error:', error);

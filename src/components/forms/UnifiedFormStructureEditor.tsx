@@ -13,6 +13,7 @@ import { Plus, Trash2, GripVertical, Edit3, Package, ChevronDown, ChevronUp, Lin
 import { FieldEditor } from './FieldEditor';
 import { FormLayoutPreview } from './FormLayoutPreview';
 import { RowGroupConfigurator } from './RowGroupConfigurator';
+import { UnifiedFormDemo } from './UnifiedFormDemo';
 
 export interface FormStructureItem {
   id: string;
@@ -798,6 +799,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
 
       {/* Form Layout Preview */}
       {showPreview && <FormLayoutPreview items={items} onUpdate={onUpdate} />}
+
 
       {/* Unified Form Structure Editor */}
       <Card>

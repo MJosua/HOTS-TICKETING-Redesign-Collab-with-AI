@@ -3,13 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
-import { ApprovalFlowCard } from '@/components/ui/ApprovalFlowCard';
 import { DynamicField } from './DynamicField';
 import { RowGroupField } from './RowGroupField';
 import { RepeatingSection } from './RepeatingSection';
 import { StructuredRowGroup } from './StructuredRowGroup';
 import WidgetRenderer from '@/components/widgets/WidgetRenderer';
-import { FormConfig, FormField, RowGroup, FormSection, RowData } from '@/types/formTypes';
+import { FormConfig, FormField, RowGroup, FormSection, RowData, FormItem } from '@/types/formTypes';
 import { WidgetConfig } from '@/types/widgetTypes';
 import { getWidgetById } from '@/registry/widgetRegistry';
 import { mapFormDataToTicketColumns, getMaxFormFields } from '@/utils/formFieldMapping';
@@ -18,20 +17,22 @@ import { createTicket, uploadFiles } from '@/store/slices/ticketsSlice';
 import { selectServiceWidgets } from '@/store/slices/catalogSlice';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { mapUnifiedForm } from '@/utils/unifiedFormMapping';
 
 interface DynamicFormProps {
   config: FormConfig;
+  setConfig: React.Dispatch<React.SetStateAction<FormConfig>>;
   onSubmit: (data: any) => void;
   serviceId?: string;
 }
 
-export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serviceId }) => {
+export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onSubmit, serviceId }) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
   const form = useForm();
   const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
-  
+
   // Memoize watchedValues to avoid unnecessary re-renders
   const memoizedWatchedValues = useMemo(() => watchedValues, [watchedValues]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,7 +52,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
   const serviceWidgetIds = useAppSelector(state =>
     serviceId ? selectServiceWidgets(state, parseInt(serviceId)) : []
   );
-  
+
   const assignedWidgets: WidgetConfig[] = useMemo(() => {
     const ids = Array.isArray(serviceWidgetIds)
       ? serviceWidgetIds
@@ -66,27 +67,47 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   }, [serviceWidgetIds]);
 
-  const handleUpdateRowGroup = (groupIndex: number, updatedRows: RowData[]) => {
-    setRowGroups(prev => {
-      const updated = [...prev];
-      updated[groupIndex] = {
-        ...updated[groupIndex],
-        rowGroup: updatedRows
+  const handleUpdateRowGroup = (groupId: string, updatedRows: RowData[]) => {
+    setConfig(prev => {
+      const updatedItems = prev.items.map(item => {
+        if (item.type === "rowgroup" && item.id === groupId) {
+          return {
+            ...item,
+            data: {
+              ...item.data,
+              rowGroup: updatedRows
+            }
+          };
+        }
+        return item;
+      });
+
+      return {
+        ...prev,
+        items: updatedItems
       };
-      return updated;
     });
+
+    
   };
 
   const currentFieldCount = useMemo(() => {
-    const regularFields = config.fields?.length || 0;
-    const rowGroupFields = rowGroups.reduce((acc, rg, index) => {
-      if (rg.isStructuredInput) {
-        return acc + (structuredRowCounts[index] || 1);
+    return config.items.reduce((acc, item) => {
+      if (item.type === "field") {
+        return acc + 1;
       }
-      return acc + (Array.isArray(rg.rowGroup) ? rg.rowGroup.length : 0);
+      if (item.type === "rowgroup") {
+        if (item.data.isStructuredInput) {
+          // count structured rows (or at least 1)
+          const count = structuredRowCounts[item.id] || 1;
+          return acc + count;
+        }
+        // count normal rowGroup length
+        return acc + (Array.isArray(item.data.rowGroup) ? item.data.rowGroup.length : 0);
+      }
+      return acc;
     }, 0);
-    return regularFields + rowGroupFields;
-  }, [config.fields, rowGroups, structuredRowCounts]);
+  }, [config.items, structuredRowCounts]);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];
@@ -114,10 +135,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
   const handleSubmit = async (data: any) => {
     if (!serviceId) {
-      const mappedData = mapFormDataToTicketColumns(
+
+      const mappedData = mapUnifiedForm(
         data,
-        config.fields || [],
-        rowGroups,
+        config.items || [],
       );
 
       toast({
@@ -138,10 +159,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
           delete data[key];
         }
       }
-      const mappedData = mapFormDataToTicketColumns(
+      const mappedData = mapUnifiedForm(
         data,
-        config.fields || [],
-        rowGroups
+        config.items || [],
       );
       const ticketData = {
         subject: data.subject || 'Service Request',
@@ -237,6 +257,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
     return result.filter(Boolean);
   };
 
+  console.log("config", config)
+
   const renderFieldsInRows = (fields: FormField[]) => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -252,36 +274,36 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
 
           return (
             <div key={fieldKey} className={getColSpanClass(field.columnSpan || 1)}>
-                  <DynamicField
-                    field={fieldToRender}
-                    value={form.watch(fieldKey)}
-                    onChange={useCallback((value) => {
-                      form.setValue(fieldKey, value);
-                      setWatchedValues(prev => {
-                        if (prev[fieldKey] === value) {
-                          return prev;
-                        }
-                        const newValues = { ...prev, [fieldKey]: value };
-                        return newValues;
-                      });
+              <DynamicField
+                field={fieldToRender}
+                value={form.watch(fieldKey)}
+                onChange={useCallback((value) => {
+                  form.setValue(fieldKey, value);
+                  setWatchedValues(prev => {
+                    if (prev[fieldKey] === value) {
+                      return prev;
+                    }
+                    const newValues = { ...prev, [fieldKey]: value };
+                    return newValues;
+                  });
 
-                      const updatedFields = (config.fields || []).map(f => {
-                        if (f.dependsOn === field.name) {
-                          const filteredOptions = filterDependentFieldOptions(f, value);
-                          console.log('Updating dependent field options:', f.name, filteredOptions);
-                          return { ...f, options: filteredOptions };
-                        }
-                        return f;
-                      });
+                  const updatedFields = (config.fields || []).map(f => {
+                    if (f.dependsOn === field.name) {
+                      const filteredOptions = filterDependentFieldOptions(f, value);
+                      console.log('Updating dependent field options:', f.name, filteredOptions);
+                      return { ...f, options: filteredOptions };
+                    }
+                    return f;
+                  });
 
-                      if (updatedFields.some(f => f.dependsOn === field.name)) {
-                        console.log('Setting local fields with updated options');
-                        setLocalFields(updatedFields);
-                      }
-                    }, [field.name, config.fields, filterDependentFieldOptions, form, setLocalFields, setWatchedValues])}
-                    watchedValues={memoizedWatchedValues}
-                    error={form.formState.errors[fieldKey]?.message as string}
-                  />
+                  if (updatedFields.some(f => f.dependsOn === field.name)) {
+                    console.log('Setting local fields with updated options');
+                    setLocalFields(updatedFields);
+                  }
+                }, [field.name, config.fields, filterDependentFieldOptions, form, setLocalFields, setWatchedValues])}
+                watchedValues={memoizedWatchedValues}
+                error={form.formState.errors[fieldKey]?.message as string}
+              />
             </div>
           );
         })}
@@ -335,55 +357,101 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, onSubmit, serv
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              {config.fields && (
-                <div className="space-y-4">
-                  {renderFieldsInRows(localFields.length > 0 ? localFields : config.fields)}
+              {/* Unified rendering using items array */}
+              {config.items && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {config.items
+                    .sort((a, b) => a.order - b.order)
+                    .map((item) => {
+                      switch (item.type) {
+                        case 'field':
+                          const field = item.data as FormField;
+                          const fieldKey = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                          if (!shouldShowField(field, watchedValues)) return null;
+
+                          let fieldToRender = field;
+                          if (field.dependsOn && watchedValues[field.dependsOn]) {
+                            const filteredOptions = filterDependentFieldOptions(field, watchedValues[field.dependsOn]);
+                            fieldToRender = { ...field, options: filteredOptions };
+                          }
+
+                          return (
+                            <div key={item.id} className={getColSpanClass(field.columnSpan || 1)}>
+                              <DynamicField
+                                field={fieldToRender}
+                                value={form.watch(fieldKey)}
+                                onChange={useCallback((value) => {
+                                  form.setValue(fieldKey, value);
+                                  setWatchedValues(prev => {
+                                    if (prev[fieldKey] === value) {
+                                      return prev;
+                                    }
+                                    const newValues = { ...prev, [fieldKey]: value };
+                                    return newValues;
+                                  });
+                                }, [form, setWatchedValues])}
+                                watchedValues={memoizedWatchedValues}
+                                error={form.formState.errors[fieldKey]?.message as string}
+                              />
+                            </div>
+                          );
+
+                        case 'section': {
+                          const section = item.data as FormSection;
+                          return (
+                            <div key={item.id} className="col-span-1 md:col-span-3 space-y-4">
+                              <h3 className="text-lg font-medium">{section.title}</h3>
+                              {section.description && (
+                                <p className="text-sm text-muted-foreground">{section.description}</p>
+                              )}
+                              {section.repeatable ? (
+                                <RepeatingSection section={section} form={form} />
+                              ) : (
+                                renderFieldsInRows(section.fields)
+                              )}
+                            </div>
+                          );
+                        }
+
+                        case 'rowgroup': {
+                          const rowGroup = item.data as RowGroup;
+                          const groupIndex = config.items.findIndex(i => i.id === item.id);
+                          return (
+                            <div key={item.id} className="col-span-1 md:col-span-3">
+                              {rowGroup.title && <h3 className="text-lg font-medium mb-2">{rowGroup.title}</h3>}
+                              {rowGroup.isStructuredInput ? (
+                                <StructuredRowGroup
+                                  rowGroup={rowGroup}
+                                  groupIndex={groupIndex}
+                                  form={form}
+                                  maxTotalFields={50}
+                                  currentFieldCount={currentFieldCount}
+                                  onFieldCountChange={(count) => setStructuredRowCounts(prev => ({ ...prev, [groupIndex]: count }))}
+                                  onUpdateRowGroup={handleUpdateRowGroup}
+                                />
+                              ) : (
+                                isLegacyRowGroup(rowGroup) ? (
+                                  <RowGroupField
+                                    rowGroup={rowGroup.rowGroup}
+                                    form={form}
+                                    groupIndex={groupIndex}
+                                    onValueChange={(fieldKey, value) => {
+                                      setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
+                                    }}
+                                  />
+                                ) : null
+                              )}
+                            </div>
+                          );
+                        }
+
+                        default:
+                          return null;
+                      }
+                    })}
                 </div>
               )}
 
-              {config.sections?.map((section, sectionIndex) => (
-                <div key={`section-${sectionIndex}`} className="space-y-4">
-                  <h3 className="text-lg font-medium">{section.title}</h3>
-                  {section.description && (
-                    <p className="text-sm text-muted-foreground">{section.description}</p>
-                  )}
-
-                  {section.repeatable ? (
-                    <RepeatingSection section={section} form={form} />
-                  ) : (
-                    renderFieldsInRows(section.fields)
-                  )}
-                </div>
-              ))}
-
-              {rowGroups.map((rowGroup, index) => (
-                <div key={`rowgroup-${index}`}>
-                  {rowGroup.title && <h3 className="text-lg font-medium mb-2">{rowGroup.title}</h3>}
-                  {rowGroup.isStructuredInput ? (
-                    <StructuredRowGroup
-                      key={index}
-                      rowGroup={rowGroup}
-                      groupIndex={index}
-                      form={form}
-                      maxTotalFields={50}
-                      currentFieldCount={currentFieldCount}
-                      onFieldCountChange={(count) => setStructuredRowCounts(prev => ({ ...prev, [index]: count }))}
-                      onUpdateRowGroup={handleUpdateRowGroup}
-                    />
-                  ) : (
-                    isLegacyRowGroup(rowGroup) ? (
-                      <RowGroupField
-                        rowGroup={rowGroup.rowGroup}
-                        form={form}
-                        groupIndex={index}
-                        onValueChange={(fieldKey, value) => {
-                          setWatchedValues(prev => ({ ...prev, [fieldKey]: value }));
-                        }}
-                      />
-                    ) : null
-                  )}
-                </div>
-              ))}
               <div className="flex justify-end pt-6">
                 <Button type="submit" disabled={isSubmitting} className="min-w-32">
                   {isSubmitting ? 'Submitting...' : (config.submit?.label || 'Submit')}

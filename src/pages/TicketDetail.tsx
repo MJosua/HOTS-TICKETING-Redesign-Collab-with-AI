@@ -1004,9 +1004,9 @@ const TicketDetail = () => {
 
           <div className="space-y-6">
             {isFullyApproved &&
-              user?.team_id_linked?.toString() === ticketDetail?.assigned_team?.toString() && 
+              user?.team_id_linked?.toString() === ticketDetail?.assigned_team?.toString() &&
               ticketDetail.status_id !== 6 &&
-              
+
               (
                 <CardCollapsible
                   title="Ticket Service"
@@ -1321,7 +1321,8 @@ const TicketDetail = () => {
         isOpen={isRejectModalOpen}
         onClose={() => setIsRejectModalOpen(false)}
         onReject={handleReject}
-        taskId={ticketDetail?.ticket_id.toString() || ''}
+        taskId={ticketDetail?.ticket_id?.toString() ?? id ?? ''}
+
       />
     </AppLayout >
   );

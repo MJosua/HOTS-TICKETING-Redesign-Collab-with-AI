@@ -74,7 +74,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
           thirdValue: ''
         }
       ];
-      onUpdateRowGroup(groupIndex, defaultRow);
+      onUpdateRowGroup("rowgroup-items", defaultRow);
     }
   }, []);
 
@@ -98,6 +98,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   const addRow = () => {
     const newRowCount = rows.length + 1;
     const totalAfterAdd = currentFieldCount - rows.length + newRowCount;
+  
     if (totalAfterAdd > maxTotalFields) {
       toast({
         title: "Field Limit Exceeded",
@@ -106,6 +107,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       });
       return;
     }
+  
     if (rowGroup.maxRows && newRowCount > rowGroup.maxRows) {
       toast({
         title: "Row Limit Exceeded",
@@ -114,11 +116,18 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       });
       return;
     }
-    const newRows: RowData[] = [
-      ...rows,
-      { id: Date.now().toString(), firstValue: '', secondValue: '', thirdValue: '' },
-    ];
-    onUpdateRowGroup(groupIndex, newRows);
+  
+    const newRow: RowData = {
+      id: `row_${Date.now()}`, // same format as your config row id
+      firstValue: "",
+      secondValue: "",
+      thirdValue: ""
+    };
+  
+    const newRows: RowData[] = [...rows, newRow];
+  
+    // update parent config
+    onUpdateRowGroup("rowgroup-items", newRows);
   };
 
   const removeRow = (rowId: string) => {
@@ -128,7 +137,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     form.unregister(`structured_row_${groupIndex}_${rowIndex}_cstm`);
     form.unregister(`structured_row_${groupIndex}_${rowIndex}_lbl`);
     const updatedRows = rows.filter(row => row.id !== rowId);
-    onUpdateRowGroup(groupIndex, updatedRows);
+    onUpdateRowGroup("rowgroup-items", updatedRows);
   };
 
   const updateRow = (rowId: string, field: 'first' | 'second' | 'third', value: string) => {
@@ -137,7 +146,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     );
 
 
-    onUpdateRowGroup(groupIndex, updatedRows);
+    onUpdateRowGroup("rowgroup-items", updatedRows);
   };
 
   const [suggestions, setSuggestions] = useState<string[]>([]);

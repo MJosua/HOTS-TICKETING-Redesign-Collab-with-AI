@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Eye } from 'lucide-react';
-import { FormConfig, FormField, FormSection, RowGroup } from '@/types/formTypes';
+import { FormConfig, FormField, FormSection, RowGroup, FormItem } from '@/types/formTypes';
 import { DynamicForm } from '@/components/forms/DynamicForm';
 import { useCatalogData } from '@/hooks/useCatalogData';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppSelector';
@@ -34,9 +34,7 @@ const ServiceFormEditor = () => {
     description: '',
     category: '',
     apiEndpoint: '',
-    fields: [],
-    sections: [],
-    rowGroups: []
+    items: [], // Unified array for all form elements
   });
 
   const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<number | null>(null);
@@ -46,7 +44,7 @@ const ServiceFormEditor = () => {
   const [activeTab, setActiveTab] = useState('basic');
 
   const [formStructure, setFormStructure] = useState<FormStructureItem[]>([]);
-
+  
   // Calculate total field count properly
   const totalFieldCount = formStructure.reduce((acc, item) => {
     if (item.type === 'field') {
@@ -81,9 +79,7 @@ const ServiceFormEditor = () => {
           category: categoryName,
           description: serviceData.service_description,
           apiEndpoint: `/api/${serviceData.nav_link}`,
-          fields: [],
-          sections: [],
-          rowGroups: [],
+          items: [], // Initialize unified array
           servis_aktif: Number(serviceData.active) ?? 0,
           active: Number(serviceData.active) ?? 0
         };
@@ -103,6 +99,7 @@ const ServiceFormEditor = () => {
         }
 
         setConfig(parsedConfig);
+        setFormStructure(parsedConfig.items)
         if (serviceData.m_workflow_groups) {
           setSelectedWorkflowGroup(serviceData.m_workflow_groups);
         }
@@ -121,59 +118,27 @@ const ServiceFormEditor = () => {
   const { toast } = useToast();
 
   // Convert legacy structure to unified structure
-  useEffect(() => {
-    const unifiedItems: FormStructureItem[] = [];
-    let counter = 0;
 
-    // Convert existing fields
-    config.fields?.forEach((field, index) => {
-      unifiedItems.push({
-        id: `field-${counter}`,
-        type: 'field',
-        order: counter,
-        data: field
-      });
-      counter++;
-    });
-
-    // Convert existing sections
-    config.sections?.forEach((section, index) => {
-      unifiedItems.push({
-        id: `section-${counter}`,
-        type: 'section',
-        order: counter,
-        data: {
-          title: section.title,
-          description: section.description,
-          fields: section.fields
-        }
-      });
-      counter++;
-    });
-
-    // Convert existing row groups
-    config.rowGroups?.forEach((rowGroup, index) => {
-      unifiedItems.push({
-        id: `rowgroup-${counter}`,
-        type: 'rowgroup',
-        order: counter,
-        data: rowGroup
-      });
-      counter++;
-    });
-
-    setFormStructure(unifiedItems);
-  }, [config.fields, config.sections, config.rowGroups]);
 
   const handleStructureUpdate = (items: FormStructureItem[]) => {
     setFormStructure(items);
 
-    // Convert back to legacy format for saving
+    // Convert unified structure to legacy format for backward compatibility
     const fields: FormField[] = [];
     const sections: FormSection[] = [];
     const rowGroups: RowGroup[] = [];
+    const unifiedItems: FormItem[] = [];
 
-    items.forEach(item => {
+    items.forEach((item, index) => {
+      // Create unified item
+      unifiedItems.push({
+        id: item.id,
+        type: item.type,
+        order: index,
+        data: item.data
+      });
+
+      // Convert to legacy format
       if (item.type === 'field') {
         fields.push(item.data as FormField);
       } else if (item.type === 'section') {
@@ -182,7 +147,7 @@ const ServiceFormEditor = () => {
           title: sectionData.title,
           description: sectionData.description,
           fields: sectionData.fields,
-          repeatable: false
+          repeatable: sectionData.repeatable || false
         });
       } else if (item.type === 'rowgroup') {
         rowGroups.push(item.data as RowGroup);
@@ -191,9 +156,7 @@ const ServiceFormEditor = () => {
 
     setConfig({
       ...config,
-      fields,
-      sections,
-      rowGroups
+      items: unifiedItems, // Set unified items
     });
   };
 
@@ -225,11 +188,10 @@ const ServiceFormEditor = () => {
         active: 1,
         team_id: selectedAssignment || null,
         api_endpoint: config.apiEndpoint,
-        form_json: config,
+        form_json: config, // This now includes the unified items array
         m_workflow_groups: selectedWorkflowGroup,
-
       };
-      console.log("payload",payload)
+
       const response = await axios.post(`${API_URL}/hots_settings/insertupdate/service_catalog`, payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('tokek')}`,
@@ -300,6 +262,7 @@ const ServiceFormEditor = () => {
           </div>
           <DynamicForm
             config={config}
+            setConfig={setConfig}
             onSubmit={(data) => {
               toast({
                 title: "Form Submitted",
@@ -307,6 +270,9 @@ const ServiceFormEditor = () => {
               });
             }}
           />
+
+         
+
         </div>
       </AppLayout>
     );
