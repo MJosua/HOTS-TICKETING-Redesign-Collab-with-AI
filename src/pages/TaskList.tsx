@@ -16,17 +16,20 @@ import { fetchTaskList, fetchTaskCount } from '@/store/slices/ticketsSlice';
 import { convertTicketToDisplayFormat, getStatusColor, getPriorityColor } from '@/utils/ticketUtils';
 import { TicketPagination } from '@/components/ui/TicketPagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useTheme } from '@/components/theme-provider';
 
 const TaskList = () => {
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
   const { user } = useAppSelector(state => state.auth);
 
   const dispatch = useAppDispatch();
   const { taskList, taskCount } = useAppSelector((state) => state.tickets);
   const navigate = useNavigate();
+
+  const { viewMode, setViewMode } = useTheme();
+
 
   useEffect(() => {
     dispatch(fetchTaskList(1));
@@ -101,7 +104,7 @@ const TaskList = () => {
     const bCan = canUserApprove(b);
     return (aCan === bCan) ? 0 : aCan ? -1 : 1;
   });
-  console.log("filteredTasks",filteredTasks)
+  console.log("filteredTasks", filteredTasks)
   const TableView = () => (
     <Card className="border-border shadow-sm">
       <CardContent className="p-0">
@@ -150,7 +153,7 @@ const TaskList = () => {
                       <ProgressionBar steps={task.approvalSteps} />
                     </TableCell>
                     <TableCell>
-                      <Badge className={`${getStatusColor(task.status)} border`}>
+                      <Badge className={`${getStatusColor(task.status_id)} border`}>
                         {renderHighlightedText(task.status)}
                       </Badge>
                     </TableCell>
@@ -228,14 +231,14 @@ const TaskList = () => {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Badge className={`${getStatusColor(task.status)} border text-xs`}>
+                  <Badge className={`${getStatusColor(task.status_id)} border text-xs`}>
                     {renderHighlightedText(task.status)}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {new Date(originalTicket?.creation_date || '').toLocaleDateString()}
                   </span>
                 </div>
-              
+
               </CardContent>
             </Card>
           </div>
@@ -304,7 +307,7 @@ const TaskList = () => {
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="Submitted">Submitted</SelectItem>
-                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Waiting Approval">In Progress</SelectItem>
                       <SelectItem value="Approved">Approved</SelectItem>
                       <SelectItem value="Rejected">Rejected</SelectItem>
                     </SelectContent>
@@ -344,7 +347,7 @@ const TaskList = () => {
                   className="px-3"
                 >
                   <Grid className="w-4 h-4 mr-1" />
-                  Cards
+                  Cards {viewMode}
                 </Button>
               </div>
             </div>

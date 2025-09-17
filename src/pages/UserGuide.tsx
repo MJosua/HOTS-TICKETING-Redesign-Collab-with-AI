@@ -56,7 +56,7 @@ const UserGuide = () => {
                     <AccordionContent>
                       <ul className="list-disc pl-6 space-y-1">
                         <li><Badge variant="secondary">Pending</Badge> - Request submitted, waiting for review</li>
-                        <li><Badge variant="default">In Progress</Badge> - Being worked on by support team</li>
+                        <li><Badge variant="default">Waiting Approval</Badge> - Being worked on by support team</li>
                         <li><Badge variant="outline">Waiting for Approval</Badge> - Requires manager approval</li>
                         <li><Badge variant="destructive">Rejected</Badge> - Request denied with reason</li>
                         <li><Badge variant="default">Completed</Badge> - Request fulfilled</li>

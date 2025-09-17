@@ -128,3 +128,8 @@
 .hover-gray:hover {
   background-color: hsl(var(--hover-gray));
 }
+
+body{
+
+  overflow-x: hidden;
+  }

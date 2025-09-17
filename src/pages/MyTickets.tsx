@@ -17,16 +17,19 @@ import { TicketPagination } from '@/components/ui/TicketPagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 import dateFormater from '../utils/dateformater.ts';
+import { useTheme } from '@/components/theme-provider';
 
 const MyTickets = () => {
   const [searchValue, setSearchValue] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
   const dispatch = useAppDispatch();
   const { myTickets } = useAppSelector((state) => state.tickets);
   const navigate = useNavigate();
+
+  const { viewMode, setViewMode } = useTheme();
+
 
   useEffect(() => {
     dispatch(fetchMyTickets(1));
@@ -77,7 +80,7 @@ const MyTickets = () => {
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Type</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Progress</TableHead>
                 <TableHead className="text-xs font-medium text-muted-foreground uppercase">Status</TableHead>
-                </TableRow>
+              </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTickets
@@ -112,7 +115,7 @@ const MyTickets = () => {
                       <TableCell className="text-muted-foreground">
                         {renderHighlightedText(ticket.type)}
                       </TableCell>
-                      
+
                       <TableCell>
                         <ProgressionBar steps={sortedApprovalSteps} />
                       </TableCell>
@@ -134,11 +137,11 @@ const MyTickets = () => {
   );
 
   const CardView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-9 gap-4 overflow-x-hidden">
       {filteredTickets.map((ticket) => (
         <Card
           key={ticket.id}
-          className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+          className="col-span-3 border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => handleRowClick(ticket.id)}
         >
           <CardHeader className="pb-3">
@@ -189,7 +192,7 @@ const MyTickets = () => {
 
   return (
     <AppLayout searchValue={searchValue} onSearchChange={setSearchValue} searchPlaceholder="Search tickets...">
-      <div className="space-y-6">
+      <div className="space-y-6 ">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-foreground">My Tickets</h1>
@@ -232,7 +235,7 @@ const MyTickets = () => {
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="Submitted">Submitted</SelectItem>
-                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Waiting Approval">Waiting Approval</SelectItem>
                       <SelectItem value="Approved">Approved</SelectItem>
                       <SelectItem value="Rejected">Rejected</SelectItem>
                     </SelectContent>

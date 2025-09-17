@@ -172,7 +172,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
+      <SidebarHeader className="border-b border-sidebar-border p-2 h-20 pt-5">
         <div className="flex  items-center space-x-3" style={{ position: 'relative' }} >
           {/* Show when collapsible != icon */}
           <div className="w-6 h-6 bg-primary ms-1 mt-3 mb-3 rounded items-center justify-center flex-shrink-0 hidden group-data-[collapsible=icon]:flex">
@@ -191,7 +191,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-2">
+      <SidebarContent className="p-0">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider px-3 py-2">
             Main Menu
@@ -231,85 +231,74 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <Collapsible open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="w-full justify-between">
-                      <div className="flex items-center space-x-3">
-                        <HelpCircle className="w-5 h-5 flex-shrink-0" />
-                        <span>Help Center</span>
-                      </div>
-                      <ChevronRight className={cn("w-4 h-4 transition-transform", isHelpOpen && "rotate-90")} />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pl-6">
-                    <SidebarMenu>
-                      {helpItems.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild>
-                            <Link
-                              to={item.url}
-                              className={cn(
-                                "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                                location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
-                              )}
-                            >
-                              <item.icon className="w-4 h-4 flex-shrink-0" />
-                              <span>{item.title}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </CollapsibleContent>
-                </Collapsible>
+                <SidebarMenu>
+                  {helpItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <Link
+                          to={item.url}
+                          className={cn(
+                            "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                            location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
+                          )}
+                        >
+                          <item.icon className="w-4 h-4 flex-shrink-0" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Only show Administration menu for users with role === 4 */}
-        {isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider px-3 py-2">
-              Administration
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
+        {
+          isAdmin && (
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider px-3 py-2">
+                Administration
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {adminItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild tooltip={item.title}>
+                        <Link
+                          to={item.url}
+                          className={cn(
+                            "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                            location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
+                          )}
+                        >
+                          <item.icon className="w-5 h-5 flex-shrink-0" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Admin Guide">
                       <Link
-                        to={item.url}
+                        to="/admin/guide"
                         className={cn(
                           "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                          location.pathname === item.url && "bg-sidebar-accent text-sidebar-accent-foreground"
+                          location.pathname === "/admin/guide" && "bg-sidebar-accent text-sidebar-accent-foreground"
                         )}
                       >
-                        <item.icon className="w-5 h-5 flex-shrink-0" />
-                        <span>{item.title}</span>
+                        <HelpCircle className="w-5 h-5 flex-shrink-0" />
+                        <span>Admin Guide</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                ))}
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Admin Guide">
-                    <Link
-                      to="/admin/guide"
-                      className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                        location.pathname === "/admin/guide" && "bg-sidebar-accent text-sidebar-accent-foreground"
-                      )}
-                    >
-                      <HelpCircle className="w-5 h-5 flex-shrink-0" />
-                      <span>Admin Guide</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-      </SidebarContent>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )
+        }
+      </SidebarContent >
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center space-x-3 mb-3 group-data-[collapsible=icon]:justify-center">
@@ -350,7 +339,7 @@ export function AppSidebar() {
           onClose={() => setIsProfileModalOpen(false)}
         />
       </SidebarFooter>
-    </Sidebar>
+    </Sidebar >
   );
 }
 
@@ -361,11 +350,12 @@ export function AppLayout({ children, searchValue, onSearchChange, searchPlaceho
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-screen bg-background">
         <AppSidebar />
         <SidebarInset>
-          <header className="sticky backdrop-blur-md top-0 z-50 bg-muted/30 border-b border-border px-6 py-4">
+          <header className="sticky backdrop-blur-md top-0 z-50 bg-muted/30 border-b border-border px-6 py-4 w-full" >
             <div className="flex items-center justify-between">
+
               <div className="flex items-center space-x-4">
                 <SidebarTrigger className="bg-secondary hover:bg-secondary/50" />
                 <div className="flex items-center space-x-3">
@@ -375,6 +365,7 @@ export function AppLayout({ children, searchValue, onSearchChange, searchPlaceho
                   </div>
                 </div>
               </div>
+
               {!shouldHideSearch && (
                 <div className="flex items-center space-x-4">
                   <div className="relative">

@@ -46,6 +46,7 @@ import { fetchTaskList, fetchTaskCount } from '@/store/slices/ticketsSlice';
 import { AppDispatch } from './store';
 import { useAppSelector } from "./hooks/useAppSelector";
 import { fetchSrf_Puprose } from "./store/slices/srf_purpose";
+import { SidebarProvider } from "./components/ui/sidebar";
 
 const queryClient = new QueryClient();
 
@@ -103,7 +104,7 @@ const AppContentInner = () => {
           <Route path="/admin/service-catalog/new" element={<ProtectedRoute><ServiceFormEditor /></ProtectedRoute>} />
           <Route path="/admin/service-catalog/create" element={<ProtectedRoute><ServiceFormEditor /></ProtectedRoute>} />
           <Route path="/admin/service-catalog/edit/:id" element={<ProtectedRoute><ServiceFormEditor /></ProtectedRoute>} />
-          <Route path="/admin/users" element={<ProtectedRoute><UserManagement/></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
           <Route path="/admin/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
           <Route path="/admin/departments" element={<ProtectedRoute><DepartmentManagement /></ProtectedRoute>} />
           <Route path="/admin/divisions" element={<ProtectedRoute><DepartmentManagement /></ProtectedRoute>} />
@@ -133,7 +134,9 @@ const App = () => {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-          <AppContent />
+          <SidebarProvider>
+            <AppContent />
+          </SidebarProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </Provider>

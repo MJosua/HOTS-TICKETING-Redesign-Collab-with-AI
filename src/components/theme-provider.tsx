@@ -11,11 +11,15 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
+  viewMode: ViewMode
+  setViewMode: (mode: ViewMode) => void
 }
 
 const initialState: ThemeProviderState = {
   theme: "light",
   setTheme: () => null,
+  viewMode: "table",
+  setViewMode: () => null,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -27,6 +31,7 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>("light") // Force light theme
+  const [viewMode, setViewMode] = useState<ViewMode>("table")
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -42,6 +47,8 @@ export function ThemeProvider({
       localStorage.setItem(storageKey, "light")
       setTheme("light")
     },
+    viewMode,
+    setViewMode,
   }
 
   return (

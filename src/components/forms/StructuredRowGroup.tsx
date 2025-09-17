@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { resolveSystemVariable } from '@/utils/systemVariableResolver';
 import { useSystemVariableContext } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
 import { SuggestionInsertInput } from './SuggestionInsertInput';
+import { NumberField } from './NumberField';
 
 interface StructuredRowGroupProps {
   rowGroup: RowGroup;
@@ -194,60 +195,13 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 
         const rounding = structure.secondColumn.rounding || false;
 
-        const formatNumber = (num) => {
-          if (num === null || num === undefined || num === "") return "";
-          return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-          // 👆 "1,000" format. Change "," to "." for Indonesian.
-        };
-
-        const handleNumberChange = (value) => {
-          let raw = value.replace(/,/g, ""); // remove commas before parsing
-          let numVal = Number(raw);
-
-          if (!isNaN(numVal)) {
-            if (maxValue !== undefined && numVal > maxValue) {
-              numVal = maxValue;
-            }
-
-            if (rounding) {
-              numVal = Math.max(
-                rounding,
-                Math.round(numVal / rounding) * rounding
-              );
-            }
-
-            onChange(numVal); // pass numeric value upward
-            return formatNumber(numVal); // formatted for display
-          }
-
-          onChange(""); // invalid → clear
-          return "";
-        };
-
-        const handleBlur = (e) => {
-          const formatted = handleNumberChange(e.target.value);
-          setDisplay(formatted);
-        };
-
-        const [display, setDisplay] = React.useState(
-          formatNumber(value) // keep display state
-        );
-
-        React.useEffect(() => {
-          setDisplay(formatNumber(value));
-        }, [value]);
-
         return (
-          <Input
-            type="text"
-            value={display}
-            onChange={(e) => {
-              // let user type
-              setDisplay(e.target.value);
-            }}
-            onBlur={handleBlur}
-            placeholder={structure.placeholder}
-            readOnly={structure.readonly}
+          <NumberField
+            value={value}
+            onChange={onChange}
+            placeholder={colDef.placeholder}
+            maxValue={maxValue}
+            rounding={rounding}
           />
         );
       };

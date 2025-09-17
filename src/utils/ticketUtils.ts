@@ -39,12 +39,19 @@ export const convertTicketToDisplayFormat = (ticket: Ticket) => {
 };
 
 export const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case "submitted": return "bg-yellow-100 text-orange-800 border-orange-200";
-    case "onservice": return "bg-orange-100 text-orange-800 border-orange-200";
-    case "in progress": return "bg-blue-100 text-blue-800 border-blue-200";
-    case "approved": return "bg-green-100 text-green-800 border-green-200";
-    case "rejected": return "bg-red-100 text-red-800 border-red-200";
+  switch (status) {
+    //Submitted
+    case 0: return "bg-yellow-100 text-orange-800 border-orange-200";
+    //In Progress
+    case 1: return "bg-blue-100 text-blue-800 border-blue-200";
+    //Fulfilled
+    case 2: return "bg-green-100 text-green-800 border-green-200";
+    //In Progress
+    case 3: return "bg-orange-100 text-orange-800 border-orange-200";
+    //Rejected
+    case 4: return "bg-red-100 text-red-800 border-red-200";
+
+    
     default: return "bg-gray-100 text-gray-800 border-gray-200";
   }
 };
