@@ -27,6 +27,8 @@ export const useAuthCheck = ({ userToken2, setIsTokenExpiredModalOpen }: UseAuth
           });
 
           localStorage.setItem("tokek", res.data.tokek);
+          localStorage.setItem("current_delv_week", res.data.current_delv_week);
+
           const userData = res.data.userData;
 
           if (userData.uid) {

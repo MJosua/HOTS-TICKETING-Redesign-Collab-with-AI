@@ -19,26 +19,41 @@ const initialState: sku_data = {
 export const fetchsku = createAsyncThunk(
   'settings/fetchSKU',
   async (_, { rejectWithValue }) => {
-    try {
-      const token = localStorage.getItem('tokek');
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const token = localStorage.getItem('tokek');
+        console.log(`SKU fetch attempt ${attempt}: Token available:`, !!token);
 
-      const [getskures] = await Promise.all([
-        axios.get(`${API_URL}/hots_settings/get_srf_sku`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+        const [getskures] = await Promise.all([
+          axios.get(`${API_URL}/hots_settings/get_srf_sku`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-      if (!getskures.data.success) {
-        return rejectWithValue('One or more SRF fetches failed');
+        console.log(`SKU fetch attempt ${attempt}: API response success:`, getskures.data.success);
+
+        if (!getskures.data.success) {
+          if (attempt === maxRetries) return rejectWithValue('One or more SRF fetches failed');
+          console.log(`SKU fetch attempt ${attempt} failed, retrying in 1s...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+
+        console.log(`SKU fetch attempt ${attempt}: Fetched ${getskures.data.results?.length || 0} SKU items`);
+        return {
+          skulist: getskures.data.results || [],
+        };
+      } catch (error: any) {
+        console.error(`SKU fetch attempt ${attempt}: API Error:`, error);
+        if (attempt === maxRetries) {
+          return rejectWithValue(
+            error.response?.data?.message || error.message || 'Network error'
+          );
+        }
+        console.log(`SKU fetch attempt ${attempt} failed, retrying in 1s...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      return {
-        skulist: getskures.data.results || [],
-      };
-    } catch (error: any) {
-      console.error('fetchSKU API Error:', error);
-      return rejectWithValue(
-        error.response?.data?.message || error.message || 'Network error'
-      );
     }
   }
 );

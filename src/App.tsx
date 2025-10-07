@@ -61,14 +61,7 @@ const AppContentInner = () => {
 
 
 
-  useEffect(() => {
-    dispatch(fetchDepartments());
-    dispatch(fetchSRF());
-    dispatch(fetchsku());
-    dispatch(fetchSrf_Puprose());
-
-
-  }, [dispatch]);
+  
 
 
 

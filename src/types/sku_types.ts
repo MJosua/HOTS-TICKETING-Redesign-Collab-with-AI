@@ -1,5 +1,6 @@
 export interface skulist {
-  product_name_complete: string;
+  label: string;
+  filter1: string;
 }
 
 

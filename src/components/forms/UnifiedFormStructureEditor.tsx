@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
   const [configuringRowGroup, setConfiguringRowGroup] = useState<string | null>(null);
   const [showChainLinkHelper, setShowChainLinkHelper] = useState(false);
 
+  
   const addItem = (type: 'field' | 'section' | 'rowgroup') => {
     let newItem: FormStructureItem;
 
@@ -95,12 +96,18 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       data: { ...item.data }
     };
 
-    if (item.type === 'section') {
+    if (item.type === "section") {
       const sectionData = item.data as FormSection;
       clonedItem.data = {
         ...sectionData,
         title: `${sectionData.title} (Copy)`,
-        fields: sectionData.fields ? [...sectionData.fields] : []
+        fields: sectionData.fields
+          ? sectionData.fields.map((f) => ({
+            ...f,
+            name: `${f.name}_${Date.now()}_${uuidv4()}`, // ensure unique
+            label: `${f.label} (Copy)`, // optional
+          }))
+          : [],
       };
     } else if (item.type === 'field') {
       const fieldData = item.data as FormField;
@@ -339,36 +346,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
   };
 
   // Chain Link Helper Component
-  const ChainLinkHelper = () => (
-    <Card className="border-blue-200 bg-blue-50 mb-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <Link className="w-4 h-4 text-blue-600" />
-          Chain Link Quick Setup
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowChainLinkHelper(!showChainLinkHelper)}
-            className="ml-auto h-6 w-6 p-0"
-          >
-            {showChainLinkHelper ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      {showChainLinkHelper && (
-        <CardContent className="pt-0">
-          <div className="text-xs text-blue-700 space-y-2">
-            <p><strong>How to setup Chain Links:</strong></p>
-            <p>1. Create your parent field (e.g., "Category" select field)</p>
-            <p>2. Create your child field (e.g., "Sub-category" select field)</p>
-            <p>3. Edit the child field and set "Depends On" to the parent field</p>
-            <p>4. Configure the filter property path to match your data structure</p>
-            <p>5. The child field options will automatically filter based on parent selection</p>
-          </div>
-        </CardContent>
-      )}
-    </Card>
-  );
+
 
   const renderUnifiedStructure = () => {
     let dbColumnIndex = 1;
@@ -902,6 +880,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       {/* Row Group Configurator */}
       {configuringRowGroup && (
         <RowGroupConfigurator
+          field={items.data}
           rowGroup={items.find(item => item.id === configuringRowGroup)?.data as RowGroup}
           onUpdate={(updatedRowGroup) => {
             updateItem(configuringRowGroup, updatedRowGroup);
@@ -911,6 +890,8 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
           onOpenChange={(open) => {
             if (!open) setConfiguringRowGroup(null);
           }}
+          fields={getAllFields()}
+
         />
       )}
     </div>

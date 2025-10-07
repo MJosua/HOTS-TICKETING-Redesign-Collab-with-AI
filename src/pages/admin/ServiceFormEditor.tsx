@@ -37,6 +37,46 @@ const ServiceFormEditor = () => {
     items: [], // Unified array for all form elements
   });
 
+
+  useEffect(() => {
+    const updatedItems = config.items.map(item => {
+      // Collect dependers for this item.name
+      const dependers: string[] = [];
+
+      config.items.forEach(child => {
+        // Case 1: child is a normal field with dependsOn
+        if (child.data?.dependsOn === item.data?.name) {
+          dependers.push(child.data?.name);
+        }
+
+        // Case 2: child is a rowgroup → check its structure
+        if (child.type === "rowgroup" && child.data?.structure) {
+          Object.values(child.data.structure).forEach((col: any) => {
+            if (col?.dependsOn === item.data?.name) {
+              dependers.push(col.name);
+            }
+          });
+        }
+
+        // 🚀 You could also extend this if you allow "section.fields" in the future
+      });
+
+      if (dependers.length > 0) {
+        return {
+          ...item,
+          data: {
+            ...item.data,
+            dependerOf: dependers
+          }
+        };
+      }
+      return item;
+    });
+
+    setConfig({ ...config, items: updatedItems });
+  }, [config.items]);
+
+
   const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState<number | null>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
@@ -44,7 +84,7 @@ const ServiceFormEditor = () => {
   const [activeTab, setActiveTab] = useState('basic');
 
   const [formStructure, setFormStructure] = useState<FormStructureItem[]>([]);
-  
+
   // Calculate total field count properly
   const totalFieldCount = formStructure.reduce((acc, item) => {
     if (item.type === 'field') {
@@ -271,7 +311,7 @@ const ServiceFormEditor = () => {
             }}
           />
 
-         
+
 
         </div>
       </AppLayout>

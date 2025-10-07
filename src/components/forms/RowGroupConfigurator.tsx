@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Trash2, GripVertical, Settings, Save, X, Info } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Settings, Save, X, Info, Link, Unlink } from 'lucide-react';
 import { RowGroup, RowData } from '@/types/formTypes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -24,7 +24,9 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
   rowGroup,
   onUpdate,
   isOpen,
-  onOpenChange
+  onOpenChange,
+  field,
+  fields
 }) => {
   const [localRowGroup, setLocalRowGroup] = useState<RowGroup>(rowGroup);
 
@@ -100,6 +102,10 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
 
     updateRowGroup({ rowGroup: rows });
   };
+  const [localField, setLocalField] = useState<FormField>(field);
+
+  const availableFields = fields.filter(f => f.name);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -132,7 +138,7 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                   <Input
                     type="number"
                     value={localRowGroup.maxRows || 10}
-                    onChange={(e) => updateRowGroup({ maxRows: parseInt(e.target.value) || 10 }), console.log("localRowGroup",localRowGroup)}
+                    onChange={(e) => updateRowGroup({ maxRows: parseInt(e.target.value) || 10 })}
                     min="1"
                     max="50"
                   />
@@ -349,6 +355,148 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                         </div>
                       </div>
                     )}
+
+
+                    {(localRowGroup.structure?.firstColumn?.type === 'select' || localRowGroup.structure?.firstColumn?.type === 'suggestion-insert') && (
+                      <div>
+                        <Label>  Chain Link Configuration </Label>
+                        <p className="text-xs text-blue-600">
+                          Make this field's options depend on another field's value for dynamic filtering
+                        </p>
+
+                        <div>
+                          <Label className="flex items-center gap-2 text-sm">
+                            <Link className="w-4 h-4" />
+                            Parent Field (Depends On)
+                          </Label>
+
+                        </div>
+
+                        <Select
+                          value={localRowGroup.structure?.firstColumn?.dependsOn ?? "none"}
+
+
+                          onValueChange={(value) =>
+                            updateRowGroup({
+                              structure: {
+                                ...localRowGroup.structure,
+                                firstColumn: {
+                                  ...localRowGroup.structure?.firstColumn,
+                                  dependsOn: value
+                                }
+                              }
+                            })
+                          }
+
+
+                        >
+
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Select a parent field" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border shadow-lg z-50">
+                            <SelectItem value="none">
+                              <div className="flex items-center gap-2">
+                                <Unlink className="w-4 h-4" />
+                                No Dependency
+                              </div>
+                            </SelectItem>
+
+                            {availableFields.length > 0 ? (
+                              availableFields.map(f => (
+                                <SelectItem key={f.name} value={f.name}>
+                                  <div className="flex items-center gap-2">
+                                    <Link className="w-4 h-4" />
+                                    {f.label} ({f.name})
+                                  </div>
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no_fields" disabled>
+                                No fields available
+                              </SelectItem>
+                            )}
+
+                          </SelectContent>
+                        </Select>
+
+                      </div>
+                    )}
+
+
+                    {localRowGroup.structure?.firstColumn?.dependsOn && (
+                      <div>
+                        <Label className="text-sm">Filter Property Path</Label>
+                        <Input
+                          value={localRowGroup.structure?.firstColumn?.dependsOnValue ?? "none"}
+                          onChange={(e) =>
+                            updateRowGroup({
+                              structure: {
+                                ...localRowGroup.structure,
+                                firstColumn: {
+                                  ...localRowGroup.structure?.firstColumn,
+                                  dependsOnValue: e.target.value
+                                }
+                              }
+                            })
+                          }
+                          placeholder="e.g., category.name or plant_description"
+                          className="bg-white"
+                        />
+                        <div className="text-xs text-gray-600 mt-1 space-y-1">
+                          <p>• For simple matching: use property name like "category"</p>
+                          <p>• For nested objects: use dot notation like "plant.description"</p>
+                          <p>• Leave empty for basic string includes matching</p>
+                          <p className="text-blue-600 font-medium">• Changes will be applied when you click Save</p>
+                        </div>
+                      </div>
+                    )}
+
+
+                   
+
+
+                    {localRowGroup.structure?.firstColumn?.dependsOn && (
+                      <div>
+                        <Label className="text-sm">Filter By Property Path</Label>
+                        <Input
+                          value={localRowGroup.structure?.firstColumn?.dependsByValue ?? "none"}
+                          onChange={(e) =>
+                            updateRowGroup({
+                              structure: {
+                                ...localRowGroup.structure,
+                                firstColumn: {
+                                  ...localRowGroup.structure?.firstColumn,
+                                  dependsByValue: e.target.value
+                                }
+                              }
+                            })
+                          }
+                          placeholder="e.g., category.name or plant_description"
+                          className="bg-white"
+                        />
+                        <div className="text-xs text-gray-600 mt-1 space-y-1">
+                          <p>• For simple matching: use property name like "category"</p>
+                          <p>• For nested objects: use dot notation like "plant.description"</p>
+                          <p>• Leave empty for basic string includes matching</p>
+                          <p className="text-blue-600 font-medium">• Changes will be applied when you click Save</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {localRowGroup.structure?.firstColumn?.dependsOn && (
+                      <div className="p-3 bg-white rounded-lg border border-blue-200">
+                        <h4 className="text-sm font-medium text-blue-800 mb-2">How Chain Link Works:</h4>
+                        <div className="text-xs text-blue-700 space-y-1">
+                          <p>1. User selects value in "{localRowGroup.structure?.firstColumn?.dependsOn}" field</p>
+                          <p>2. This field's options get filtered automatically</p>
+                          <p>3. Only matching options will be shown to the user</p>
+                          <p>4. Filtering uses the property path you specify above</p>
+                          <p>5. Console logs will show the filtering process for debugging</p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* {localRowGroup.structure?.firstColumn?.type === 'suggestion-insert' && (
                       <div>
                         <div className="flex items-center gap-2 mb-2">

@@ -1,6 +1,8 @@
 import { useAppSelector } from '@/hooks/useAppSelector';
+import { useEffect } from 'react';
 
-export type VariableType = 'string' | 'string[]' | 'array';
+export type VariableType = 'string' | 'string[]' | 'array' | 'object' | 'array[]';
+
 
 export interface SystemVariableContext {
   user?: {
@@ -18,7 +20,7 @@ export interface SystemVariableContext {
   factoryplants?: { plant_shortname?: string; plant_description?: string;[key: string]: any }[];
   srfsamplecategoryes?: { samplecat_name: string;[key: string]: any }[];
   linkeddistributors?: { company_name: string;[key: string]: any }[];
-  skulist?: { product_name_complete: string;[key: string]: any }[];
+  skulist?: { label: string; filter1: string;[key: string]: any }[];
   analyst?: { name: string;[key: string]: any }[];
   country?: { country: string;[key: string]: any }[];
   srf_purpose?: {
@@ -37,8 +39,6 @@ export const useSystemVariableContext = (): SystemVariableContext => {
   //ps
   const analyst = useAppSelector(state => state.analyst);
   const country = useAppSelector(state => state.country);
-
-
   return {
     user: auth.user,
     superior: userManagement.users?.filter(u =>
@@ -59,10 +59,7 @@ export const useSystemVariableContext = (): SystemVariableContext => {
       plant_description: f.plant_description || '',
       ...f
     })) || [],
-    srfsamplecategoryes: srf.srfsamplecategoryes?.map(s => ({
-      samplecat_name: s.samplecat_name || '',
-      ...s
-    })) || [],
+    srfsamplecategoryes: srf.srfsamplecategoryes || [],
     linkeddistributors: srf.linkeddistributors?.map(d => ({
       company_name: d.company_name || '',
       ...d
@@ -74,12 +71,11 @@ export const useSystemVariableContext = (): SystemVariableContext => {
   };
 };
 
-
 export interface SystemVariableEntry {
   key: string;
   type: VariableType;
   description: string;
-  resolve: (ctx: SystemVariableContext) => string | string[];
+  resolve: (ctx: SystemVariableContext, options?: Record<string, any>) => any;
 }
 
 export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
@@ -143,9 +139,15 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
   },
   {
     key: '${srfsamplecategoryes}',
-    type: 'string[]',
+    type: 'array[]',
     description: 'SRF sample category names',
-    resolve: (ctx) => ctx.srfsamplecategoryes?.map(s => s.samplecat_name) || [],
+    resolve: (ctx) => {
+      if (!Array.isArray(ctx.srfsamplecategoryes)) return [];
+      return ctx.srfsamplecategoryes.map(item => ({
+        item_name: item.samplecat_name,
+        filter: item.bom_type
+      }));
+    },
   },
   {
     key: '${linkeddistributors}',
@@ -155,9 +157,15 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
   },
   {
     key: '${skulist}',
-    type: 'string[]',
-    description: 'List All SKUs',
-    resolve: (ctx) => ctx.skulist?.map(d => d.product_name_complete) || [],
+    type: 'array[]',
+    description: 'List all SKUs and RM Types grouped by category',
+    resolve: (ctx) => {
+      if (!Array.isArray(ctx.skulist)) return [];
+      return ctx.skulist.map(item => ({
+        item_name: item.product_name_complete,
+        filter: item.rm_type
+      }));
+    },
   },
   {
     key: '${analystlist}',

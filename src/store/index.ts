@@ -10,6 +10,7 @@ import skuSliceReducer from './slices/SKUslice';
 import analystSliceReducer from './slices/analystslice';
 import countrySliceReducer from './slices/countryslice';
 import srf_purposeSlideRecuder from './slices/srf_purpose';
+// import srf_poSlideRecuder from './slices/srf_po_slice';
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,8 @@ export const store = configureStore({
     country: countrySliceReducer,
 
     srf_purpose: srf_purposeSlideRecuder,
+
+    // srf_po: srf_poSlideRecuder,
 
   },
 });

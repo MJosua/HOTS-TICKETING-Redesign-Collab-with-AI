@@ -21,7 +21,7 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     dataRequirements: ["roomData", "scheduleData"],
     category: "Scheduling"
   },
-  
+
   stock_overview: {
     id: "stock_overview",
     name: "Stock Overview",
@@ -60,7 +60,18 @@ export const widgetRegistry: Record<string, WidgetConfig> = {
     applicableTo: ["form"],
     dataRequirements: ["historyData"],
     category: "History"
-  }
+  },
+
+  Fetchsrfdata: {
+    id: "Fetchsrfdata",
+    name: "Fetch SRF Data",
+    description: "Just Fetching",
+    componentPath: "Fetchsrfdata",
+    applicableTo: ["form"],
+    dataRequirements: ["sku"],
+    category: "Template"
+  },
+
 };
 
 // Get widget by ID

@@ -45,10 +45,12 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   currentFieldCount,
   onFieldCountChange,
   onUpdateRowGroup,
+  config
 }) => {
   const { toast } = useToast();
   const systemContext = useSystemVariableContext();
   const rows = (rowGroup.rowGroup || []) as RowData[];
+
 
   const structure = rowGroup.structure;
   if (!structure) return null;
@@ -77,7 +79,6 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       onUpdateRowGroup("rowgroup-items", defaultRow);
     }
   }, []);
-
   // Compute total of secondValue fields as numbers
   const totalSecondValueA = useMemo(() => {
     return rows.reduce((sum, row) => {
@@ -98,7 +99,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   const addRow = () => {
     const newRowCount = rows.length + 1;
     const totalAfterAdd = currentFieldCount - rows.length + newRowCount;
-  
+
     if (totalAfterAdd > maxTotalFields) {
       toast({
         title: "Field Limit Exceeded",
@@ -107,7 +108,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       });
       return;
     }
-  
+
     if (rowGroup.maxRows && newRowCount > rowGroup.maxRows) {
       toast({
         title: "Row Limit Exceeded",
@@ -116,16 +117,16 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       });
       return;
     }
-  
+
     const newRow: RowData = {
       id: `row_${Date.now()}`, // same format as your config row id
       firstValue: "",
       secondValue: "",
       thirdValue: ""
     };
-  
+
     const newRows: RowData[] = [...rows, newRow];
-  
+
     // update parent config
     onUpdateRowGroup("rowgroup-items", newRows);
   };
@@ -217,12 +218,25 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 
 
       case 'suggestion-insert':
+        const dependsOn =
+          structure.firstColumn.dependsOn !== undefined
+            ? structure.firstColumn.dependsOn
+            : undefined;
+
+        const dependsOnValue =
+          structure.firstColumn.dependsOnValue !== undefined
+            ? structure.firstColumn.dependsOnValue
+            : undefined;
+
         return (
           <SuggestionInsertInput
-            suggestions={suggestions.map(s => s && (typeof s === 'object' && s !== null ? (s as any).label || (s as any).name || JSON.stringify(s) : s)).filter(Boolean)}
+            suggestions={suggestions
+             .map(s => s && (typeof s === 'object' && s !== null ? (s as any).label || (s as any).name || s : s)).filter(Boolean)}
             placeholder={colDef.placeholder || "Type or select from suggestions"}
             onChange={val => onChange(val)}
             onEnter={val => onChange(val)}
+
+
           />
         );
 

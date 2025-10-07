@@ -15,6 +15,7 @@ interface WidgetRendererProps {
   className?: string;
   serviceId?: number;
   context?: DataContext;
+  handleReload?: () => void;
 }
 
 const WidgetSkeleton = () => (
@@ -44,10 +45,12 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
   data = {},
   className = "",
   serviceId,
-  context
+  context,
+  handleReload
 }) => {
   const LazyWidget = useMemo(() => {
     try {
+
       return createLazyWidget(config.componentPath);
     } catch (error) {
       console.error(`Failed to create lazy widget for ${config.name}:`, error);
@@ -77,6 +80,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     serviceId: serviceId || 0,
     widgetId: config.id,
     context: context || {},
+    
     enabled: !!(serviceId && context && !isExcluded),
   });
 
@@ -105,6 +109,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     widgetData: hasData ? widgetData : undefined,
     isLoading: isDataLoading,
     error: dataError,
+    handleReload
   };
 
   // console.log('🔧 [Widget Renderer] Final widget props:', {

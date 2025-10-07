@@ -48,90 +48,9 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   }, [field.options, systemContext]);
 
   // Enhanced chain link filtering with proper data value filtering
-  useEffect(() => {
-    if (!field.options) {
-      if (filteredOptions.length !== 0) {
-        setFilteredOptions([]);
-      }
-      return;
-    }
+  
 
-    const parentValue = watchedValues?.[field.dependsOn || ''];
 
-    // When filterOptionsBy is present, perform advanced filtering
-    if (parentValue && field.dependsOn && field.filterOptionsBy) {
-      const key = field.filterOptionsBy;
-
-      console.log('🔍 [Chain Link] Advanced filtering with key:', key);
-
-      const filtered = resolvedOptions.filter((option, index) => {
-        if (!option) return false;
-
-        let dataValue: any;
-
-        // Handle different option formats
-        if (typeof option === 'object' && option !== null) {
-          dataValue = (option as any)[key];
-        } else if (typeof option === 'string') {
-          try {
-            const parsed = JSON.parse(option);
-            dataValue = parsed[key];
-          } catch {
-            dataValue = option;
-          }
-        }
-
-        const match = String(dataValue || '')
-          .trim()
-          .toLowerCase()
-          .includes(String(parentValue).trim().toLowerCase());
-
-        console.log(`🔍 [Chain Link] Filter Check[${index}]:`, {
-          option: typeof option === 'string' ? option.substring(0, 50) + '...' : option,
-          extractedValue: dataValue,
-          parentValue: parentValue,
-          match: match
-        });
-
-        return match;
-      });
-
-      console.log('🔗 [Chain Link] Filtering complete:', {
-        original: resolvedOptions.length,
-        filtered: filtered.length
-      });
-
-      if (JSON.stringify(filtered) !== JSON.stringify(filteredOptions)) {
-        setFilteredOptions(filtered);
-      }
-      return;
-    }
-
-    // Fallback filtering for simple string matching
-    if (parentValue && field.dependsOn) {
-      console.log('🔗 [Chain Link] Simple filtering fallback');
-
-      const fallbackFiltered = resolvedOptions.filter(option => {
-        if (!option) return false;
-
-        if (typeof option === 'string') {
-          return option.toLowerCase().includes(String(parentValue).toLowerCase());
-        }
-        if (typeof option === 'object' && option !== null && typeof (option as any).label === 'string') {
-          return (option as any).label.toLowerCase().includes(String(parentValue).toLowerCase());
-        }
-        return false;
-      });
-
-      if (JSON.stringify(fallbackFiltered) !== JSON.stringify(filteredOptions)) {
-        setFilteredOptions(fallbackFiltered);
-      }
-    } else {
-      if (JSON.stringify(resolvedOptions) !== JSON.stringify(filteredOptions)) {
-        setFilteredOptions(resolvedOptions);
-      }
-    }
-  }, [resolvedOptions, watchedValues?.[field.dependsOn || ''], field.dependsOn, field.filterOptionsBy]);
 
   // Memoize suggestions to avoid unnecessary updates
   const memoizedSuggestions = useMemo(() => {
@@ -146,7 +65,13 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   }, [field.type, field.suggestions, filteredOptions]);
 
   useEffect(() => {
-    if (JSON.stringify(memoizedSuggestions) !== JSON.stringify(suggestions)) {
+    if (!Array.isArray(memoizedSuggestions) || !Array.isArray(suggestions)) return;
+
+    const changed =
+      memoizedSuggestions.length !== suggestions.length ||
+      memoizedSuggestions.some((v, i) => v !== suggestions[i]);
+
+    if (changed) {
       setSuggestions(memoizedSuggestions);
     }
   }, [memoizedSuggestions, suggestions]);
@@ -185,6 +110,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
     }
   }, [field.default, value, localValue]);
 
+
   const renderField = () => {
     switch (field.type) {
       case 'text': {
@@ -204,24 +130,38 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
 
         const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           let val = e.target.value;
+          handleChange(val);
+        };
+
+        const handleBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
+          let val = e.target.value;
           let numVal = Number(val);
+          let opcalweek = field.weekopcal !== undefined ? localStorage.getItem("current_delv_week") : false;
+
+
           if (!isNaN(numVal)) {
             if (maxValue !== undefined && numVal > maxValue) {
-              numVal = maxValue ;
+              numVal = maxValue;
             }
             if (rounding) {
               numVal = Math.round(numVal / 25) * 25;
             }
+            if (opcalweek && numVal < opcalweek) {
+              numVal = opcalweek
+            }
+
             val = numVal.toString();
           }
           handleChange(val);
         };
+
 
         return (
           <Input
             type="number"
             value={localValue}
             onChange={handleNumberChange}
+            onBlur={handleBlur}
             placeholder={field.placeholder}
             max={maxValue}
             readOnly={field.readonly}
@@ -254,34 +194,49 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             <SelectContent className="bg-white border shadow-lg z-50">
               {filteredOptions.map((option, index) => {
                 if (!option) return null;
-
                 try {
                   const parsed = JSON.parse(option);
                   return (
                     <SelectItem key={index} value={parsed.plan_id ?? option}>
-                      {parsed.label || parsed.name || option}
+                      {parsed.label || parsed.name || parsed.item_name || option}
                     </SelectItem>
                   );
                 } catch {
-
                   let key = `option-${index}`;
-                  let value = ''; let label = '';
+                  let value = '';
+                  let label = '';
 
                   if (typeof option === 'object' && option !== null) {
                     const objOption = option as any;
-                    value = objOption.value || objOption.label || objOption.description || JSON.stringify(objOption);
-                    label = objOption.label || objOption.description || value;
+
+                    value =
+                      objOption.value ||
+                      objOption.label ||
+                      objOption.item_name || // ✅ Added here
+                      objOption.name ||
+                      objOption.product_name_complete ||
+                      objOption.description ||
+                      JSON.stringify(objOption);
+
+                    label =
+                      objOption.label ||
+                      objOption.item_name || // ✅ Added here
+                      objOption.name ||
+                      objOption.product_name_complete ||
+                      objOption.description ||
+                      value;
+
                     key = `${value}-${index}`;
                   } else {
                     try {
                       const parsed = JSON.parse(option);
-                      value = parsed.plan_id ?? parsed.label ?? parsed.name ?? option;
-                      label = parsed.label ?? parsed.name ?? option;
+                      value = parsed.plan_id ?? parsed.label ?? parsed.name ?? parsed.item_name ?? option;
+                      label = parsed.label ?? parsed.name ?? parsed.item_name ?? option;
                       key = `${value}-${index}`;
                     } catch {
                       value = option;
                       label = option;
-                      key = `fallback-${index}`; // 👈 unique fallback key
+                      key = `fallback-${index}`;
                     }
                   }
 
@@ -299,7 +254,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       case 'suggestion-insert':
         return (
           <SuggestionInsertInput
-            suggestions={suggestions.map(s => s && (typeof s === 'object' && s !== null ? (s as any).label || (s as any).name || JSON.stringify(s) : s)).filter(Boolean)}
+            suggestions={filteredOptions}
             placeholder={field.placeholder || "Type or select from suggestions"}
             readOnly={field.readonly}
             defaultValue={localValue}

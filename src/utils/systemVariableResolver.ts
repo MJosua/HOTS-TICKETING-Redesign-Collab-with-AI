@@ -8,7 +8,7 @@ export const resolveSystemVariable = (
   value: string,
   context: SystemVariableContext
 ): string | string[] => {
-  if (!value || !value.includes('${')) return value;
+  if (typeof value !== 'string' || !value.includes('${')) return value;
 
   // Direct match
   const directMatch = SYSTEM_VARIABLE_ENTRIES.find(entry => entry.key === value);

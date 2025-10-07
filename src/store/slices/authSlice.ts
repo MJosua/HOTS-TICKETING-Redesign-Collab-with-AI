@@ -55,6 +55,8 @@ const initialState: AuthState = {
   isLocked: false,
 };
 
+
+
 // Async thunk for login
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
@@ -65,9 +67,10 @@ export const loginUser = createAsyncThunk(
         asin: password,
       });
       if (response.data.success) {
-        const { tokek, userData } = response.data;
+        const { tokek, userData, current_delv_week } = response.data;
         localStorage.setItem('tokek', tokek);
         localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('current_delv_week', current_delv_week);
         // Persist user data for recovery scenarios
         persistUserData(userData);
         

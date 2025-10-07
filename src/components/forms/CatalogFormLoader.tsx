@@ -6,6 +6,8 @@ import { FormConfig } from '@/types/formTypes';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { useAppSelector } from '@/hooks/useAppSelector';
+import { Skeleton } from '../ui/skeleton';
 
 interface CatalogFormLoaderProps {
   servicePath: string;
@@ -83,15 +85,24 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
   const [error, setError] = useState<string | null>(null);
   const [serviceInfo, setServiceInfo] = useState<any>(null);
   const [usingFallback, setUsingFallback] = useState(false);
+  const { loading } = useAppSelector(state => state.sku);
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  const handleReload = async () => {
+    await fetchData()
+  }
+
+
+ 
+
+
   useEffect(() => {
     if (!catalogLoading && serviceCatalog.length > 0) {
       const service = serviceCatalog.find(s => s.nav_link === servicePath);
-      
+
       if (!service) {
         setError(`Service not found for path: ${servicePath}`);
         setIsLoading(false);
@@ -123,7 +134,7 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
         setUsingFallback(true);
         setError(null);
       }
-      
+
       setIsLoading(false);
     }
   }, [catalogLoading, serviceCatalog, servicePath]);
@@ -139,6 +150,21 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
     };
     return iconMap[category?.category_name || ''] || '📋';
   };
+
+  const [delayedLoading,setDelayedLoading]= useState()
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (!isLoading || !loading ) {
+      // wait 1 second before hiding skeleton
+      timer = setTimeout(() => setDelayedLoading(false), 250);
+    } else {
+      // reset to true if loading again
+      setDelayedLoading(true);
+    }
+
+    return () => clearTimeout(timer);
+  }, [isLoading,loading]);
 
   const getCategoryColor = (categoryId: number) => {
     const category = categoryList.find(cat => cat.category_id === categoryId);
@@ -157,10 +183,13 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
     return category?.category_name || 'Unknown';
   };
 
-  if (isLoading || catalogLoading) {
+  if (delayedLoading) {
     return <FormSkeleton />;
   }
 
+
+
+  
   if (error) {
     return (
       <div className="space-y-4">
@@ -212,12 +241,26 @@ export const CatalogFormLoader: React.FC<CatalogFormLoaderProps> = ({ servicePat
           </div>
         )}
       </div>
-      <DynamicForm 
-        config={formConfig} 
-        setConfig={setFormConfig}
-        onSubmit={onSubmit}
-        serviceId={serviceInfo?.service_id?.toString()}
-      />
+
+
+      {
+        loading ?
+          <>
+          </>
+          :
+          <>
+            <DynamicForm
+              config={formConfig}
+              setConfig={setFormConfig}
+              onSubmit={onSubmit}
+              serviceId={serviceInfo?.service_id?.toString()}
+              handleReload={handleReload}
+            />
+          </>
+
+      }
+
+
     </div>
   );
 };

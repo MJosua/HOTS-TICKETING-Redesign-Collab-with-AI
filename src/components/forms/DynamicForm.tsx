@@ -18,6 +18,8 @@ import { selectServiceWidgets } from '@/store/slices/catalogSlice';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { mapUnifiedForm } from '@/utils/unifiedFormMapping';
+import { resolveSystemVariable } from '@/utils/systemVariableResolver';
+import { useSystemVariableContext } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
 
 interface DynamicFormProps {
   config: FormConfig;
@@ -26,18 +28,19 @@ interface DynamicFormProps {
   serviceId?: string;
 }
 
-export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onSubmit, serviceId }) => {
+export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onSubmit, serviceId, handleReload }) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
   const form = useForm();
   const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
-
   // Memoize watchedValues to avoid unnecessary re-renders
   const memoizedWatchedValues = useMemo(() => watchedValues, [watchedValues]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [structuredRowCounts, setStructuredRowCounts] = useState<Record<number, number>>({});
+  const systemContext = useSystemVariableContext();
+
 
   const { user } = useAppSelector(state => state.auth);
 
@@ -92,22 +95,27 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
   };
 
   const currentFieldCount = useMemo(() => {
+    if (!config || !Array.isArray(config.items)) {
+      return 0; // fallback when config.items isn't ready
+    }
+
     return config.items.reduce((acc, item) => {
       if (item.type === "field") {
         return acc + 1;
       }
       if (item.type === "rowgroup") {
-        if (item.data.isStructuredInput) {
+        if (item.data?.isStructuredInput) {
           // count structured rows (or at least 1)
           const count = structuredRowCounts[item.id] || 1;
           return acc + count;
         }
         // count normal rowGroup length
-        return acc + (Array.isArray(item.data.rowGroup) ? item.data.rowGroup.length : 0);
+        return acc + (Array.isArray(item.data?.rowGroup) ? item.data.rowGroup.length : 0);
       }
       return acc;
     }, 0);
-  }, [config.items, structuredRowCounts]);
+  }, [config?.items, structuredRowCounts]);
+
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return [];
@@ -221,12 +229,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
 
   const filterDependentFieldOptions = (field: FormField, dependsOnValue: any): string[] => {
     if (!field.options || !field.filterOptionsBy) {
-      console.log(`[filterDependentFieldOptions] No filterOptionsBy — return original options`);
       return field.options;
     }
 
-    console.log(`[filterDependentFieldOptions] Transforming options using filterOptionsBy for field: ${field.name}`);
-    console.log(`[filterDependentFieldOptions] dependsOnValue:`, dependsOnValue);
 
     let optionsArray: any[] = [];
 
@@ -235,7 +240,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
         ? field.options.map(opt => JSON.parse(opt))
         : field.options;
     } catch (error) {
-      console.warn(`[filterDependentFieldOptions] Error parsing options`, error);
       optionsArray = field.options;
     }
 
@@ -243,21 +247,120 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
       if (typeof opt === 'string') return opt;
 
       const extracted = getNestedProperty(opt, field.filterOptionsBy!);
-      console.log(`[filterDependentFieldOptions] Extracted value from object:`, {
-        original: opt,
-        path: field.filterOptionsBy,
-        extracted
-      });
+
 
       return extracted ?? JSON.stringify(opt);
     });
 
-    console.log(`[filterDependentFieldOptions] Final mapped result:`, result);
 
     return result.filter(Boolean);
   };
 
-  console.log("config", config)
+  const transformedItems = useMemo(() => {
+    if (!config?.items) return [];
+
+    return config.items.map(item => {
+      if (item.type !== "field") return item;
+
+      const field = item.data;
+      let rawResolved: any[] = [];
+
+      // 1️⃣ Resolve ${...} system variables
+      if (Array.isArray(field.options)) {
+        rawResolved = field.options.flatMap(opt => {
+          if (typeof opt === "string") {
+            const resolved = resolveSystemVariable(opt, systemContext);
+            return Array.isArray(resolved) ? resolved : [resolved];
+          }
+          return [opt];
+        }).filter(Boolean);
+      }
+
+      // 2️⃣ Handle dependency filtering (dependsOn, dependsOnValue, dependsByValue)
+      const parentFieldName = field.dependsOn;
+      const parentExtractKey = field.filterOptionsBy || field.dependsOnValue;
+      const childExtractKey = field.dependsByValue;
+
+      if (parentFieldName) {
+        const parentValue = watchedValues?.[parentFieldName];
+      
+        // Find the parent field definition
+        const parentItem = config.items.find(
+          it => it.type === "field" && it.data.name === parentFieldName
+        );
+        const parentOptions = parentItem?.data?.options ?? [];
+      
+        // Find the full parent selected object (not just the label)
+        let parentSelectedObj = null;
+        if (Array.isArray(parentOptions)) {
+          parentSelectedObj = parentOptions.find(opt => {
+            if (typeof opt === "object") {
+              return (
+                opt.item_name?.toString() === parentValue?.toString() ||
+                opt.value?.toString() === parentValue?.toString() ||
+                opt.label?.toString() === parentValue?.toString()
+              );
+            }
+            return opt?.toString() === parentValue?.toString();
+          });
+        }
+      
+        // Extract the filter or key we’ll use to compare
+        const parentFilterValue =
+          parentSelectedObj?.filter ??
+          parentSelectedObj?.[field.filterOptionsBy] ??
+          null;
+      
+        const beforeCount = rawResolved.length;
+      
+        // Perform filtering using the parent’s filter value
+        if (parentFilterValue !== null && parentFilterValue !== undefined) {
+          rawResolved = rawResolved.filter(opt => {
+            try {
+              if (typeof opt === "object") {
+                const value = opt[field.filterOptionsBy];
+                return (
+                  value?.toString().toLowerCase() ===
+                  parentFilterValue?.toString().toLowerCase()
+                );
+              }
+              return (
+                opt?.toString().toLowerCase() ===
+                parentFilterValue?.toString().toLowerCase()
+              );
+            } catch {
+              return true;
+            }
+          });
+        }
+      
+        const afterCount = rawResolved.length;
+      
+        console.groupCollapsed(`[transformedItems] Filtering "${field.name}"`);
+        console.log({
+          parentFieldName,
+          parentValue,
+          parentSelectedObj,
+          parentFilterValue,
+          beforeCount,
+          afterCount,
+          exampleAfter: rawResolved.slice(0, 3)
+        });
+        console.groupEnd();
+      }
+
+      // 3️⃣ Return updated field
+      return {
+        ...item,
+        data: {
+          ...field,
+          options: rawResolved
+        }
+      };
+    });
+  }, [config.items, systemContext, watchedValues]);
+
+
 
   const renderFieldsInRows = (fields: FormField[]) => {
     return (
@@ -290,7 +393,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
                   const updatedFields = (config.fields || []).map(f => {
                     if (f.dependsOn === field.name) {
                       const filteredOptions = filterDependentFieldOptions(f, value);
-                      console.log('Updating dependent field options:', f.name, filteredOptions);
                       return { ...f, options: filteredOptions };
                     }
                     return f;
@@ -324,6 +426,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
         <WidgetRenderer
           key={widget.id}
           config={widget}
+          handleReload={handleReload}
           data={{
             formData: watchedValues,
             userData: user,
@@ -360,7 +463,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
               {/* Unified rendering using items array */}
               {config.items && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {config.items
+                  {transformedItems
                     .sort((a, b) => a.order - b.order)
                     .map((item) => {
                       switch (item.type) {
@@ -434,6 +537,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
                                   rowGroup={rowGroup}
                                   groupIndex={groupIndex}
                                   form={form}
+                                  config={config}
                                   maxTotalFields={50}
                                   currentFieldCount={currentFieldCount}
                                   onFieldCountChange={(count) => setStructuredRowCounts(prev => ({ ...prev, [groupIndex]: count }))}

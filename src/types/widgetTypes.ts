@@ -31,6 +31,7 @@ export interface WidgetProps {
   // Loading and error states
   isLoading?: boolean;
   error?: string | null;
+  handleReload?: () => void;
 }
 
 export interface WidgetConfig extends WidgetPreset {
