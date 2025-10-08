@@ -60,7 +60,6 @@ const ServiceCatalogAdmin = () => {
     error,
     fetchData
   } = useCatalogData();
-  console.log("serviceCatalog",serviceCatalog)
   const { toast } = useToast();
   const dispatch = useAppDispatch();
 

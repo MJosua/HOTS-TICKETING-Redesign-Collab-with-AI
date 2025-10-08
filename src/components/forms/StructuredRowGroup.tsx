@@ -230,13 +230,10 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 
         return (
           <SuggestionInsertInput
-            suggestions={suggestions
-             .map(s => s && (typeof s === 'object' && s !== null ? (s as any).label || (s as any).name || s : s)).filter(Boolean)}
+            suggestions={suggestions}
             placeholder={colDef.placeholder || "Type or select from suggestions"}
             onChange={val => onChange(val)}
             onEnter={val => onChange(val)}
-
-
           />
         );
 

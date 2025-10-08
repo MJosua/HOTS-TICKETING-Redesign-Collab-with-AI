@@ -49,7 +49,6 @@ export const fetchMyTickets = createAsyncThunk(
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch my tickets');
       }
-        console.log("response.data",response.data)
       return { ...response.data, currentPage: page };
     } catch (error: any) {
       console.error('My Tickets API Error:', error);
@@ -68,7 +67,6 @@ export const fetchAllTickets = createAsyncThunk(
         },
       });
       
-      console.log('All Tickets API Response:', response.data);
       
       if (!response.data.success) {
         return rejectWithValue(response.data.message || 'Failed to fetch all tickets');

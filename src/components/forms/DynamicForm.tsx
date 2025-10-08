@@ -256,111 +256,125 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
     return result.filter(Boolean);
   };
 
+
+
+  const resolveSystemVarsInField = (field: FormField, context: any): FormField => {
+    const newField = { ...field };
+
+    // 🔹 Resolve system variables in option arrays
+    if (Array.isArray(newField.options)) {
+      newField.options = newField.options.flatMap(opt => {
+        if (typeof opt === "string") {
+          const resolved = resolveSystemVariable(opt, context);
+          return Array.isArray(resolved) ? resolved : [resolved];
+        }
+        return [opt];
+      }).filter(Boolean);
+    }
+
+    // 🔹 Resolve system variables in text-based properties
+    ['defaultValue', 'label', 'placeholder', 'description', 'tooltip'].forEach(key => {
+      if (typeof (newField as any)[key] === "string") {
+        (newField as any)[key] = resolveSystemVariable((newField as any)[key], context);
+      }
+    });
+
+    return newField;
+  };
+
+
   const transformedItems = useMemo(() => {
     if (!config?.items) return [];
 
     return config.items.map(item => {
-      if (item.type !== "field") return item;
+      switch (item.type) {
+        case "field": {
+          const field = resolveSystemVarsInField(item.data, systemContext);
 
-      const field = item.data;
-      let rawResolved: any[] = [];
+          // ✅ Dependency filtering logic (same as before)
+          const parentFieldName = field.dependsOn;
+          if (parentFieldName) {
+            const parentValue = watchedValues?.[parentFieldName];
+            const parentItem = config.items.find(
+              it => it.type === "field" && it.data.name === parentFieldName
+            );
+            const parentOptions = parentItem?.data?.options ?? [];
+            const parentSelectedObj = Array.isArray(parentOptions)
+              ? parentOptions.find(opt => {
+                if (typeof opt === "object") {
+                  return (
+                    opt.item_name?.toString() === parentValue?.toString() ||
+                    opt.value?.toString() === parentValue?.toString() ||
+                    opt.label?.toString() === parentValue?.toString()
+                  );
+                }
+                return opt?.toString() === parentValue?.toString();
+              })
+              : null;
 
-      // 1️⃣ Resolve ${...} system variables
-      if (Array.isArray(field.options)) {
-        rawResolved = field.options.flatMap(opt => {
-          if (typeof opt === "string") {
-            const resolved = resolveSystemVariable(opt, systemContext);
-            return Array.isArray(resolved) ? resolved : [resolved];
+            const parentFilterValue =
+              parentSelectedObj?.filter ??
+              parentSelectedObj?.[field.filterOptionsBy] ??
+              null;
+
+            if (parentFilterValue !== null && parentFilterValue !== undefined) {
+              field.options = (field.options || []).filter(opt => {
+                try {
+                  if (typeof opt === "object") {
+                    const val = opt[field.filterOptionsBy];
+                    return (
+                      val?.toString().toLowerCase() ===
+                      parentFilterValue?.toString().toLowerCase()
+                    );
+                  }
+                  return (
+                    opt?.toString().toLowerCase() ===
+                    parentFilterValue?.toString().toLowerCase()
+                  );
+                } catch {
+                  return true;
+                }
+              });
+            }
           }
-          return [opt];
-        }).filter(Boolean);
+
+          return { ...item, data: field };
+        }
+
+        case "section": {
+          const section = item.data;
+          const resolvedFields = (section.fields || []).map(f =>
+            resolveSystemVarsInField(f, systemContext)
+          );
+          return {
+            ...item,
+            data: { ...section, fields: resolvedFields },
+          };
+        }
+
+        case "rowgroup": {
+          const rowGroup = item.data;
+          const resolvedGroup =
+            Array.isArray(rowGroup.rowGroup)
+              ? rowGroup.rowGroup.map(f =>
+                resolveSystemVarsInField(f, systemContext)
+              )
+              : rowGroup.rowGroup;
+
+          return {
+            ...item,
+            data: { ...rowGroup, rowGroup: resolvedGroup },
+          };
+        }
+
+        default:
+          return item;
       }
-
-      // 2️⃣ Handle dependency filtering (dependsOn, dependsOnValue, dependsByValue)
-      const parentFieldName = field.dependsOn;
-      const parentExtractKey = field.filterOptionsBy || field.dependsOnValue;
-      const childExtractKey = field.dependsByValue;
-
-      if (parentFieldName) {
-        const parentValue = watchedValues?.[parentFieldName];
-      
-        // Find the parent field definition
-        const parentItem = config.items.find(
-          it => it.type === "field" && it.data.name === parentFieldName
-        );
-        const parentOptions = parentItem?.data?.options ?? [];
-      
-        // Find the full parent selected object (not just the label)
-        let parentSelectedObj = null;
-        if (Array.isArray(parentOptions)) {
-          parentSelectedObj = parentOptions.find(opt => {
-            if (typeof opt === "object") {
-              return (
-                opt.item_name?.toString() === parentValue?.toString() ||
-                opt.value?.toString() === parentValue?.toString() ||
-                opt.label?.toString() === parentValue?.toString()
-              );
-            }
-            return opt?.toString() === parentValue?.toString();
-          });
-        }
-      
-        // Extract the filter or key we’ll use to compare
-        const parentFilterValue =
-          parentSelectedObj?.filter ??
-          parentSelectedObj?.[field.filterOptionsBy] ??
-          null;
-      
-        const beforeCount = rawResolved.length;
-      
-        // Perform filtering using the parent’s filter value
-        if (parentFilterValue !== null && parentFilterValue !== undefined) {
-          rawResolved = rawResolved.filter(opt => {
-            try {
-              if (typeof opt === "object") {
-                const value = opt[field.filterOptionsBy];
-                return (
-                  value?.toString().toLowerCase() ===
-                  parentFilterValue?.toString().toLowerCase()
-                );
-              }
-              return (
-                opt?.toString().toLowerCase() ===
-                parentFilterValue?.toString().toLowerCase()
-              );
-            } catch {
-              return true;
-            }
-          });
-        }
-      
-        const afterCount = rawResolved.length;
-      
-        console.groupCollapsed(`[transformedItems] Filtering "${field.name}"`);
-        console.log({
-          parentFieldName,
-          parentValue,
-          parentSelectedObj,
-          parentFilterValue,
-          beforeCount,
-          afterCount,
-          exampleAfter: rawResolved.slice(0, 3)
-        });
-        console.groupEnd();
-      }
-
-      // 3️⃣ Return updated field
-      return {
-        ...item,
-        data: {
-          ...field,
-          options: rawResolved
-        }
-      };
     });
   }, [config.items, systemContext, watchedValues]);
 
 
+  console.log("transformmap",transformedItems)
 
   const renderFieldsInRows = (fields: FormField[]) => {
     return (
@@ -529,6 +543,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ config, setConfig, onS
                         case 'rowgroup': {
                           const rowGroup = item.data as RowGroup;
                           const groupIndex = config.items.findIndex(i => i.id === item.id);
+                          console.log("rowgroup", rowGroup)
                           return (
                             <div key={item.id} className="col-span-1 md:col-span-3">
                               {rowGroup.title && <h3 className="text-lg font-medium mb-2">{rowGroup.title}</h3>}

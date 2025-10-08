@@ -1,0 +1,307 @@
+Contoh JSON : 
+[
+    {
+        "id": "field-nametitle",
+        "type": "field",
+        "order": 0,
+        "data": {
+            "label": "Name/title",
+            "name": "nametitle",
+            "type": "text",
+            "required": true,
+            "columnSpan": 1,
+            "default": "${user}"
+        }
+    },
+    {
+        "id": "field-deliver-to",
+        "type": "field",
+        "order": 1,
+        "data": {
+            "label": "Deliver To",
+            "name": "deliver_to",
+            "type": "suggestion-insert",
+            "required": false,
+            "columnSpan": 1,
+            "options": [
+                "SPIT IOD - Lt. 23",
+                "KEDUTAAN BESAR REPUBLIK INDONESIA (KBRI)"
+            ],
+            "dependerOf": [
+                "field_1751275073662"
+            ]
+        }
+    },
+    {
+        "id": "field-delivery-method",
+        "type": "field",
+        "order": 2,
+        "data": {
+            "label": "delivery method ",
+            "name": "delivery_method ",
+            "type": "select",
+            "required": false,
+            "columnSpan": 1,
+            "options": [
+                "Delivery",
+                "Pickup"
+            ]
+        }
+    },
+    {
+        "id": "field-purpose",
+        "type": "field",
+        "order": 3,
+        "data": {
+            "label": "Purpose",
+            "name": "purpose",
+            "type": "select",
+            "required": false,
+            "columnSpan": 3,
+            "options": [
+                "Absorb excess FG",
+                "Internal IOD",
+                "Free Goods",
+                "Marketing Event",
+                "Listing New SKU",
+                "Sample for Distributor",
+                "Compensation Item",
+                "Phytosanitary",
+                "Others",
+                "Absorb excess RM"
+            ]
+        }
+    },
+    {
+        "id": "field-product-category",
+        "type": "field",
+        "order": 4,
+        "data": {
+            "label": "Product Category",
+            "name": "Product Category",
+            "type": "select",
+            "required": false,
+            "columnSpan": 1,
+            "options": [
+                "Noodle",
+                "Snack",
+                "Dairy",
+                "NICI/FS"
+            ],
+            "dependerOf": [
+                "item_name"
+            ]
+        }
+    },
+    {
+        "id": "field-factory",
+        "type": "field",
+        "order": 5,
+        "data": {
+            "label": "Factory",
+            "name": "field_1751275073662",
+            "type": "select",
+            "required": false,
+            "columnSpan": 1,
+            "options": [
+                "IOD",
+                "CBT",
+                "SBY",
+                "CRB"
+            ],
+            "placeholder": "Select ( Leave Empty for FS )",
+            "dependsOn": "deliver_to"
+        }
+    },
+    {
+        "id": "field-po-number",
+        "type": "field",
+        "order": 6,
+        "data": {
+            "label": "PO_Number",
+            "name": "PO_Number",
+            "type": "text",
+            "required": false,
+            "columnSpan": 1,
+            "placeholder": "Fill PO number, left empty if none"
+        }
+    },
+    {
+        "id": "field-week-delivery",
+        "type": "field",
+        "order": 7,
+        "data": {
+            "label": "Week Delivery",
+            "name": "Week Delivery",
+            "type": "number",
+            "required": false,
+            "columnSpan": 1,
+            "default": "",
+            "placeholder": "Fill Week number, left empty if none",
+            "maxnumber": "52"
+        }
+    },
+    {
+        "id": "field-declare-shipping",
+        "type": "field",
+        "order": 8,
+        "data": {
+            "label": "Declare on Shipping Docs",
+            "name": "field_1752122843525",
+            "type": "checkbox",
+            "required": false,
+            "columnSpan": 1,
+            "placeholder": "Declare"
+        }
+    },
+    {
+        "id": "field-notes",
+        "type": "field",
+        "order": 9,
+        "data": {
+            "label": "Request Detail",
+            "name": "notes",
+            "type": "textarea",
+            "required": false,
+            "columnSpan": 3,
+            "placeholder": "Fill if there is additional remarks."
+        }
+    },
+    {
+        "id": "field-1759808532362",
+        "type": "field",
+        "order": 10,
+        "data": {
+            "label": "Sample Category",
+            "name": "field_1751274972416_copy_1759808532363",
+            "type": "text",
+            "required": false,
+            "columnSpan": 1,
+            "options": [
+                {
+                    "item_name": "FG - Noodle",
+                    "filter": "0"
+                },
+                {
+                    "item_name": "RM - Empty Carton",
+                    "filter": "1"
+                },
+                {
+                    "item_name": "RM - Empty Cup",
+                    "filter": "2,3"
+                },
+                {
+                    "item_name": "RM - OPP Tape",
+                    "filter": "4"
+                }
+            ],
+            "dependerOf": [
+                "item_name",
+                "field_1759822570447"
+            ]
+        }
+    },
+    {
+        "id": "rowgroup-items",
+        "type": "rowgroup",
+        "order": 11,
+        "data": {
+            "title": "Items",
+            "isStructuredInput": true,
+            "maxRows": 5,
+            "structure": {
+                "firstColumn": {
+                    "label": "Item Name",
+                    "name": "item_name",
+                    "type": "suggestion-insert",
+                    "placeholder": "Enter item name",
+                    "options": [
+                        "${skulist}"
+                    ],
+                    "dependsOn": "field_1751274972416_copy_1759808532363",
+                    "dependsOnValue": "filter",
+                    "dependsByValue": ""
+                },
+                "secondColumn": {
+                    "label": "Quantity",
+                    "name": "quantity",
+                    "type": "number",
+                    "placeholder": "Enter quantity",
+                    "rounding": "25",
+                    "maxnumber": "9999"
+                },
+                "thirdColumn": {
+                    "label": "Unit",
+                    "name": "unit",
+                    "type": "select",
+                    "options": [
+                        "Ctns",
+                        "Pcs"
+                    ],
+                    "placeholder": "Select unit"
+                },
+                "combinedMapping": "second_third"
+            },
+            "rowGroup": [
+                {
+                    "id": "row_1756266314872",
+                    "firstValue": "",
+                    "secondValue": "",
+                    "thirdValue": ""
+                }
+            ],
+            "dependerOf": [
+                "nametitle",
+                "deliver_to",
+                "delivery_method ",
+                "purpose",
+                "Product Category",
+                "PO_Number",
+                "Week Delivery",
+                "field_1752122843525",
+                "notes",
+                "field_1751274972416_copy_1759808532363",
+                null,
+                "quantity",
+                "unit",
+                null
+            ]
+        }
+    },
+    {
+        "id": "field-1759822570447",
+        "type": "field",
+        "order": 12,
+        "data": {
+            "label": "Sku List Select",
+            "name": "field_1759822570447",
+            "type": "suggestion-insert",
+            "required": false,
+            "columnSpan": 1,
+            "dependsOn": "field_1751274972416_copy_1759808532363",
+            "options": [
+                {
+                    "item_name": "225241 |  BUMBU AB USA 30 | BUMBU AB-MF-O-TP-INDOMIE AYAM BWG MF/NDL",
+                    "filter": 5
+                },
+                {
+                    "item_name": "220722 |  MINYAK BUMBU AB USA 30 | MINYAK MBJ3-TP/VL-MINYAK BAWANG JAWA/NDL",
+                    "filter": 6
+                },
+                {
+                    "item_name": "189515 | INDOMIE VEGETABLE (SM) - VG (SM) ERO 40",
+                    "filter": 0
+                },
+                {
+                    "item_name": "195816 | INDOMIE SPECIAL CHICKEN 40X4 - SA US/AR 40X4",
+                    "filter": 0
+                },
+                {
+                    "item_name": "406810 | INDOMIE SPECIAL CHICKEN FLAVOUR - SA INDIA 40",
+                    "filter": 0
+                }
+            ],
+            "filterOptionsBy": "filter"
+        }
+    }
+]
