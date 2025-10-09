@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { resolveSystemVariable } from "@/utils/systemVariableResolver";
 import { useSystemVariableContext } from "@/utils/systemVariableDefinitions/systemVariableDefinitions";
 import { compareValues, getNested } from "@/utils/dependencyResolver";
+import { DynamicSection } from "./DynamicSection";
 
 export const DynamicForm: React.FC<{
   config: FormConfig;
@@ -229,8 +230,7 @@ export const DynamicForm: React.FC<{
   });
 
 
-  console.log("itemsWithFilteredOptions", itemsWithFilteredOptions)
-
+  // console.log("item",itemsWithFilteredOptions)
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -316,6 +316,31 @@ export const DynamicForm: React.FC<{
                                   [groupId]: rowValues,
                                 }));
                               }}
+                              watchedValues={memoizedWatchedValues}
+                              selectedObjects={selectedObjects}
+                            />
+                          </div>
+                        );
+                      }
+
+
+                      case "section": {
+                        const section = item.data;
+                        const parentVal = watchedValues?.[section.dependsOn];
+                        if (section.dependsOn && parentVal !== section.dependsOnValue) return null;
+                        return (
+                          <div key={item.id} className="col-span-3">
+                            <DynamicSection
+                              section={section}
+                              form={form}
+                              watchedValues={memoizedWatchedValues}
+                              selectedObjects={selectedObjects}
+                              setWatchedValues={setWatchedValues}
+                              setSelectedObjects={setSelectedObjects}
+                              handleUpdateRowGroup={handleUpdateRowGroup}
+                              currentFieldCount={currentFieldCount}
+                              setStructuredRowCounts={setStructuredRowCounts}
+                              shouldShowField={shouldShowField}
                             />
                           </div>
                         );

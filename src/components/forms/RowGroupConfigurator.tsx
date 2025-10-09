@@ -453,7 +453,7 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                     )}
 
 
-                   
+
 
 
                     {localRowGroup.structure?.firstColumn?.dependsOn && (
@@ -623,12 +623,7 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                             className="bg-white"
                           />
                         </div>
-                        <div className="text-xs text-gray-500 mt-1 space-y-1">
-                          <p>• Enter each option on a new line</p>
-                          <p>• For JSON objects, enter valid JSON on each line</p>
-                          <p>• System variables like ${'{factoryplants}'} will be resolved automatically</p>
 
-                        </div>
                       </div>
                     )}
 
@@ -686,25 +681,258 @@ export const RowGroupConfigurator: React.FC<RowGroupConfiguratorProps> = ({
                         <SelectItem value="select">Select</SelectItem>
                       </SelectContent>
                     </Select>
+
+                    {(localRowGroup.structure?.thirdColumn?.type === 'select') && (
+                    <>
+                      {localRowGroup.structure?.thirdColumn?.options?.map((opt, i) => (
+                        <div key={i} className="flex gap-2 mb-2">
+                          <Input
+                            value={typeof opt === "string" ? opt : opt.label || ""}
+                            placeholder={`Option ${i + 1}`}
+                            onChange={(e) => {
+                              const newOptions = [...(localRowGroup.structure.thirdColumn.options || [])];
+                              newOptions[i] = e.target.value;
+                              updateRowGroup({
+                                structure: {
+                                  ...localRowGroup.structure,
+                                  thirdColumn: {
+                                    ...localRowGroup.structure.thirdColumn,
+                                    options: newOptions
+                                  }
+                                }
+                              });
+                            }}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newOptions = localRowGroup.structure.thirdColumn.options.filter(
+                                (_, idx) => idx !== i
+                              );
+                              updateRowGroup({
+                                structure: {
+                                  ...localRowGroup.structure,
+                                  thirdColumn: {
+                                    ...localRowGroup.structure.thirdColumn,
+                                    options: newOptions
+                                  }
+                                }
+                              });
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newOptions = [...(localRowGroup.structure.thirdColumn.options || []), ""];
+                          updateRowGroup({
+                            structure: {
+                              ...localRowGroup.structure,
+                              thirdColumn: {
+                                ...localRowGroup.structure.thirdColumn,
+                                options: newOptions
+                              }
+                            }
+                          });
+                        }}
+                      >
+                        + Add Option
+                      </Button>
+                    </>
+                  )}
+
+
+                    <div className='col-span-3'>
+
+
+                      {(localRowGroup.structure?.thirdColumn?.type === 'select' || localRowGroup.structure?.thirdColumn?.type === 'suggestion-insert') && (
+                        <div>
+                          <Label>  Chain Link Configuration </Label>
+                          <p className="text-xs text-blue-600">
+                            Make this field's options depend on another field's value for dynamic filtering
+                          </p>
+
+                          <div>
+                            <Label className="flex items-center gap-2 text-sm">
+                              <Link className="w-4 h-4" />
+                              Parent Field (Depends On)
+                            </Label>
+
+                          </div>
+
+                          <Select
+                            value={localRowGroup.structure?.thirdColumn?.dependsOn ?? "none"}
+
+
+                            onValueChange={(value) =>
+                              updateRowGroup({
+                                structure: {
+                                  ...localRowGroup.structure,
+                                  thirdColumn: {
+                                    ...localRowGroup.structure?.thirdColumn,
+                                    dependsOn: value
+                                  }
+                                }
+                              })
+                            }
+
+
+                          >
+
+                            <SelectTrigger className="bg-white">
+                              <SelectValue placeholder="Select a parent field" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border shadow-lg z-50">
+                              <SelectItem value="none">
+                                <div className="flex items-center gap-2">
+                                  <Unlink className="w-4 h-4" />
+                                  No Dependency
+                                </div>
+                              </SelectItem>
+
+                              {availableFields.length > 0 ? (
+                                availableFields.map(f => (
+                                  <SelectItem key={f.name} value={f.name}>
+                                    <div className="flex items-center gap-2">
+                                      <Link className="w-4 h-4" />
+                                      {f.label} ({f.name})
+                                    </div>
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no_fields" disabled>
+                                  No fields available
+                                </SelectItem>
+                              )}
+
+                            </SelectContent>
+                          </Select>
+
+                        </div>
+                      )}
+
+
+                      {localRowGroup.structure?.thirdColumn?.dependsOn && (
+                        <div>
+                          <Label className="text-sm">Filter Property Path</Label>
+                          <Input
+                            value={localRowGroup.structure?.thirdColumn?.dependsOnValue ?? "none"}
+                            onChange={(e) =>
+                              updateRowGroup({
+                                structure: {
+                                  ...localRowGroup.structure,
+                                  thirdColumn: {
+                                    ...localRowGroup.structure?.thirdColumn,
+                                    dependsOnValue: e.target.value
+                                  }
+                                }
+                              })
+                            }
+                            placeholder="e.g., category.name or plant_description"
+                            className="bg-white"
+                          />
+                          <div className="text-xs text-gray-600 mt-1 space-y-1">
+                            <p>• For simple matching: use property name like "category"</p>
+                            <p>• For nested objects: use dot notation like "plant.description"</p>
+                            <p>• Leave empty for basic string includes matching</p>
+                            <p className="text-blue-600 font-medium">• Changes will be applied when you click Save</p>
+                          </div>
+                        </div>
+                      )}
+
+
+
+
+
+                      {localRowGroup.structure?.thirdColumn?.dependsOn && (
+                        <div>
+                          <Label className="text-sm">Filter By Property Path</Label>
+                          <Input
+                            value={localRowGroup.structure?.thirdColumn?.dependsByValue ?? "none"}
+                            onChange={(e) =>
+                              updateRowGroup({
+                                structure: {
+                                  ...localRowGroup.structure,
+                                  thirdColumn: {
+                                    ...localRowGroup.structure?.thirdColumn,
+                                    dependsByValue: e.target.value
+                                  }
+                                }
+                              })
+                            }
+                            placeholder="e.g., category.name or plant_description"
+                            className="bg-white"
+                          />
+                          <div className="text-xs text-gray-600 mt-1 space-y-1">
+                            <p>• For simple matching: use property name like "category"</p>
+                            <p>• For nested objects: use dot notation like "plant.description"</p>
+                            <p>• Leave empty for basic string includes matching</p>
+                            <p className="text-blue-600 font-medium">• Changes will be applied when you click Save</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {localRowGroup.structure?.thirdColumn?.dependsOn && (
+                        <div className="p-3 bg-white rounded-lg border border-blue-200">
+                          <h4 className="text-sm font-medium text-blue-800 mb-2">How Chain Link Works:</h4>
+                          <div className="text-xs text-blue-700 space-y-1">
+                            <p>1. User selects value in "{localRowGroup.structure?.thirdColumn?.dependsOn}" field</p>
+                            <p>2. This field's options get filtered automatically</p>
+                            <p>3. Only matching options will be shown to the user</p>
+                            <p>4. Filtering uses the property path you specify above</p>
+                            <p>5. Console logs will show the filtering process for debugging</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* {localRowGroup.structure?.firstColumn?.type === 'suggestion-insert' && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label>Suggestions</Label>
+                          <SystemVariableHelper />
+                        </div>
+                        <Textarea
+                          value={field.suggestions?.join('\n') || ''}
+                          onChange={(e) => updateField({ suggestions: e.target.value.split('\n').filter(o => o.trim()) })}
+                          placeholder="Enter suggestions (one per line)"
+                          rows={3}
+                        />
+                      </div>
+                    )} */}
+
+
                   </div>
+
+
+
+                 
+
                 </div>
-              </CardContent>
+              </div>
+            </CardContent>
             </Card>
+
+
           )}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              <X className="w-4 h-4 mr-2" />
-              Cancel
-            </Button>
-            <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
-              <Save className="w-4 h-4 mr-2" />
-              Save Configuration
-            </Button>
-          </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </Button>
+          <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+            <Save className="w-4 h-4 mr-2" />
+            Save Configuration
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </DialogContent>
+    </Dialog >
   );
 };

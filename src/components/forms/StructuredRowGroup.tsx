@@ -17,7 +17,7 @@ import { resolveSystemVariable } from "@/utils/systemVariableResolver";
 import { useSystemVariableContext } from "@/utils/systemVariableDefinitions/systemVariableDefinitions";
 import { SuggestionInsertInput } from "./SuggestionInsertInput";
 import { NumberField } from "./NumberField";
-import { compareValues } from "@/utils/dependencyResolver"; // 🧩 add safe comparator
+import { compareValues, getNested } from "@/utils/dependencyResolver"; // 🧩 add safe comparator
 
 export interface RowData {
   id: string;
@@ -36,6 +36,8 @@ interface StructuredRowGroupProps {
   onFieldCountChange: (count: number) => void;
   onUpdateRowGroup: (groupId: string, updatedRows: RowData[]) => void;
   onRowValueChange?: (groupId: string, rowValues: RowData[]) => void;
+  watchedValues?: Record<string, any>;        // ✅ new
+  selectedObjects?: Record<string, any>;
 }
 
 export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
@@ -45,9 +47,10 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   groupIndex,
   maxTotalFields,
   currentFieldCount,
-  watchedValues,
   onUpdateRowGroup,
   onRowValueChange,
+  watchedValues,
+  selectedObjects
 }) => {
   const { toast } = useToast();
   const systemContext = useSystemVariableContext();
@@ -60,6 +63,46 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   );
 
   const structure = rowGroup.structure;
+
+  const filteredSuggestions = useMemo(() => {
+    const col = structure.firstColumn;
+    const opts = Array.isArray(col.options) ? col.options : [];
+
+    // Step 1: find parent value
+    const parentValue =
+      selectedObjects?.[col.dependsOn] ?? watchedValues?.[col.dependsOn];
+
+    const parentFilterVal =
+      typeof parentValue === "object"
+        ? getNested(parentValue, col.dependsOnValue || "value")
+        : parentValue;
+
+    // Step 2: filter
+    const filtered = opts.filter((opt) => {
+      try {
+        let optVal: any;
+
+        if (col.dependsByValue && typeof opt === "object") {
+          optVal = getNested(opt, col.dependsByValue);
+        } else if (opt && typeof opt === "object" && opt.filter !== undefined) {
+          optVal = opt.filter;
+        } else {
+          optVal = opt;
+        }
+
+        if (parentFilterVal == null || parentFilterVal === "") return true;
+        if (optVal == null) return true;
+
+        return compareValues(optVal, parentFilterVal);
+      } catch (err) {
+        console.warn("⚠️ Rowgroup filter error:", err, opt);
+        return true;
+      }
+    });
+
+    return filtered;
+  }, [structure.firstColumn.options, watchedValues, selectedObjects]);
+
   if (!structure) return null;
 
   // 🧠 Resolve suggestions/options safely
@@ -74,6 +117,59 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       resolveSystemVariable(opt, systemContext)
     ).flat().filter(Boolean);
   }, [structure.thirdColumn?.options, systemContext]);
+
+  const getFilteredOptions = (col: any, opts: any[]) => {
+    if (!col) return opts || [];
+
+    const parentValue =
+      selectedObjects?.[col.dependsOn] ?? watchedValues?.[col.dependsOn];
+
+    const parentFilterVal =
+      typeof parentValue === "object"
+        ? getNested(parentValue, col.dependsOnValue || "value")
+        : parentValue;
+
+    if (parentFilterVal == null || parentFilterVal === "") return opts || [];
+
+    return opts.filter((opt) => {
+      try {
+        let optVal;
+        if (col.dependsByValue && typeof opt === "object") {
+          optVal = getNested(opt, col.dependsByValue);
+        } else if (opt && typeof opt === "object" && opt.filter !== undefined) {
+          optVal = opt.filter;
+        } else {
+          optVal = opt;
+        }
+
+        return compareValues(optVal, parentFilterVal);
+      } catch (err) {
+        console.warn("⚠️ Rowgroup filter error:", err, opt);
+        return true;
+      }
+    });
+  };
+
+
+
+  const filteredFirstOptions = useMemo(() => {
+    const col = structure.firstColumn;
+    const opts = Array.isArray(col.options) ? col.options : [];
+    return getFilteredOptions(col, opts);
+  }, [structure.firstColumn.options, watchedValues, selectedObjects]);
+
+  const filteredSecondOptions = useMemo(() => {
+    const col = structure.secondColumn;
+    const opts = Array.isArray(col.options) ? col.options : [];
+    return getFilteredOptions(col, opts);
+  }, [structure.secondColumn.options, watchedValues, selectedObjects]);
+
+  const filteredThirdOptions = useMemo(() => {
+    const col = structure.thirdColumn;
+    const opts = Array.isArray(col.options) ? col.options : [];
+    return getFilteredOptions(col, opts);
+  }, [structure.thirdColumn.options, watchedValues, selectedObjects]);
+
 
   const syncToParent = (newRows: RowData[]) => {
     setRows(newRows);
@@ -129,7 +225,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     }
   }, [watchedValues, rowGroup.structure.firstColumn.dependsOn]);
 
-  
+
   // 🧩 unified renderer
   const renderField = (
     column: "firstColumn" | "secondColumn" | "thirdColumn",
@@ -140,17 +236,25 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     const col = structure[column];
 
     switch (col.type) {
-      case "suggestion-insert":
+      case "suggestion-insert": {
+        const filteredOpts =
+          column === "firstColumn"
+            ? filteredFirstOptions
+            : column === "secondColumn"
+              ? filteredSecondOptions
+              : filteredThirdOptions;
+
         return (
           <SuggestionInsertInput
-            suggestions={resolvedSuggestions}
+            suggestions={filteredOpts}
             placeholder={col.placeholder}
             defaultValue={value}
-            onChange={(val, full) => onChange(val)}
-            onEnter={(val, full) => onCommit?.(val)}
+            onChange={onChange}
+            onEnter={(val) => onCommit?.(val)}
             onBlur={(val) => onCommit?.(val)}
           />
         );
+      }
 
       case "number":
         return (
@@ -164,15 +268,23 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
           />
         );
 
-      case "select":
+      case "select": {
+        const filteredOpts =
+          column === "firstColumn"
+            ? filteredFirstOptions
+            : column === "secondColumn"
+              ? filteredSecondOptions
+              : filteredThirdOptions;
+
         return (
           <Select
             value={value}
             onValueChange={(v) => {
-              const matched = resolvedThirdOptions.find(opt => compareValues(opt, v));
-              const display = typeof matched === "object"
-                ? matched.item_name ?? matched.label ?? matched.name ?? String(v)
-                : String(v);
+              const matched = filteredOpts.find((opt) => compareValues(opt, v));
+              const display =
+                typeof matched === "object"
+                  ? matched.item_name ?? matched.label ?? matched.name ?? String(v)
+                  : String(v);
               onChange(display);
               onCommit?.(display);
             }}
@@ -181,7 +293,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
               <SelectValue placeholder={col.placeholder} />
             </SelectTrigger>
             <SelectContent>
-              {resolvedThirdOptions.map((o, i) => {
+              {filteredOpts.map((o, i) => {
                 const text =
                   typeof o === "object"
                     ? o.label ?? o.item_name ?? o.name ?? JSON.stringify(o)
@@ -195,7 +307,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
             </SelectContent>
           </Select>
         );
-
+      }
       default:
         return (
           <Input

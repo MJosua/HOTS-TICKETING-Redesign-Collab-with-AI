@@ -185,4 +185,19 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
     description: 'List All purpose for srf',
     resolve: (ctx) => Array.isArray(ctx.srf_purpose) ? ctx.srf_purpose.map(d => d.purpose) : [],
   },
+  {
+    key: '${typesrf}',
+    type: 'object[]',
+    description: 'Manually defined SRF purposes with filter mapping',
+    resolve: () => [
+      {
+        item_name: 'pcs',
+        filter: '0,1, 2, 3',
+      },
+      {
+        item_name: 'ctns',
+        filter: '4, 5',
+      },
+    ],
+  }
 ];
