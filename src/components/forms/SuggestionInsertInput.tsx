@@ -1,163 +1,126 @@
-// SuggestionInsertInput.tsx
 import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Check, ChevronDown } from 'lucide-react';
 
-export interface SuggestionInsertInputProps {
-  suggestions: (string | Record<string, any>)[];
-  placeholder?: string;
-  defaultValue?: string;
-  readOnly?: boolean;
-  onChange?: (value: string) => void;
-  onEnter?: (value: string) => void;
-}
-
-export const SuggestionInsertInput: React.FC<SuggestionInsertInputProps> = ({
-  suggestions,
-  placeholder = "Type or select suggestions",
-  defaultValue = "",
+export const SuggestionInsertInput = ({
+  suggestions = [],
+  placeholder,
+  defaultValue = '',
   readOnly = false,
   onChange = () => {},
   onEnter = () => {},
+  onBlur = () => {}
 }) => {
   const [value, setValue] = useState(defaultValue);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [filtered, setFiltered] = useState<any[]>([]);
+  const [index, setIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Normalize suggestions into flat array but keep original objects
+  const normalized = React.useMemo(() => {
+    return suggestions.flatMap(s => (Array.isArray(s) ? s : [s])).filter(Boolean);
+  }, [suggestions]);
 
   useEffect(() => {
-    const searchValue = (value ?? "").toString().toLowerCase();
-
-    if (!searchValue) {
-      setFilteredSuggestions(suggestions as string[]);
+    if (!value) {
+      setFiltered(normalized);
     } else {
-      const filtered = suggestions.filter(suggestion => {
-        let text = '';
-
-        if (typeof suggestion === 'string') text = suggestion;
-        else if (Array.isArray(suggestion))
-          text = suggestion.map(item => (typeof item === 'string' ? item : item?.label || item?.name || '')).join(' ');
-        else if (typeof suggestion === 'object' && suggestion !== null)
-          text = suggestion.label || suggestion.name || JSON.stringify(suggestion);
-
-        return text.toLowerCase().includes(searchValue);
-      });
-      setFilteredSuggestions(filtered as string[]);
+      const v = String(value).toLowerCase();
+      setFiltered(
+        normalized.filter(s => {
+          const text = typeof s === 'string'
+            ? s
+            : (s.item_name ?? s.label ?? s.name ?? JSON.stringify(s));
+          return String(text).toLowerCase().includes(v);
+        })
+      );
     }
-    setSelectedIndex(-1);
-  }, [value, suggestions]);
+    setIndex(-1);
+  }, [value, normalized]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-        setSelectedIndex(-1);
+    const handleClick = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(e.target as Node)) {
+        setVisible(false);
+        setIndex(-1);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(e.target.value);
-    setShowSuggestions(true);
-    setSelectedIndex(-1);
-    // ❌ removed onChange(e.target.value)
-    // don't notify parent on typing
-  };
-
-  const confirmSelection = (text: string) => {
-    setValue(text);
-    onChange(text);
-    onEnter(text);
-    setShowSuggestions(false);
-    setSelectedIndex(-1);
+  const applySelection = (s: any) => {
+    const display = typeof s === 'string' ? s : (s.item_name ?? s.label ?? s.name ?? JSON.stringify(s));
+    setValue(display);
+    onChange(display, s);
+    onEnter(display, s);
+    setVisible(false);
+    setIndex(-1);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (!showSuggestions) setShowSuggestions(true);
-      else setSelectedIndex(prev => Math.min(prev + 1, filteredSuggestions.length - 1));
+      setVisible(true);
+      setIndex(i => Math.min(i + 1, filtered.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex(prev => Math.max(prev - 1, 0));
+      setIndex(i => Math.max(i - 1, 0));
     } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (selectedIndex >= 0 && selectedIndex < filteredSuggestions.length) {
-        const suggestion = filteredSuggestions[selectedIndex];
-        const label = typeof suggestion === 'string' ? suggestion : suggestion?.label || suggestion?.name || JSON.stringify(suggestion);
-        confirmSelection(label);
-      } else if (value.trim()) {
-        confirmSelection(value.trim());
+      if (index >= 0 && index < filtered.length) {
+        e.preventDefault();
+        applySelection(filtered[index]);
+      } else {
+        // commit typed value
+        onEnter(value, null);
+        setVisible(false);
       }
     } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
-      setSelectedIndex(-1);
+      setVisible(false);
+      setIndex(-1);
     }
-  };
-
-  const handleSuggestionClick = (suggestion: any) => {
-    const label =
-      typeof suggestion === 'string'
-        ? suggestion
-        : suggestion?.label || suggestion?.name || JSON.stringify(suggestion);
-    confirmSelection(label);
   };
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <div className="relative">
-        <Input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setShowSuggestions(true)}
-          placeholder={placeholder}
-          readOnly={readOnly}
-          className="pr-8"
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-0 top-0 h-full px-2"
-          onClick={() => setShowSuggestions(prev => !prev)}
-          disabled={readOnly}
-        >
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-      </div>
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        readOnly={readOnly}
+        placeholder={placeholder}
+        onChange={(e) => {
+          setValue(e.target.value);
+          onChange(e.target.value, null);
+          setVisible(true);
+        }}
+        onFocus={() => setVisible(true)}
+        onBlur={() => {
+          onBlur(value);
+        }}
+        onKeyDown={handleKeyDown}
+        className="w-full border p-2 rounded"
+      />
 
-      {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
-          {filteredSuggestions.map((suggestion, index) => {
-            const label =
-              typeof suggestion === 'string'
-                ? suggestion
-                : suggestion?.label || suggestion?.name || JSON.stringify(suggestion);
-
+      {visible && filtered.length > 0 && (
+        <ul className="absolute z-50 w-full bg-white border rounded shadow max-h-60 overflow-auto">
+          {filtered.map((s, i) => {
+            const text = typeof s === 'string' ? s : (s.item_name ?? s.label ?? s.name ?? JSON.stringify(s));
             return (
-              <div
-                key={index}
-                onMouseDown={() => handleSuggestionClick(suggestion)}
-                className={`px-3 py-2 cursor-pointer hover:bg-accent ${
-                  index === selectedIndex ? 'bg-accent text-accent-foreground' : ''
-                }`}
+              <li
+                key={`${text}-${i}`}
+                onMouseDown={(ev) => {
+                  ev.preventDefault(); // prevent blur
+                  applySelection(s);
+                }}
+                className={`p-2 cursor-pointer ${i === index ? 'bg-blue-100' : ''}`}
               >
-                <div className="flex items-center justify-between">
-                  <span>{label}</span>
-                  {index === selectedIndex && <Check className="h-4 w-4 text-primary" />}
-                </div>
-              </div>
+                {text}
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

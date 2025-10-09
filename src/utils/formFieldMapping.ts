@@ -135,3 +135,47 @@ export const getMaxFormFields = (): number => {
 export const validateFormFieldCount = (fieldCount: number): boolean => {
   return fieldCount <= getMaxFormFields();
 };
+
+export const mapUnifiedForm = (data: any, items: any[]) => {
+  if (!data || !Array.isArray(items)) return [];
+
+  return items.map((item) => {
+    if (!item || !item.data) return null;
+
+    switch (item.type) {
+      case "field":
+        return {
+          id: item.id,
+          name: item.data.name,
+          label: item.data.label || item.data.name,
+          value: data[item.data.name] ?? "",
+        };
+
+      case "section":
+        return {
+          id: item.id,
+          type: "section",
+          label: item.data.label || "Section",
+          fields: (item.data.fields || []).map((f) => ({
+            name: f.name,
+            value: data[f.name] ?? "",
+          })),
+        };
+
+      case "rowgroup":
+        return {
+          id: item.id,
+          type: "rowgroup",
+          label: item.data.label || "Row Group",
+          rows: data[item.id] || item.data.rowGroup || [],
+        };
+
+      default:
+        return {
+          id: item.id,
+          type: item.type,
+          value: data[item.id] ?? "",
+        };
+    }
+  }).filter(Boolean);
+};

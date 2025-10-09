@@ -99,11 +99,9 @@ const UserModal: React.FC<UserModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (user) {
-      console.log("jalan")
       onEdit(formData);
     }
     else{
-      console.log("jalan2")
 
       onSave(formData)
     }

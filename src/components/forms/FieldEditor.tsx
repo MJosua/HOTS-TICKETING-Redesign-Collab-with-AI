@@ -23,7 +23,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
   const [filterInput, setFilterInput] = useState(field.filterOptionsBy || '');
   const [filterInputshow, setFilterInputShow] = useState(field.filterOptionsBy || '');
 
-  const [dependsByValue, setDependsByValue] = useState(field.dependsByValue || '');
+  const [dependsByValue, setDependsByValue] = useState(field.dependsOtherFieldByValue || '');
 
   const updateField = (updates: Partial<FormField>) => {
     setLocalField(prev => ({ ...prev, ...updates }));
@@ -34,7 +34,7 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
     const updatedField = {
       ...localField,
       filterOptionsBy: filterInput.trim() || undefined,
-      dependsByValue: dependsByValue.trim() || undefined
+      dependsOtherFieldByValue: dependsByValue.trim() || undefined
     };
 
     console.log('🔧 [Field Editor] Saving field:', {

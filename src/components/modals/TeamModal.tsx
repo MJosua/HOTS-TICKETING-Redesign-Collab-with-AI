@@ -31,9 +31,6 @@ const TeamModal = ({ isOpen, onClose, team, mode, onSave }: TeamModalProps) => {
     dispatch(fetchUsers());
   }, [dispatch]);
   
-  console.log("departments",departments)
-  console.log("users",users)
-  console.log("formData",formData)
 
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [teamLeader, setTeamLeader] = useState<number | null>(null);

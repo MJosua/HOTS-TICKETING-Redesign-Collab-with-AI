@@ -14,11 +14,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/types/formTypes';
 import { SuggestionInsertInput } from './SuggestionInsertInput';
+import { compareValues } from '@/utils/dependencyResolver'; // 🆕 add this import
 
 interface DynamicFieldProps {
   field: FormField;
   value: any;
-  onChange: (value: any) => void;
+  onChange: (value: any, fullOption?: any) => void; // <-- second optional param
   watchedValues?: Record<string, any>;
   error?: string;
 }
@@ -30,18 +31,15 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   watchedValues = {},
   error
 }) => {
-  const [localValue, setLocalValue] = useState(value || '');
+  const [localValue, setLocalValue] = useState(value ?? '');
   const [filteredOptions, setFilteredOptions] = useState<any[]>(field.options || []);
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  // 🧠 Resolve options — no system variable resolver needed here anymore
   const resolvedOptions = useMemo(() => {
     if (!Array.isArray(field.options)) return [];
     return field.options.filter(Boolean);
   }, [field.options]);
 
-
-  // 🧠 Handle default value from pre-resolved field.default
   const getDefaultValue = () => {
     if (field.default) {
       return Array.isArray(field.default)
@@ -61,39 +59,33 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
     }
   }, [field.default, value, localValue]);
 
-  // 🧠 Update filteredOptions whenever resolvedOptions change
   useEffect(() => {
     if (JSON.stringify(filteredOptions) !== JSON.stringify(resolvedOptions)) {
       setFilteredOptions(resolvedOptions);
     }
   }, [resolvedOptions]);
 
-  // 🧠 Suggestion-insert handling
   useEffect(() => {
     if (field.type === 'suggestion-insert') {
-      const optArray = Array.isArray(filteredOptions)
-        ? filteredOptions.map(opt => {
-          if (typeof opt === 'object' && opt.item_name) return opt.item_name;
-          return opt;
-        })
-        : [];
+      const optArray = Array.isArray(filteredOptions) ? filteredOptions.map(opt => {
+        if (typeof opt === 'object') return opt.item_name ?? opt.label ?? opt.name ?? JSON.stringify(opt);
+        return opt;
+      }) : [];
       setSuggestions(optArray);
     }
   }, [field.type, filteredOptions]);
 
-
-  const handleChange = (newValue: any) => {
+  const handleChange = (newValue: any, fullOption?: any) => {
     setLocalValue(newValue);
-    onChange(newValue);
-
+    onChange(newValue, fullOption);
     console.log('📝 [Field Change]:', {
       fieldName: field.name,
-      newValue: newValue,
-      dependsOn: field.dependsOn
+      newValue,
+      dependsOn: field.dependsOn,
+      fullOption
     });
   };
 
-  // ✅ Clean, single-purpose renderer
   const renderField = () => {
     switch (field.type) {
       case 'text':
@@ -161,7 +153,10 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         return (
           <Select
             value={localValue}
-            onValueChange={handleChange}
+            onValueChange={(newVal) => {
+              const foundOption = filteredOptions.find(opt => compareValues(opt, newVal));
+              handleChange(newVal, foundOption);
+            }}
             disabled={field.readonly}
           >
             <SelectTrigger className={error ? 'border-red-500' : ''}>
@@ -169,26 +164,22 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             </SelectTrigger>
             <SelectContent className="bg-white border shadow-lg z-50">
               {filteredOptions.map((option, index) => {
-                // Ensure option rendering never breaks
                 let value = '';
                 let label = '';
-              
+
                 if (typeof option === 'object' && option !== null) {
-                  // Object type (with item_name or label)
                   value =
                     option.value ??
                     option.item_name ??
                     option.label ??
                     option.name ??
                     JSON.stringify(option);
-              
                   label =
                     option.label ??
                     option.item_name ??
                     option.name ??
                     value;
                 } else {
-                  // Primitive type (string, number, etc.)
                   value = String(option);
                   label = String(option);
                 }
@@ -206,12 +197,12 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
       case 'suggestion-insert':
         return (
           <SuggestionInsertInput
-            suggestions={suggestions}
+            suggestions={filteredOptions}
             placeholder={field.placeholder || 'Type or select a value'}
             readOnly={field.readonly}
             defaultValue={localValue}
-            onChange={handleChange}
-            onEnter={handleChange}
+            onChange={(val, full) => handleChange(val, full)}
+            onEnter={(val, full) => handleChange(val, full)}
           />
         );
 
@@ -219,7 +210,10 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
         return (
           <RadioGroup
             value={localValue}
-            onValueChange={handleChange}
+            onValueChange={(val) => {
+              const foundOption = filteredOptions.find(opt => compareValues(opt, val));
+              handleChange(val, foundOption);
+            }}
             disabled={field.readonly}
           >
             {filteredOptions.map((option, index) => {
@@ -247,7 +241,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           <div className="flex items-center space-x-2">
             <Checkbox
               checked={!!localValue}
-              onCheckedChange={handleChange}
+              onCheckedChange={(v) => handleChange(v)}
               disabled={field.readonly}
             />
             <Label>{field.placeholder}</Label>
@@ -259,7 +253,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           <div className="flex items-center space-x-2">
             <Switch
               checked={!!localValue}
-              onCheckedChange={handleChange}
+              onCheckedChange={(v) => handleChange(v)}
               disabled={field.readonly}
             />
             <Label>{field.placeholder}</Label>
@@ -284,7 +278,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             type="file"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) handleChange(file.name);
+              if (file) handleChange(file.name, file);
             }}
             accept={field.accept?.join(',')}
             multiple={field.multiple}
@@ -324,9 +318,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           </span>
         )}
       </Label>
-
       {renderField()}
-
       {error && <p className="text-sm text-red-500">{error}</p>}
       {field.note && <p className="text-sm text-gray-500">{field.note}</p>}
     </div>
