@@ -9,12 +9,7 @@ export const DynamicSection = ({
   form,
   watchedValues,
   selectedObjects,
-  setWatchedValues,
-  setSelectedObjects,
-  handleUpdateRowGroup,
-  currentFieldCount,
-  setStructuredRowCounts,
-  shouldShowField,
+  onChange,
 }) => {
   return (
     <Card className="mt-4">
@@ -28,14 +23,7 @@ export const DynamicSection = ({
               key={field.id}
               field={field}
               value={form.watch(field.name)}
-              onChange={(v, obj) => {
-                form.setValue(field.name, v);
-                setWatchedValues((p) => ({ ...p, [field.name]: v }));
-                setSelectedObjects((p) => ({
-                  ...p,
-                  [field.name]: obj || { value: v },
-                }));
-              }}
+              onChange={onChange}
               watchedValues={watchedValues}
               selectedObjects={selectedObjects}
             />
