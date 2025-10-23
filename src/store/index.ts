@@ -10,6 +10,7 @@ import skuSliceReducer from './slices/SKUslice';
 import analystSliceReducer from './slices/analystslice';
 import countrySliceReducer from './slices/countryslice';
 import srf_purposeSlideRecuder from './slices/srf_purpose';
+import srf_todaysweekReducer from './slices/srf_todaysweekSlice';
 // import srf_poSlideRecuder from './slices/srf_po_slice';
 
 export const store = configureStore({
@@ -28,8 +29,9 @@ export const store = configureStore({
 
     srf_purpose: srf_purposeSlideRecuder,
 
+    srf_todaysweek : srf_todaysweekReducer,
     // srf_po: srf_poSlideRecuder,
-
+    srf_todaysweek: srf_todaysweekReducer,
   },
 });
 

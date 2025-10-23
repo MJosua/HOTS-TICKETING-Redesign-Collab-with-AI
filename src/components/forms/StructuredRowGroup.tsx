@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,14 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RowGroup } from "@/types/formTypes";
-import { useToast } from "@/hooks/use-toast";
-import { resolveSystemVariable } from "@/utils/systemVariableResolver";
-import { useSystemVariableContext } from "@/utils/systemVariableDefinitions/systemVariableDefinitions";
 import { SuggestionInsertInput } from "./SuggestionInsertInput";
 import { NumberField } from "./NumberField";
-import { compareValues, getNested } from "@/utils/dependencyResolver"; // 🧩 add safe comparator
+import { compareValues, getNested } from "@/utils/dependencyResolver";
+import { applyFieldRules } from "@/utils/rulingSystem/applyFieldRules";
+import { useToast } from "@/hooks/use-toast";
 
-export interface RowData {
+interface RowData {
   id: string;
   firstValue: string;
   secondValue: string;
@@ -30,276 +29,241 @@ interface StructuredRowGroupProps {
   rowGroup: RowGroup;
   rowGroupId: string;
   form: UseFormReturn<any>;
-  groupIndex: number;
   maxTotalFields: number;
   currentFieldCount: number;
-  onFieldCountChange: (count: number) => void;
   onUpdateRowGroup: (groupId: string, updatedRows: RowData[]) => void;
-  onRowValueChange?: (groupId: string, rowValues: RowData[]) => void;
-  watchedValues?: Record<string, any>;        // ✅ new
+  watchedValues?: Record<string, any>;
   selectedObjects?: Record<string, any>;
+  globalValues: Record<string, any>;
+  setGlobalValues: React.Dispatch<React.SetStateAction<Record<string, any>>>;
 }
 
 export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   rowGroup,
   rowGroupId,
   form,
-  groupIndex,
-  maxTotalFields,
-  currentFieldCount,
   onUpdateRowGroup,
-  onRowValueChange,
   watchedValues,
-  selectedObjects
+  selectedObjects,
+  globalValues,
+  setGlobalValues,
 }) => {
-  const { toast } = useToast();
-  const systemContext = useSystemVariableContext();
-
-  // 🧠 ensure stable rows with fallback row
-  const [rows, setRows] = useState<RowData[]>(() =>
-    Array.isArray(rowGroup.rowGroup) && rowGroup.rowGroup.length > 0
-      ? (rowGroup.rowGroup as RowData[])
-      : [{ id: Date.now().toString(), firstValue: "", secondValue: "", thirdValue: "" }]
-  );
-
   const structure = rowGroup.structure;
 
-  const filteredSuggestions = useMemo(() => {
-    const col = structure.firstColumn;
-    const opts = Array.isArray(col.options) ? col.options : [];
+  const {toast} = useToast();
 
-    // Step 1: find parent value
-    const parentValue =
-      selectedObjects?.[col.dependsOn] ?? watchedValues?.[col.dependsOn];
+  const rows: RowData[] = useMemo(() => {
+    const currentRows = globalValues?.[rowGroupId];
+    if (Array.isArray(currentRows)) {
+      return [...currentRows]; // Always create new reference
+    }
 
-    const parentFilterVal =
-      typeof parentValue === "object"
-        ? getNested(parentValue, col.dependsOnValue || "value")
-        : parentValue;
+    const initialRow: RowData = {
+      id: `row_${Date.now()}`,
+      firstValue: "",
+      secondValue: "",
+      thirdValue: "",
+    };
 
-    // Step 2: filter
-    const filtered = opts.filter((opt) => {
-      try {
-        let optVal: any;
+    setGlobalValues((prev) => ({
+      ...prev,
+      [rowGroupId]: [initialRow],
+    }));
 
-        if (col.dependsByValue && typeof opt === "object") {
-          optVal = getNested(opt, col.dependsByValue);
-        } else if (opt && typeof opt === "object" && opt.filter !== undefined) {
-          optVal = opt.filter;
-        } else {
-          optVal = opt;
-        }
+    return [initialRow];
+  }, [globalValues, rowGroupId]);
 
-        if (parentFilterVal == null || parentFilterVal === "") return true;
-        if (optVal == null) return true;
-
-        return compareValues(optVal, parentFilterVal);
-      } catch (err) {
-        console.warn("⚠️ Rowgroup filter error:", err, opt);
-        return true;
+  const syncToGlobal = (newRows: RowData[]) => {
+    setGlobalValues((prev) => {
+      const prevRows = prev[rowGroupId] || [];
+      // Skip if a rule just reset the group and newRows is identical
+      if (
+        prevRows.length === 1 &&
+        prevRows[0].firstValue === "" &&
+        prevRows[0].secondValue === "" &&
+        prevRows[0].thirdValue === "" &&
+        newRows.length === 1 &&
+        newRows[0].firstValue === "" &&
+        newRows[0].secondValue === "" &&
+        newRows[0].thirdValue === ""
+      ) {
+        console.log("⚠️ Skipped redundant update (already reset)");
+        return prev;
       }
+      return { ...prev, [rowGroupId]: newRows };
     });
-
-    return filtered;
-  }, [structure.firstColumn.options, watchedValues, selectedObjects]);
-
-  if (!structure) return null;
-
-  // 🧠 Resolve suggestions/options safely
-  const resolvedSuggestions = useMemo(() => {
-    return (structure.firstColumn?.options || []).map(opt =>
-      resolveSystemVariable(opt, systemContext)
-    ).flat().filter(Boolean);
-  }, [structure.firstColumn?.options, systemContext]);
-
-  const resolvedThirdOptions = useMemo(() => {
-    return (structure.thirdColumn?.options || []).map(opt =>
-      resolveSystemVariable(opt, systemContext)
-    ).flat().filter(Boolean);
-  }, [structure.thirdColumn?.options, systemContext]);
-
-  const getFilteredOptions = (col: any, opts: any[]) => {
-    if (!col) return opts || [];
-
-    const parentValue =
-      selectedObjects?.[col.dependsOn] ?? watchedValues?.[col.dependsOn];
-
-    const parentFilterVal =
-      typeof parentValue === "object"
-        ? getNested(parentValue, col.dependsOnValue || "value")
-        : parentValue;
-
-    if (parentFilterVal == null || parentFilterVal === "") return opts || [];
-
-    return opts.filter((opt) => {
-      try {
-        let optVal;
-        if (col.dependsByValue && typeof opt === "object") {
-          optVal = getNested(opt, col.dependsByValue);
-        } else if (opt && typeof opt === "object" && opt.filter !== undefined) {
-          optVal = opt.filter;
-        } else {
-          optVal = opt;
-        }
-
-        return compareValues(optVal, parentFilterVal);
-      } catch (err) {
-        console.warn("⚠️ Rowgroup filter error:", err, opt);
-        return true;
-      }
-    });
-  };
-
-
-
-  const filteredFirstOptions = useMemo(() => {
-    const col = structure.firstColumn;
-    const opts = Array.isArray(col.options) ? col.options : [];
-    return getFilteredOptions(col, opts);
-  }, [structure.firstColumn.options, watchedValues, selectedObjects]);
-
-  const filteredSecondOptions = useMemo(() => {
-    const col = structure.secondColumn;
-    const opts = Array.isArray(col.options) ? col.options : [];
-    return getFilteredOptions(col, opts);
-  }, [structure.secondColumn.options, watchedValues, selectedObjects]);
-
-  const filteredThirdOptions = useMemo(() => {
-    const col = structure.thirdColumn;
-    const opts = Array.isArray(col.options) ? col.options : [];
-    return getFilteredOptions(col, opts);
-  }, [structure.thirdColumn.options, watchedValues, selectedObjects]);
-
-
-  const syncToParent = (newRows: RowData[]) => {
-    setRows(newRows);
     onUpdateRowGroup(rowGroupId, newRows);
   };
 
+
+  const updateRowField = (rowId: string, field: keyof RowData, value: string) => {
+    const updated = rows.map((r) => (r.id === rowId ? { ...r, [field]: value } : r));
+    syncToGlobal(updated);
+  };
+
   const addRow = () => {
-    const newRow = { id: `row_${Date.now()}`, firstValue: "", secondValue: "", thirdValue: "" };
-    const updated = [...rows, newRow];
-    syncToParent(updated);
+    if (rowGroup.maxRows > rows.length) {
+
+      const newRow: RowData = {
+        id: `row_${Date.now()}`,
+        firstValue: "",
+        secondValue: "",
+        thirdValue: "",
+      };
+
+      setGlobalValues((prev) => {
+        const existing = Array.isArray(prev[rowGroupId]) ? prev[rowGroupId] : [];
+        const updated = [...existing, newRow];
+
+        console.log("➕ Adding new row:", newRow);
+        return { ...prev, [rowGroupId]: updated };
+      });
+
+      onUpdateRowGroup(rowGroupId, [
+        ...(globalValues?.[rowGroupId] || []),
+        newRow,
+      ]);
+
+    } else {
+
+      toast({
+        title: `Can't Add More Item `,
+        description:  `Failed to add item max is  ${rowGroup.maxRows}`,
+        variant: "destructive",
+      });
+
+    }
   };
 
   const removeRow = (rowId: string) => {
     const updated = rows.filter((r) => r.id !== rowId);
-    if (updated.length === 0) return;
-    syncToParent(updated);
+    if (updated.length > 0) syncToGlobal(updated);
   };
 
-  const updateLocalRow = (rowId: string, field: keyof RowData, value: string) => {
-    setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, [field]: value } : r)));
+  const getFilteredOptions = (col: any, opts: any[]) => {
+    if (!col) return opts || [];
+    const parentVal =
+      selectedObjects?.[col.dependsOn] ?? watchedValues?.[col.dependsOn];
+    const parentFilterVal =
+      typeof parentVal === "object"
+        ? getNested(parentVal, col.dependsOnValue || "value")
+        : parentVal;
+    if (!parentFilterVal) return opts || [];
+    return opts.filter((opt) => {
+      try {
+        const val =
+          col.dependsByValue && typeof opt === "object"
+            ? getNested(opt, col.dependsByValue)
+            : typeof opt === "object" && opt.filter !== undefined
+              ? opt.filter
+              : opt;
+        return compareValues(val, parentFilterVal);
+      } catch {
+        return true;
+      }
+    });
   };
 
-  const confirmRowUpdate = (rowId: string, field: keyof RowData, value: string) => {
-    const updated = rows.map((r) => (r.id === rowId ? { ...r, [field]: value } : r));
-    onUpdateRowGroup(rowGroupId, updated);
-    onRowValueChange?.(rowGroupId, updated); // 🔥 send to parent DynamicForm
-  };
+  const filteredFirstOptions = useMemo(() => {
+    const col = structure.firstColumn;
+    return getFilteredOptions(col, Array.isArray(col.options) ? col.options : []);
+  }, [structure.firstColumn.options, watchedValues, selectedObjects]);
 
-  const totalPcs = useMemo(
-    () =>
-      rows.reduce((sum, r) => {
-        const isPcs = r.thirdValue.toLowerCase().includes("pcs");
-        const num = Number(r.secondValue);
-        return sum + (isPcs && !isNaN(num) ? num : 0);
-      }, 0),
-    [rows]
-  );
+  const filteredSecondOptions = useMemo(() => {
+    const col = structure.secondColumn;
+    return getFilteredOptions(col, Array.isArray(col.options) ? col.options : []);
+  }, [structure.secondColumn.options, watchedValues, selectedObjects]);
 
-  const totalCtns = useMemo(
-    () =>
-      rows.reduce((sum, r) => {
-        const isCtn = r.thirdValue.toLowerCase().includes("ctn");
-        const num = Number(r.secondValue);
-        return sum + (isCtn && !isNaN(num) ? num : 0);
-      }, 0),
-    [rows]
-  );
+  const filteredThirdOptions = useMemo(() => {
+    const col = structure.thirdColumn;
+    return getFilteredOptions(col, Array.isArray(col.options) ? col.options : []);
+  }, [structure.thirdColumn.options, watchedValues, selectedObjects]);
 
-  useEffect(() => {
-    if (rowGroup.structure.firstColumn.dependsOn) {
-      const parentVal = watchedValues?.[rowGroup.structure.firstColumn.dependsOn];
-      // Refilter options dynamically when parent changes
-    }
-  }, [watchedValues, rowGroup.structure.firstColumn.dependsOn]);
-
-
-  // 🧩 unified renderer
   const renderField = (
     column: "firstColumn" | "secondColumn" | "thirdColumn",
     value: string,
     onChange: (val: string) => void,
-    onCommit?: (val: string) => void
+    rowId?: string
   ) => {
-    const col = structure[column];
+    let col = structure[column];
+    col = applyFieldRules(col, {
+      watchedValues: globalValues,
+      selectedObjects: selectedObjects || {},
+      rowContext: {
+        rowGroupId,
+        columnKey: column, // "firstColumn", "secondColumn", or "thirdColumn"
+      },
+      setGlobalValues,
+      autoSetValue: (fieldName: string, value: any) => {
+        const fieldKey =
+          column === "firstColumn"
+            ? "firstValue"
+            : column === "secondColumn"
+              ? "secondValue"
+              : "thirdValue";
+
+        // Normal update logic
+        const updatedRows = (globalValues?.[rowGroupId] || rows || []).map((r) => ({
+          ...r,
+          [fieldKey]: value ?? "",
+        }));
+
+        setGlobalValues((prev) => ({
+          ...prev,
+          [rowGroupId]: updatedRows,
+        }));
+
+        console.log(`🧹 Cleared all '${fieldKey}' in ${rowGroupId}`);
+      },
+    });
+
+    const opts =
+      column === "firstColumn"
+        ? filteredFirstOptions
+        : column === "secondColumn"
+          ? filteredSecondOptions
+          : filteredThirdOptions;
 
     switch (col.type) {
-      case "suggestion-insert": {
-        const filteredOpts =
-          column === "firstColumn"
-            ? filteredFirstOptions
-            : column === "secondColumn"
-              ? filteredSecondOptions
-              : filteredThirdOptions;
-
+      case "suggestion-insert":
         return (
           <SuggestionInsertInput
-            suggestions={filteredOpts}
+            suggestions={opts}
             placeholder={col.placeholder}
-            defaultValue={value}
+            required={col.required}
+            value={value}
             onChange={onChange}
-            onEnter={(val) => onCommit?.(val)}
-            onBlur={(val) => onCommit?.(val)}
           />
         );
-      }
-
       case "number":
         return (
           <NumberField
             value={value}
-            onChange={(v) => {
-              onChange(v);
-              onCommit?.(v);
-            }}
+            onChange={(v) => onChange(v)}
             placeholder={col.placeholder}
+            rounding={col.rounding}
+            maxValue={col.maxnumber}
+            readOnly={col.readonly}
+            required={col.required}
           />
         );
-
-      case "select": {
-        const filteredOpts =
-          column === "firstColumn"
-            ? filteredFirstOptions
-            : column === "secondColumn"
-              ? filteredSecondOptions
-              : filteredThirdOptions;
-
+      case "select":
         return (
-          <Select
-            value={value}
-            onValueChange={(v) => {
-              const matched = filteredOpts.find((opt) => compareValues(opt, v));
-              const display =
-                typeof matched === "object"
-                  ? matched.item_name ?? matched.label ?? matched.name ?? String(v)
-                  : String(v);
-              onChange(display);
-              onCommit?.(display);
-            }}
+          <Select value={value} onValueChange={(v) => onChange(v)} disabled={col.readonly}
+          required={col.required}
+          
           >
             <SelectTrigger>
               <SelectValue placeholder={col.placeholder} />
             </SelectTrigger>
             <SelectContent>
-              {filteredOpts.map((o, i) => {
+              {opts.map((o, i) => {
                 const text =
                   typeof o === "object"
                     ? o.label ?? o.item_name ?? o.name ?? JSON.stringify(o)
                     : String(o);
                 return (
-                  <SelectItem key={i} value={String(text)}>
+                  <SelectItem key={i} value={text}>
                     {text}
                   </SelectItem>
                 );
@@ -307,13 +271,11 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
             </SelectContent>
           </Select>
         );
-      }
       default:
         return (
           <Input
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            onBlur={(e) => onCommit?.(e.target.value)}
             placeholder={col.placeholder}
           />
         );
@@ -323,56 +285,39 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   return (
     <div className="space-y-4">
       <Card>
+        <CardHeader>
+          <CardTitle>
+            Item List
+          </CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4 pt-4">
           {rows.map((r) => (
             <div key={r.id} className="grid grid-cols-6 gap-4">
               <div className="col-span-3">
-                {renderField(
-                  "firstColumn",
-                  r.firstValue,
-                  (v) => updateLocalRow(r.id, "firstValue", v),
-                  (v) => confirmRowUpdate(r.id, "firstValue", v)
-                )}
+                {renderField("firstColumn", r.firstValue, (v) => updateRowField(r.id, "firstValue", v), r.id)}
               </div>
               <div className="col-span-1">
-                {renderField(
-                  "secondColumn",
-                  r.secondValue,
-                  (v) => updateLocalRow(r.id, "secondValue", v),
-                  (v) => confirmRowUpdate(r.id, "secondValue", v)
-                )}
+                {renderField("secondColumn", r.secondValue, (v) => updateRowField(r.id, "secondValue", v), r.id)}
               </div>
               <div className="col-span-2 flex items-center gap-2">
-                {renderField(
-                  "thirdColumn",
-                  r.thirdValue,
-                  (v) => updateLocalRow(r.id, "thirdValue", v),
-                  (v) => confirmRowUpdate(r.id, "thirdValue", v)
-                )}
+                {renderField("thirdColumn", r.thirdValue, (v) => updateRowField(r.id, "thirdValue", v), r.id)}
                 {rows.length > 1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeRow(r.id)}
-                    className="h-[38px]"
-                  >
+                  <Button variant="outline" size="sm" onClick={() => removeRow(r.id)} className="h-[38px]">
                     <Trash2 size={16} />
                   </Button>
                 )}
               </div>
             </div>
           ))}
-          <div className="flex justify-end gap-4 text-sm">
-            <span>Total Pcs: {totalPcs}</span>
-            <span>Total Ctns: {totalCtns}</span>
+
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={addRow}>
+              <Plus size={16} />
+            </Button>
           </div>
         </CardContent>
       </Card>
-      <div className="flex justify-end">
-        <Button type="button" variant="outline" size="sm" onClick={addRow}>
-          <Plus size={16} />
-        </Button>
-      </div>
+
     </div>
   );
 };

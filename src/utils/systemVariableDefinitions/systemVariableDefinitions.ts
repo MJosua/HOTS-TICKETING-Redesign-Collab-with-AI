@@ -27,6 +27,8 @@ export interface SystemVariableContext {
     [key: string]: any;
     purpose: string;
   }
+  srf_po?: { po_number: string;[key: string]: any }[];
+  srf_todaysweek?: { actualWeek: number;[key: string]: any }[];
 }
 
 export const useSystemVariableContext = (): SystemVariableContext => {
@@ -36,9 +38,13 @@ export const useSystemVariableContext = (): SystemVariableContext => {
   const srf = useAppSelector(state => state.srf);
   const sku = useAppSelector(state => state.sku);
   const srf_purpose = useAppSelector(state => state.srf_purpose)
+  const srf_po = useAppSelector(state => state.srf_purpose)
   //ps
   const analyst = useAppSelector(state => state.analyst);
   const country = useAppSelector(state => state.country);
+
+  console.log("srf.factoryplant",srf.factoryplants)
+  const srf_todaysweek = useAppSelector(state => state.srf_todaysweek);
   return {
     user: auth.user,
     superior: userManagement.users?.filter(u =>
@@ -68,8 +74,13 @@ export const useSystemVariableContext = (): SystemVariableContext => {
     analyst: analyst.data || [],
     country: (country as any)?.data || [],
     srf_purpose: (srf_purpose as any)?.data || {},
+    srf_po: (srf_po as any)?.data || {},
+    srf_todaysweek: (srf_todaysweek as any)?.data || {},
   };
+
+
 };
+
 
 export interface SystemVariableEntry {
   key: string;
@@ -135,7 +146,13 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
     key: '${factoryplants}',
     type: 'string[]',
     description: 'Factory plant objects with id and label for filtering',
-    resolve: (ctx) => ctx.factoryplants?.map(f => `${f.plant_shortname}`) || [],
+    resolve: (ctx) => {
+      if (!Array.isArray(ctx.factoryplants)) return [];
+      return ctx.factoryplants.map(item => ({
+        item_name: item.plant_shortname,
+        filter: item.plant_id
+      }));
+    },
   },
   {
     key: '${srfsamplecategoryes}',
@@ -153,7 +170,13 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
     key: '${linkeddistributors}',
     type: 'string[]',
     description: 'Linked distributor names',
-    resolve: (ctx) => ctx.linkeddistributors?.map(d => d.company_name) || [],
+    resolve: (ctx) => {
+      if (!Array.isArray(ctx.srfsamplecategoryes)) return [];
+      return ctx.linkeddistributors.map(item => ({
+        item_name: item.company_name,
+        filter: item.company_id
+      }));
+    }
   },
   {
     key: '${skulist}',
@@ -186,18 +209,30 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
     resolve: (ctx) => Array.isArray(ctx.srf_purpose) ? ctx.srf_purpose.map(d => d.purpose) : [],
   },
   {
+    key: '${ponumber}',
+    type: 'string[]',
+    description: 'List All PO for current company in Deliver To for srf',
+    resolve: (ctx) => Array.isArray(ctx.srf_purpose) ? ctx.srf_purpose.map(d => d.purpose) : [],
+  },
+  {
     key: '${typesrf}',
     type: 'object[]',
     description: 'Manually defined SRF purposes with filter mapping',
     resolve: () => [
       {
         item_name: 'pcs',
-        filter: '0,1, 2, 3',
+        filter: '1, 2, 3',
       },
       {
         item_name: 'ctns',
-        filter: '4, 5',
+        filter: '0, 4, 5',
       },
     ],
-  }
+  },
+  {
+    key: '${todaysweek}',
+    type: 'number[]',
+    description: 'Get today`s week',
+    resolve: (ctx) => ctx.srf_todaysweek?.actualWeek ?? 0,
+  },
 ];

@@ -1,25 +1,29 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useEffect, useMemo, useCallback } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
-import { FormField } from '@/types/formTypes';
-import { SuggestionInsertInput } from './SuggestionInsertInput';
-import { compareValues } from '@/utils/dependencyResolver'; // 🆕 add this import
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { FormField } from "@/types/formTypes";
+import { SuggestionInsertInput } from "./SuggestionInsertInput";
+import { compareValues } from "@/utils/dependencyResolver";
 
 interface DynamicFieldProps {
   field: FormField;
   value: any;
-  onChange: (value: any, fullOption?: any) => void; // <-- second optional param
+  onChange: (value: any, fullOption?: any) => void;
+  onBlur?: (name?: string) => void;
+  setConfig?: React.Dispatch<React.SetStateAction<any>>;
+  globalValues: Record<string, any>; // 🧩 new
+  setGlobalValues: React.Dispatch<React.SetStateAction<Record<string, any>>>; // 🧩 new
   watchedValues?: Record<string, any>;
   error?: string;
 }
@@ -27,147 +31,129 @@ interface DynamicFieldProps {
 export const DynamicField: React.FC<DynamicFieldProps> = ({
   field,
   value,
+  onBlur,
   onChange,
+  setConfig,
+  globalValues,
+  setGlobalValues,
+  currentValue,
   watchedValues = {},
-  error
+  error,
 }) => {
-  const [localValue, setLocalValue] = useState(value ?? '');
-  const [filteredOptions, setFilteredOptions] = useState<any[]>(field.options || []);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  // 🧩 get the current field value directly from global state
 
+  // ✅ keep field options fresh
   const resolvedOptions = useMemo(() => {
     if (!Array.isArray(field.options)) return [];
     return field.options.filter(Boolean);
   }, [field.options]);
 
-  const getDefaultValue = () => {
-    if (field.default) {
-      return Array.isArray(field.default)
-        ? field.default.join(', ')
-        : field.default;
-    }
-    return '';
-  };
-
-  useEffect(() => {
-    if (!value && field.default) {
-      const defaultValue = getDefaultValue();
-      if (localValue !== defaultValue) {
-        setLocalValue(defaultValue);
-        onChange(defaultValue);
-      }
-    }
-  }, [field.default, value, localValue]);
-
-  useEffect(() => {
-    if (JSON.stringify(filteredOptions) !== JSON.stringify(resolvedOptions)) {
-      setFilteredOptions(resolvedOptions);
-    }
-  }, [resolvedOptions]);
-
-  useEffect(() => {
-    if (field.type === 'suggestion-insert') {
-      const optArray = Array.isArray(filteredOptions) ? filteredOptions.map(opt => {
-        if (typeof opt === 'object') return opt.item_name ?? opt.label ?? opt.name ?? JSON.stringify(opt);
-        return opt;
-      }) : [];
-      setSuggestions(optArray);
-    }
-  }, [field.type, filteredOptions]);
-
+  // ✅ unified handler for any value change
   const handleChange = (newValue: any, fullOption?: any) => {
-    setLocalValue(newValue);
-    onChange(newValue, fullOption);
-    console.log('📝 [Field Change]:', {
-      fieldName: field.name,
-      newValue,
-      dependsOn: field.dependsOn,
-      fullOption
-    });
+    onChange(newValue, fullOption); // let parent manage globalValues + config
   };
 
+  // ✅ default value sync on mount if needed
+  useEffect(() => {
+    if (
+      (globalValues[field.name] === undefined || globalValues[field.name] === "") &&
+      field.default
+    ) {
+      const defaultValue = Array.isArray(field.default)
+        ? field.default.join(", ")
+        : field.default;
+      onChange(defaultValue);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleBlur = useCallback(() => {
+    if (typeof onBlur === "function") onBlur(field.name);
+  }, [field.name, onBlur]);
+
+  // 🧩 input renderer
   const renderField = () => {
     switch (field.type) {
-      case 'text':
+      case "text":
         return (
           <Input
-            value={localValue}
+            value={globalValues[field.name]}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
             readOnly={field.readonly}
-            className={error ? 'border-red-500' : ''}
+            required={field.required}
+            className={error ? "border-red-500" : ""}
+            onBlur={handleBlur}
           />
         );
 
-      case 'number': {
-        const maxValue = field.maxnumber;
-        const rounding = field.rounding || false;
-
-        const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      case "number":
+        const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) =>
           handleChange(e.target.value);
-        };
 
-        const handleBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const handleNumberBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
           let val = e.target.value;
           let numVal = Number(val);
-          let opcalweek = field.weekopcal
-            ? Number(localStorage.getItem('current_delv_week'))
-            : false;
-
+          const { maxnumber, rounding, minnumber } = field;
           if (!isNaN(numVal)) {
-            if (maxValue && numVal > maxValue) numVal = maxValue;
+            if (maxnumber && numVal > maxnumber) numVal = maxnumber;
+            if (minnumber && numVal < minnumber) numVal = minnumber;
             if (rounding) numVal = Math.round(numVal / 25) * 25;
-            if (opcalweek && numVal < opcalweek) numVal = opcalweek;
-            val = numVal.toString();
-          }
+            // if (weekopcal) {
+            //   const opcalWeek = Number(localStorage.getItem("current_delv_week"));
+            //   if (numVal < opcalWeek) numVal = opcalWeek;
+            // }
 
-          handleChange(val);
+
+          }
+          handleChange(numVal.toString());
         };
 
         return (
           <Input
             type="number"
-            value={localValue}
+            value={currentValue}
             onChange={handleNumberChange}
-            onBlur={handleBlur}
+            onBlur={handleNumberBlur}
+            required={field.required}
             placeholder={field.placeholder}
-            max={maxValue}
             readOnly={field.readonly}
-            className={error ? 'border-red-500' : ''}
+            className={error ? "border-red-500" : ""}
           />
         );
-      }
 
-      case 'textarea':
+      case "textarea":
         return (
           <Textarea
-            value={localValue}
+            value={currentValue}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
+            required={field.required}
             readOnly={field.readonly}
-            className={error ? 'border-red-500' : ''}
+            className={error ? "border-red-500" : ""}
           />
         );
 
-      case 'select':
+      case "select":
         return (
           <Select
-            value={localValue}
+            value={globalValues[field.name]}
+            required={field.required}
             onValueChange={(newVal) => {
-              const foundOption = filteredOptions.find(opt => compareValues(opt, newVal));
-              handleChange(newVal, foundOption);
+              const found = resolvedOptions.find((opt) => compareValues(opt, newVal));
+              handleChange(newVal, found);
+              handleBlur();
             }}
             disabled={field.readonly}
           >
-            <SelectTrigger className={error ? 'border-red-500' : ''}>
+            <SelectTrigger className={error ? "border-red-500" : ""}>
               <SelectValue placeholder={field.placeholder} />
             </SelectTrigger>
             <SelectContent className="bg-white border shadow-lg z-50">
-              {filteredOptions.map((option, index) => {
-                let value = '';
-                let label = '';
-
-                if (typeof option === 'object' && option !== null) {
+              {resolvedOptions.map((option, index) => {
+                let value = "";
+                let label = "";
+                if (typeof option === "object" && option !== null) {
                   value =
                     option.value ??
                     option.item_name ??
@@ -183,7 +169,6 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
                   value = String(option);
                   label = String(option);
                 }
-
                 return (
                   <SelectItem key={`${value}-${index}`} value={value}>
                     {label}
@@ -194,85 +179,63 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           </Select>
         );
 
-      case 'suggestion-insert':
+      case "suggestion-insert":
         return (
           <SuggestionInsertInput
-            suggestions={filteredOptions}
-            placeholder={field.placeholder || 'Type or select a value'}
+            suggestions={resolvedOptions}
+            value={currentValue}            // 👈 this comes directly from globalValues[field.name]
             readOnly={field.readonly}
-            defaultValue={localValue}
+            placeholder={field.placeholder}
+            required={field.required}
             onChange={(val, full) => handleChange(val, full)}
-            onEnter={(val, full) => handleChange(val, full)}
+            onEnter={(val, full) => {
+              handleChange(val, full);
+              handleBlur();
+            }}
+            onBlur={handleBlur}
           />
         );
 
-      case 'radio':
-        return (
-          <RadioGroup
-            value={localValue}
-            onValueChange={(val) => {
-              const foundOption = filteredOptions.find(opt => compareValues(opt, val));
-              handleChange(val, foundOption);
-            }}
-            disabled={field.readonly}
-          >
-            {filteredOptions.map((option, index) => {
-              const label =
-                typeof option === 'object'
-                  ? option.label || option.item_name || option.name || JSON.stringify(option)
-                  : option;
-              const value =
-                typeof option === 'object'
-                  ? option.value || option.item_name || option.label || option.name || JSON.stringify(option)
-                  : option;
-
-              return (
-                <div key={index} className="flex items-center space-x-2">
-                  <RadioGroupItem value={value} id={`${field.name}-${index}`} />
-                  <Label htmlFor={`${field.name}-${index}`}>{label}</Label>
-                </div>
-              );
-            })}
-          </RadioGroup>
-        );
-
-      case 'checkbox':
+      case "checkbox":
         return (
           <div className="flex items-center space-x-2">
             <Checkbox
-              checked={!!localValue}
+              checked={!!currentValue}
               onCheckedChange={(v) => handleChange(v)}
+              required={field.required}
               disabled={field.readonly}
             />
             <Label>{field.placeholder}</Label>
           </div>
         );
 
-      case 'toggle':
+      case "toggle":
         return (
           <div className="flex items-center space-x-2">
             <Switch
-              checked={!!localValue}
+              checked={!!currentValue}
               onCheckedChange={(v) => handleChange(v)}
+              required={field.required}
               disabled={field.readonly}
             />
             <Label>{field.placeholder}</Label>
           </div>
         );
 
-      case 'date':
-      case 'time':
+      case "date":
+      case "time":
         return (
           <Input
             type={field.type}
-            value={localValue}
+            value={currentValue}
             onChange={(e) => handleChange(e.target.value)}
+            required={field.required}
             readOnly={field.readonly}
-            className={error ? 'border-red-500' : ''}
+            className={error ? "border-red-500" : ""}
           />
         );
 
-      case 'file':
+      case "file":
         return (
           <Input
             type="file"
@@ -280,21 +243,23 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
               const file = e.target.files?.[0];
               if (file) handleChange(file.name, file);
             }}
-            accept={field.accept?.join(',')}
+            accept={field.accept?.join(",")}
             multiple={field.multiple}
+            required={field.required}
             disabled={field.readonly}
-            className={error ? 'border-red-500' : ''}
+            className={error ? "border-red-500" : ""}
           />
         );
 
       default:
         return (
           <Input
-            value={localValue}
+            value={currentValue}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={field.placeholder}
+            required={field.required}
             readOnly={field.readonly}
-            className={error ? 'border-red-500' : ''}
+            className={error ? "border-red-500" : ""}
           />
         );
     }
@@ -303,10 +268,10 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   return (
     <div
       className={`space-y-2 ${field.columnSpan === 2
-        ? 'col-span-2'
+        ? "col-span-2"
         : field.columnSpan === 3
-          ? 'col-span-3'
-          : 'col-span-1'
+          ? "col-span-3"
+          : "col-span-1"
         }`}
     >
       <Label htmlFor={field.name} className="flex items-center gap-2">

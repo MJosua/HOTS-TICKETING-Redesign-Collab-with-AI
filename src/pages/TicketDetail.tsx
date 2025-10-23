@@ -893,7 +893,9 @@ const TicketDetail = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {customFormData.map((field, index) => (
+                      {customFormData.filter(
+                        field => field.label && field.label.toLowerCase() !== "factory_id"
+                      ).map((field, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{field.label}</TableCell>
                           <TableCell>

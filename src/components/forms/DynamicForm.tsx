@@ -1,19 +1,17 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { DynamicField } from "./DynamicField";
-import { RowGroupField } from "./RowGroupField";
-import { RepeatingSection } from "./RepeatingSection";
 import { StructuredRowGroup } from "./StructuredRowGroup";
 import WidgetRenderer from "@/components/widgets/WidgetRenderer";
-import { FormConfig, FormField, RowGroup, FormSection } from "@/types/formTypes";
+import { FormConfig, FormField, RowGroup } from "@/types/formTypes";
 import { WidgetConfig } from "@/types/widgetTypes";
 import { getWidgetById } from "@/registry/widgetRegistry";
 import { mapUnifiedForm, getMaxFormFields } from "@/utils/formFieldMapping";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppSelector";
-import { createTicket, uploadFiles } from "@/store/slices/ticketsSlice";
+import { createTicket } from "@/store/slices/ticketsSlice";
 import { selectServiceWidgets } from "@/store/slices/catalogSlice";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +20,17 @@ import { useSystemVariableContext } from "@/utils/systemVariableDefinitions/syst
 import { compareValues, getNested } from "@/utils/dependencyResolver";
 import { DynamicSection } from "./DynamicSection";
 import { applyFieldRules } from "@/utils/rulingSystem/applyFieldRules";
+import { ruleActions } from "@/utils/rulingSystem/ruleActions";
+import { WarningDialog } from "../dialog/warningdialoguser";
 
+// 🕒 Simple debounce
+const debounce = (fn: (...args: any[]) => void, delay = 300) => {
+  let timer: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+};
 
 export const DynamicForm: React.FC<{
   config: FormConfig;
@@ -36,33 +44,46 @@ export const DynamicForm: React.FC<{
   const navigate = useNavigate();
   const form = useForm();
   const { user } = useAppSelector((s) => s.auth);
-  const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
+
+  // const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
+  const [globalValues, setGlobalValues] = useState<Record<string, any>>({});
+
+
+  const [selectedObjects, setSelectedObjects] = useState<Record<string, any>>({});
+
+  console.log("selectedObjects", selectedObjects)
+
+  const [rowGroupValues, setRowGroupValues] = useState<Record<string, any[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [structuredRowCounts, setStructuredRowCounts] = useState<Record<number, number>>({});
+  const [externalSystemVars, setExternalSystemVars] = useState<Record<string, any>>({});
+  const [systemVarsVersion, setSystemVarsVersion] = useState(0);
+
   const systemContext = useSystemVariableContext();
   const serviceWidgetIds = useAppSelector((s) =>
     serviceId ? selectServiceWidgets(s, parseInt(serviceId)) : []
   );
 
-  const memoizedWatchedValues = useMemo(() => watchedValues, [watchedValues]);
+  const memoizedWatchedValues = useMemo(() => globalValues, [globalValues]);
   const maxFields = useMemo(() => getMaxFormFields(), []);
-
-  // ✅ Rowgroup updater — stable reference
+  console.log("memoizedWatchedValues", memoizedWatchedValues)
+  // ✅ Handle row group updates
   const handleUpdateRowGroup = useCallback(
     (groupId: string, updatedRows) => {
-      setConfig((prev) => {
-        const updatedItems = prev.items.map((item) =>
+      setConfig((prev) => ({
+        ...prev,
+        items: prev.items.map((item) =>
           item.type === "rowgroup" && item.id === groupId
             ? { ...item, data: { ...item.data, rowGroup: updatedRows } }
             : item
-        );
-        return { ...prev, items: updatedItems };
-      });
+        ),
+      }));
     },
     [setConfig]
   );
 
-  const assignedWidgets: WidgetConfig[] = useMemo(() => {
+  // ✅ Assign form widgets
+  const assignedWidgets = useMemo(() => {
     const ids = Array.isArray(serviceWidgetIds)
       ? serviceWidgetIds
       : serviceWidgetIds
@@ -74,22 +95,32 @@ export const DynamicForm: React.FC<{
       .filter((w) => w.applicableTo.includes("form"));
   }, [serviceWidgetIds]);
 
+
+
+  // ✅ Form submission
   const handleSubmit = async (data: any) => {
     if (!serviceId) {
-      const mappedData = mapUnifiedForm(data, config.items || []);
+      const mappedData = mapUnifiedForm(globalValues, config.items, selectedObjects || []);
       toast({
-        title: "TEST NO SERVICE ID",
+        title: "TEST MODE",
         description: JSON.stringify(mappedData, null, 2),
         variant: "destructive",
       });
+
+
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const mappedData = mapUnifiedForm(data, config.items || []);
+      const mappedData = mapUnifiedForm(globalValues, config.items, selectedObjects || []);
       const ticketData = { subject: data.subject || "Service Request", ...mappedData };
+
+      console.log("ticketData", ticketData)
+
+
       const result = await dispatch(createTicket({ serviceId, ticketData })).unwrap();
+
       if (result.success) {
         toast({ title: "Success", description: "Submitted successfully!" });
         navigate("/my-tickets");
@@ -101,36 +132,40 @@ export const DynamicForm: React.FC<{
     }
   };
 
+  const [isOpenwarning, setIsOpenwarning] = useState(false);
+
+  const handleOpenWarning = () => {
+    setIsOpenwarning(true);
+  }
+
+  const handleCancelWarning = () => setIsOpenwarning(false);
+
+  // ✅ Conditional visibility
   const shouldShowField = useCallback(
     (field: FormField, values: Record<string, any>) => {
       if (!field.uiCondition) return true;
       if (field.uiCondition.includes("toggle is on")) {
-        const toggled = Object.keys(values).some(
-          (k) => form.watch(k) === true || form.watch(k) === "on"
+        return Object.keys(values).some(
+          (k) => globalValues[k] === true || globalValues[k] === "on"
         );
-        return toggled;
       }
       return true;
     },
-    [form]
+    [globalValues]
   );
 
-
-
-
-  // ✅ Resolve system vars once
+  // ✅ System variable resolver
   const transformedItems = useMemo(() => {
     if (!config?.items) return [];
+    const mergedContext = { ...systemContext, ...externalSystemVars };
 
-    const resolveSystemVarsDeep = (value: any, context: any): any => {
+    const resolveDeep = (value: any, context: any): any => {
       if (Array.isArray(value)) {
-        return value.flatMap(v => resolveSystemVarsDeep(v, context)).filter(Boolean);
+        return value.flatMap((v) => resolveDeep(v, context)).filter(Boolean);
       } else if (value && typeof value === "object") {
-        const resolvedObj: Record<string, any> = {};
-        for (const [key, val] of Object.entries(value)) {
-          resolvedObj[key] = resolveSystemVarsDeep(val, context);
-        }
-        return resolvedObj;
+        return Object.fromEntries(
+          Object.entries(value).map(([k, v]) => [k, resolveDeep(v, context)])
+        );
       } else if (typeof value === "string") {
         const resolved = resolveSystemVariable(value, context);
         if (Array.isArray(resolved)) return resolved.flat().filter(Boolean);
@@ -140,152 +175,117 @@ export const DynamicForm: React.FC<{
     };
 
     return config.items.map((item) => {
-      switch (item.type) {
-        case "field": {
-          const resolvedField = resolveSystemVarsDeep(item.data, systemContext);
-          return { ...item, data: resolvedField };
-        }
-
-        case "section": {
-          const section = resolveSystemVarsDeep(item.data, systemContext);
-          return { ...item, data: section };
-        }
-
-        case "rowgroup": {
-          const rowGroup = resolveSystemVarsDeep(item.data, systemContext);
-          return { ...item, data: rowGroup };
-        }
-
-        default:
-          return item;
-      }
+      const resolvedData = resolveDeep(item.data, { ...mergedContext, _version: systemVarsVersion });
+      return { ...item, data: resolvedData };
     });
-  }, [config.items, systemContext]);
+  }, [config.items, systemContext, externalSystemVars, systemVarsVersion]);
 
+  // ✅ Direct option updater
+  const handleFieldOptionsUpdate = (fieldName, newOptions) => {
+    console.log(`🧩 Updating options for ${fieldName}`, newOptions);
+    setConfig((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.data.name === fieldName
+          ? { ...item, data: { ...item.data, options: newOptions } }
+          : item
+      ),
+    }));
+  };
 
-  const dependencyIndex = useMemo(() => {
-    const index: Record<string, string[]> = {};
-
-    if (!config?.items) return index;
-
-    config.items.forEach((item) => {
-      const field = item.data;
-      if (!field) return;
-
-      // Handle direct dependencies (dependsOn)
-      if (field.dependsOn) {
-        if (!index[field.dependsOn]) index[field.dependsOn] = [];
-        index[field.dependsOn].push(field.name);
-      }
-
-      // Handle rule-based dependencies
-      if (field.rules) {
-        for (const rule of field.rules) {
-          const dep = rule.dependsBy || rule.when?.field;
-          if (dep) {
-            if (!index[dep]) index[dep] = [];
-            index[dep].push(field.name);
-          }
-        }
-      }
-    });
-
-    return index;
-  }, [config.items]);
-
-  useEffect(() => {
-    console.table(dependencyIndex);
-  }, [dependencyIndex]);
-
-
-  const currentFieldCount = useMemo(() => {
-    if (!config?.items) return 0;
-    return config.items.reduce((acc, i) => {
-      if (i.type === "field") return acc + 1;
-      if (i.type === "rowgroup") {
-        return acc + (Array.isArray(i.data?.rowGroup) ? i.data.rowGroup.length : 0);
-      }
-      return acc;
-    }, 0);
-  }, [config.items]);
-
-
-  const [selectedObjects, setSelectedObjects] = useState<Record<string, any>>({});
-  const [rowGroupValues, setRowGroupValues] = useState<Record<string, any[]>>({});
-
-
-  const itemsWithFilteredOptions = transformedItems.map((item) => {
-    if (item.type !== "field") return item;
-
-    const field = item.data;
-
-    if (field.dependsOn) {
-      const parentValue =
-        selectedObjects?.[field.dependsOn] ??
-        watchedValues?.[field.dependsOn] ??
-        rowGroupValues?.[field.dependsOn]?.[0];
-
-      const parentFilterVal =
-        typeof parentValue === "object"
-          ? parentValue[field.dependsOtherFieldByValue || "value"] ??
-          parentValue.value ??
-          parentValue.label ??
-          parentValue.item_name ??
-          parentValue.name
-          : parentValue;
-
-      if (Array.isArray(field.options)) {
-        const filteredOptions = field.options.filter((opt: any) => {
-          try {
-            // Extract value inside each option
-            let optVal: any;
-            if (field.filterOptionsBy && opt && typeof opt === "object") {
-              optVal = getNested(opt, field.filterOptionsBy);
-            } else if (opt && typeof opt === "object" && opt.filter !== undefined) {
-              optVal = opt.filter;
-            } else {
-              optVal = opt;
-            }
-
-            // Fallbacks
-            if (parentFilterVal == null || parentFilterVal === "") return true;
-            if (optVal == null) return true;
-
-            // Compare safely
-            return compareValues(optVal, parentFilterVal);
-          } catch (err) {
-            console.warn("⚠️ Filtering error:", err, field.name, opt);
-            return true;
-          }
-        });
-
-        return { ...item, data: { ...field, options: filteredOptions } };
-      }
-    }
-
-    return item;
-  });
 
   const itemsWithRules = useMemo(() => {
-    return itemsWithFilteredOptions.map((item) => {
+    // 🧠 Transform each item (only fields are affected by rules)
+    return transformedItems.map((item) => {
       if (item.type !== "field") return item;
-      return {
-        ...item,
-        data: applyFieldRules(item.data, { watchedValues, selectedObjects }),
-      };
+
+      const field = item.data;
+
+      // ✅ Apply rules to this field
+      const ruledField = applyFieldRules(field, {
+        globalValues, // shared state for all field values
+        selectedObjects, // stores metadata of selected options
+        onFieldOptionsUpdate: handleFieldOptionsUpdate,
+        autoSetValue: (fieldName, value, fullOption) => {
+          // --- Keep React Hook Form synced
+          form.setValue(fieldName, value);
+
+          // --- Update globalValues (our central source of truth)
+          setGlobalValues((prev) => ({
+            ...prev,
+            [fieldName]: value,
+          }));
+
+          // --- Track selected option objects for rule context
+          setSelectedObjects((prev) => ({
+            ...prev,
+            [fieldName]:
+              fullOption && typeof fullOption === "object"
+                ? fullOption
+                : { value },
+          }));
+
+          // --- Update config JSON (so form structure stays in sync)
+          setConfig((prev) => ({
+            ...prev,
+            items: prev.items.map((it) =>
+              it.type === "field" && it.data.name === fieldName
+                ? {
+                  ...it,
+                  data: {
+                    ...it.data,
+                    value: value ?? "",
+                    options:
+                      fullOption && typeof fullOption === "object"
+                        ? [fullOption]
+                        : it.data.options ?? [],
+                  },
+                }
+                : it
+            ),
+          }));
+
+          console.log(`🔧 autoSetValue → ${fieldName} =`, value, fullOption);
+        },
+      });
+
+      // ✅ Return updated item with new rule-applied data
+      return { ...item, data: ruledField };
     });
-  }, [itemsWithFilteredOptions, watchedValues, selectedObjects]);
+    // 🚨 Keep dependency array minimal and stable to avoid infinite loops
+  }, [
+    transformedItems,
+    globalValues,
+    selectedObjects,
+    handleFieldOptionsUpdate,
+    setConfig, // stable reference from props
+  ]);
+
+  console.log("itemsWithRules", itemsWithRules)
+  console.log("globalValues", globalValues)
 
 
-
+  // ✅ Render UI
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+
+
+      <WarningDialog
+        isOpen={isOpenwarning}
+        title="Ticket Submit"
+        description="Are you sure you want to submit this ticket ?"
+        confirmLabel="Yes"
+        cancelLabel="Cancel"
+        onConfirm={handleSubmit}
+        onCancel={handleCancelWarning}
+      />
+
       {assignedWidgets.map((w) => (
         <WidgetRenderer
           key={w.id}
           config={w}
           handleReload={handleReload}
-          data={{ formData: watchedValues, userData: user, serviceId }}
+          data={{ formData: globalValues, userData: user, serviceId }}
         />
       ))}
 
@@ -295,195 +295,101 @@ export const DynamicForm: React.FC<{
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleOpenWarning)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {itemsWithRules
                   .sort((a, b) => a.order - b.order)
                   .map((item) => {
+                    if (item.type === "field") {
+                      const field = item.data as FormField;
+                      const key = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, "_");
+                      if (!shouldShowField(field, globalValues)) return null;
+
+                      const currentValue = globalValues?.[field.name] ?? field.value ?? "";
 
 
+                      return (
+                        <div key={item.id} className="contents">
+                          <DynamicField
+                            field={field}
+                            setConfig={setConfig}
+                            value={currentValue}
+                            onChange={(val, fullOption) => {
+                              form.setValue(key, val);
+                              setGlobalValues((p) => ({ ...p, [key]: val }));   // 🧩 update global value
+                              setSelectedObjects((p) => ({ ...p, [key]: fullOption }));
+                            }}
+                            onBlur={() => {
+                              setSelectedObjects((prev) => ({
+                                ...prev,
+                                __lastBlurField: field.name,
+                              }));
 
-
-                    switch (item.type) {
-                      case "field":
-
-
-                        const field = item.data as FormField;
-                        const key =
-                          field.name ||
-                          field.label.toLowerCase().replace(/[^a-z0-9]/g, "_");
-                        if (!shouldShowField(field, watchedValues)) return null;
-                        return (
-                          <div key={item.id} className="contents">
-                            <DynamicField
-                              field={field}
-                              value={form.watch(key)}
-
-                              onChange={(val, fullOption) => {
-                                form.setValue(key, val);
-                                setWatchedValues((p) => ({ ...p, [key]: val }));
-
-                                const optionObj = fullOption && typeof fullOption === "object"
-                                  ? fullOption
-                                  : { value: val };
-
-                                setSelectedObjects((p) => ({ ...p, [key]: optionObj }));
-
-                                // ✅ Trigger dependent updates
-                                const dependents = dependencyIndex[key] || [];
-                                if (dependents.length > 0) {
-                                  dependents.forEach((depField) => {
-                                    // force reapply rules and filters for these dependent fields
-                                    const fieldToUpdate = config.items.find(
-                                      (i) => i.type === "field" && i.data.name === depField
-                                    );
-
-                                    if (fieldToUpdate) {
-                                      const updatedField = applyFieldRules(fieldToUpdate.data, {
-                                        watchedValues: { ...watchedValues, [key]: val },
-                                        selectedObjects: { ...selectedObjects, [key]: optionObj },
-                                      });
-
-                                      // update config for live reactivity (if necessary)
-                                      setConfig((prev) => {
-                                        const updatedItems = prev.items.map((i) =>
-                                          i.id === fieldToUpdate.id
-                                            ? { ...i, data: updatedField }
-                                            : i
-                                        );
-                                        return { ...prev, items: updatedItems };
-                                      });
-                                    }
-                                  });
+                              // Normalize spaces (avoid "   " issue)
+                              const val = globalValues?.[field.name];
+                              if (typeof val === "string") {
+                                const trimmed = val.trim();
+                                if (trimmed !== val) {
+                                  setGlobalValues((p) => ({ ...p, [field.name]: trimmed }));
                                 }
-                              }}
-
-                              watchedValues={memoizedWatchedValues}
-                            />
-                          </div>
-                        );
-
-                      case "rowgroup": {
-                        const rg = item.data as RowGroup;
-                        const groupIndex = config.items.findIndex(
-                          (i) => i.id === item.id
-                        );
-                        return (
-                          <div key={item.id} className="col-span-3">
-                            <StructuredRowGroup
-                              rowGroup={rg}
-                              rowGroupId={item.id}
-                              form={form}
-                              groupIndex={groupIndex}
-                              maxTotalFields={50}
-                              currentFieldCount={currentFieldCount}
-                              onFieldCountChange={(count) =>
-                                setStructuredRowCounts((prev) => ({
-                                  ...prev,
-                                  [groupIndex]: count,
-                                }))
                               }
-                              onUpdateRowGroup={handleUpdateRowGroup}
-                              onRowValueChange={(groupId, rowValues) => {
-                                setRowGroupValues((prev) => ({ ...prev, [groupId]: rowValues }));
-
-                                // ✅ Find dependents from dependencyIndex (if any)
-                                const dependents = dependencyIndex[groupId] || [];
-                                dependents.forEach((depField) => {
-                                  const fieldToUpdate = config.items.find(
-                                    (i) => i.type === "field" && i.data.name === depField
-                                  );
-
-                                  if (fieldToUpdate) {
-                                    const updatedField = applyFieldRules(fieldToUpdate.data, {
-                                      watchedValues,
-                                      selectedObjects,
-                                    });
-
-                                    setConfig((prev) => {
-                                      const updatedItems = prev.items.map((i) =>
-                                        i.id === fieldToUpdate.id
-                                          ? { ...i, data: updatedField }
-                                          : i
-                                      );
-                                      return { ...prev, items: updatedItems };
-                                    });
-                                  }
-                                });
-                              }}
-                              watchedValues={memoizedWatchedValues}
-                              selectedObjects={selectedObjects}
-                            />
-                          </div>
-                        );
-                      }
-
-
-                      case "section": {
-                        const section = item.data;
-                        const parentVal = watchedValues?.[section.dependsOn];
-                        if (section.dependsOn && parentVal !== section.dependsOnValue) return null;
-                        return (
-                          <div key={item.id} className="col-span-3">
-                            <DynamicSection
-                              section={section}
-                              form={form}
-                              onChange={(val, fullOption) => {
-                                form.setValue(key, val);
-                                setWatchedValues((p) => ({ ...p, [key]: val }));
-
-                                const optionObj = fullOption && typeof fullOption === "object"
-                                  ? fullOption
-                                  : { value: val };
-
-                                setSelectedObjects((p) => ({ ...p, [key]: optionObj }));
-
-                                // ✅ Trigger dependent updates
-                                const dependents = dependencyIndex[key] || [];
-                                if (dependents.length > 0) {
-                                  dependents.forEach((depField) => {
-                                    // force reapply rules and filters for these dependent fields
-                                    const fieldToUpdate = config.items.find(
-                                      (i) => i.type === "field" && i.data.name === depField
-                                    );
-
-                                    if (fieldToUpdate) {
-                                      const updatedField = applyFieldRules(fieldToUpdate.data, {
-                                        watchedValues: { ...watchedValues, [key]: val },
-                                        selectedObjects: { ...selectedObjects, [key]: optionObj },
-                                      });
-
-                                      // update config for live reactivity (if necessary)
-                                      setConfig((prev) => {
-                                        const updatedItems = prev.items.map((i) =>
-                                          i.id === fieldToUpdate.id
-                                            ? { ...i, data: updatedField }
-                                            : i
-                                        );
-                                        return { ...prev, items: updatedItems };
-                                      });
-                                    }
-                                  });
-                                }
-                              }}
-                              watchedValues={memoizedWatchedValues}
-                              selectedObjects={selectedObjects}
-                              setWatchedValues={setWatchedValues}
-                              setSelectedObjects={setSelectedObjects}
-                              handleUpdateRowGroup={handleUpdateRowGroup}
-                              currentFieldCount={currentFieldCount}
-                              setStructuredRowCounts={setStructuredRowCounts}
-                              shouldShowField={shouldShowField}
-                            />
-                          </div>
-                        );
-                      }
-
-                      default:
-                        return null;
+                            }}
+                            globalValues={globalValues}         // 🧩 added
+                            setGlobalValues={setGlobalValues}   // 🧩 added
+                            watchedValues={memoizedWatchedValues}
+                            currentValue={currentValue}
+                          />
+                        </div>
+                      );
                     }
+
+                    if (item.type === "rowgroup") {
+                      const rg = item.data as RowGroup;
+                      return (
+                        <div key={item.id} className="col-span-3">
+                          <StructuredRowGroup
+                            rowGroup={rg}
+                            rowGroupId={item.id}
+                            form={form}
+                            watchedValues={memoizedWatchedValues}
+                            selectedObjects={selectedObjects}
+                            currentFieldCount={0}
+                            maxTotalFields={50}
+                            globalValues={globalValues}           // 🧩 Added
+                            setGlobalValues={setGlobalValues}     // ✅ Already there
+                            onUpdateRowGroup={handleUpdateRowGroup}
+                          />
+                        </div>
+                      );
+                    }
+
+                    if (item.type === "section") {
+                      const section = item.data;
+                      const parentVal = globalValues?.[section.dependsOn];
+
+                      if (section.dependsOn && parentVal !== section.dependsOnValue) return null;
+
+                      return (
+                        <div key={item.id} className="col-span-3">
+                          <DynamicSection
+                            section={section}
+                            form={form}
+                            watchedValues={memoizedWatchedValues}
+                            selectedObjects={selectedObjects}
+                            setConfig={setConfig}
+                            globalValues={globalValues}              // 🧩 added
+                            setGlobalValues={setGlobalValues}        // 🧩 added
+                            setSelectedObjects={setSelectedObjects}
+                            handleUpdateRowGroup={handleUpdateRowGroup}
+                          />
+                        </div>
+                      );
+                    }
+
+                    return null;
                   })}
               </div>
+
               <div className="flex justify-end pt-6">
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Submitting..." : "Submit"}
@@ -493,6 +399,18 @@ export const DynamicForm: React.FC<{
           </Form>
         </CardContent>
       </Card>
+
+      {isSubmitting
+        &&
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-6 bg-gray-800 text-white rounded-lg shadow-lg">
+            <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p>Submitting...</p>
+          </div>
+        </div>
+
+      }
+
     </div>
   );
 };
