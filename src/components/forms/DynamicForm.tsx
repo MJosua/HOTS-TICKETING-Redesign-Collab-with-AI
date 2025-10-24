@@ -399,7 +399,7 @@ export const DynamicForm: React.FC<{
           </Form>
         </CardContent>
       </Card>
-
+      
       {isSubmitting
         &&
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">

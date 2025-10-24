@@ -11,14 +11,14 @@ import { Info, Link, Unlink, AlertCircle, Save, X } from 'lucide-react';
 import { SYSTEM_VARIABLE_ENTRIES } from '@/utils/systemVariableDefinitions/systemVariableDefinitions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface FieldEditorProps {
-  field: FormField;
+interface specialfunctionEditorProps {
+  function: FormField;
   fields?: FormField[];
   onUpdate: (field: FormField) => void;
   onCancel: () => void;
 }
 
-export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], onUpdate, onCancel }) => {
+export const FunctionEditor: React.FC<specialfunctionEditorProps> = ({ field, fields = [], onUpdate, onCancel }) => {
   const [localField, setLocalField] = useState<FormField>(field);
   const [filterInput, setFilterInput] = useState(field.filterOptionsBy || '');
   const [filterInputshow, setFilterInputShow] = useState(field.filterOptionsBy || '');
