@@ -57,10 +57,18 @@ export async function handleAPI(ruleThen: any, checkVal: any) {
       },
     });
 
-    console.log("📡 Rule API success:", res.data.data);
-    return res.data.data;
+    const data = res?.data?.data ?? [];
+
+    // ✅ Guarantee non-empty options array
+    if (!Array.isArray(data) || data.length === 0) {
+      console.warn("⚠️ Empty API response — defaulting to No data found");
+      return [{ item_name: "No data found", filter: null }];
+    }
+
+    console.log("📡 Rule API success:", data);
+    return data;
   } catch (err: any) {
     console.warn("⚠️ Rule API error:", err.response?.data || err.message);
-    return null;
+    return [{ item_name: "No data found", filter: null }];
   }
 }

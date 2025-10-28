@@ -23,7 +23,7 @@ import { applyFieldRules } from "@/utils/rulingSystem/applyFieldRules";
 import { ruleActions } from "@/utils/rulingSystem/ruleActions";
 import { WarningDialog } from "../dialog/warningdialoguser";
 
-// 🕒 Simple debounce
+// 🕒 Simple debounce utility
 const debounce = (fn: (...args: any[]) => void, delay = 300) => {
   let timer: NodeJS.Timeout;
   return (...args: any[]) => {
@@ -45,19 +45,13 @@ export const DynamicForm: React.FC<{
   const form = useForm();
   const { user } = useAppSelector((s) => s.auth);
 
-  // const [watchedValues, setWatchedValues] = useState<Record<string, any>>({});
+  // 🌍 Global Form States
   const [globalValues, setGlobalValues] = useState<Record<string, any>>({});
-
-
   const [selectedObjects, setSelectedObjects] = useState<Record<string, any>>({});
-
-  console.log("selectedObjects", selectedObjects)
-
-  const [rowGroupValues, setRowGroupValues] = useState<Record<string, any[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [structuredRowCounts, setStructuredRowCounts] = useState<Record<number, number>>({});
   const [externalSystemVars, setExternalSystemVars] = useState<Record<string, any>>({});
   const [systemVarsVersion, setSystemVarsVersion] = useState(0);
+  const [isOpenwarning, setIsOpenwarning] = useState(false);
 
   const systemContext = useSystemVariableContext();
   const serviceWidgetIds = useAppSelector((s) =>
@@ -66,8 +60,8 @@ export const DynamicForm: React.FC<{
 
   const memoizedWatchedValues = useMemo(() => globalValues, [globalValues]);
   const maxFields = useMemo(() => getMaxFormFields(), []);
-  console.log("memoizedWatchedValues", memoizedWatchedValues)
-  // ✅ Handle row group updates
+
+  // 🧩 Handle rowgroup updates
   const handleUpdateRowGroup = useCallback(
     (groupId: string, updatedRows) => {
       setConfig((prev) => ({
@@ -82,22 +76,20 @@ export const DynamicForm: React.FC<{
     [setConfig]
   );
 
-  // ✅ Assign form widgets
+  // 🧩 Assign service widgets
   const assignedWidgets = useMemo(() => {
     const ids = Array.isArray(serviceWidgetIds)
       ? serviceWidgetIds
       : serviceWidgetIds
-        ? [serviceWidgetIds]
-        : [];
+      ? [serviceWidgetIds]
+      : [];
     return ids
       .map(getWidgetById)
       .filter((w): w is WidgetConfig => !!w)
       .filter((w) => w.applicableTo.includes("form"));
   }, [serviceWidgetIds]);
 
-
-
-  // ✅ Form submission
+  // 🧩 Submit handler
   const handleSubmit = async (data: any) => {
     if (!serviceId) {
       const mappedData = mapUnifiedForm(globalValues, config.items, selectedObjects || []);
@@ -106,8 +98,6 @@ export const DynamicForm: React.FC<{
         description: JSON.stringify(mappedData, null, 2),
         variant: "destructive",
       });
-
-
       return;
     }
 
@@ -116,11 +106,9 @@ export const DynamicForm: React.FC<{
       const mappedData = mapUnifiedForm(globalValues, config.items, selectedObjects || []);
       const ticketData = { subject: data.subject || "Service Request", ...mappedData };
 
-      console.log("ticketData", ticketData)
-
+      console.log("ticketData", ticketData);
 
       const result = await dispatch(createTicket({ serviceId, ticketData })).unwrap();
-
       if (result.success) {
         toast({ title: "Success", description: "Submitted successfully!" });
         navigate("/my-tickets");
@@ -132,15 +120,11 @@ export const DynamicForm: React.FC<{
     }
   };
 
-  const [isOpenwarning, setIsOpenwarning] = useState(false);
-
-  const handleOpenWarning = () => {
-    setIsOpenwarning(true);
-  }
-
+  // 🧩 Confirmation dialog
+  const handleOpenWarning = () => setIsOpenwarning(true);
   const handleCancelWarning = () => setIsOpenwarning(false);
 
-  // ✅ Conditional visibility
+  // 🧩 Conditional field visibility
   const shouldShowField = useCallback(
     (field: FormField, values: Record<string, any>) => {
       if (!field.uiCondition) return true;
@@ -154,11 +138,10 @@ export const DynamicForm: React.FC<{
     [globalValues]
   );
 
-  // ✅ System variable resolver
+  // 🧩 System variable resolver
   const transformedItems = useMemo(() => {
     if (!config?.items) return [];
     const mergedContext = { ...systemContext, ...externalSystemVars };
-
     const resolveDeep = (value: any, context: any): any => {
       if (Array.isArray(value)) {
         return value.flatMap((v) => resolveDeep(v, context)).filter(Boolean);
@@ -173,14 +156,13 @@ export const DynamicForm: React.FC<{
       }
       return value;
     };
-
     return config.items.map((item) => {
       const resolvedData = resolveDeep(item.data, { ...mergedContext, _version: systemVarsVersion });
       return { ...item, data: resolvedData };
     });
   }, [config.items, systemContext, externalSystemVars, systemVarsVersion]);
 
-  // ✅ Direct option updater
+  // 🧩 Update options from API or rule
   const handleFieldOptionsUpdate = (fieldName, newOptions) => {
     console.log(`🧩 Updating options for ${fieldName}`, newOptions);
     setConfig((prev) => ({
@@ -193,83 +175,28 @@ export const DynamicForm: React.FC<{
     }));
   };
 
-
+  // 🧠 Apply rules (top-level only)
   const itemsWithRules = useMemo(() => {
-    // 🧠 Transform each item (only fields are affected by rules)
     return transformedItems.map((item) => {
       if (item.type !== "field") return item;
-
       const field = item.data;
-
-      // ✅ Apply rules to this field
       const ruledField = applyFieldRules(field, {
-        globalValues, // shared state for all field values
-        selectedObjects, // stores metadata of selected options
+        globalValues,
+        selectedObjects,
         onFieldOptionsUpdate: handleFieldOptionsUpdate,
-        autoSetValue: (fieldName, value, fullOption) => {
-          // --- Keep React Hook Form synced
-          form.setValue(fieldName, value);
-
-          // --- Update globalValues (our central source of truth)
-          setGlobalValues((prev) => ({
-            ...prev,
-            [fieldName]: value,
-          }));
-
-          // --- Track selected option objects for rule context
-          setSelectedObjects((prev) => ({
-            ...prev,
-            [fieldName]:
-              fullOption && typeof fullOption === "object"
-                ? fullOption
-                : { value },
-          }));
-
-          // --- Update config JSON (so form structure stays in sync)
-          setConfig((prev) => ({
-            ...prev,
-            items: prev.items.map((it) =>
-              it.type === "field" && it.data.name === fieldName
-                ? {
-                  ...it,
-                  data: {
-                    ...it.data,
-                    value: value ?? "",
-                    options:
-                      fullOption && typeof fullOption === "object"
-                        ? [fullOption]
-                        : it.data.options ?? [],
-                  },
-                }
-                : it
-            ),
-          }));
-
-          console.log(`🔧 autoSetValue → ${fieldName} =`, value, fullOption);
-        },
+        setGlobalValues,
+        rowContext: {}, // only for top-level; rowgroup handles its own
       });
-
-      // ✅ Return updated item with new rule-applied data
       return { ...item, data: ruledField };
     });
-    // 🚨 Keep dependency array minimal and stable to avoid infinite loops
-  }, [
-    transformedItems,
-    globalValues,
-    selectedObjects,
-    handleFieldOptionsUpdate,
-    setConfig, // stable reference from props
-  ]);
+  }, [transformedItems, globalValues, selectedObjects, handleFieldOptionsUpdate]);
 
-  console.log("itemsWithRules", itemsWithRules)
-  console.log("globalValues", globalValues)
+  console.log("🧠 itemsWithRules", itemsWithRules);
+  console.log("🧠 globalValue", globalValues);
 
-
-  // ✅ Render UI
+  // 🧩 Render UI
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-
-
       <WarningDialog
         isOpen={isOpenwarning}
         title="Ticket Submit"
@@ -307,7 +234,6 @@ export const DynamicForm: React.FC<{
 
                       const currentValue = globalValues?.[field.name] ?? field.value ?? "";
 
-
                       return (
                         <div key={item.id} className="contents">
                           <DynamicField
@@ -316,7 +242,7 @@ export const DynamicForm: React.FC<{
                             value={currentValue}
                             onChange={(val, fullOption) => {
                               form.setValue(key, val);
-                              setGlobalValues((p) => ({ ...p, [key]: val }));   // 🧩 update global value
+                              setGlobalValues((p) => ({ ...p, [key]: val }));
                               setSelectedObjects((p) => ({ ...p, [key]: fullOption }));
                             }}
                             onBlur={() => {
@@ -324,8 +250,6 @@ export const DynamicForm: React.FC<{
                                 ...prev,
                                 __lastBlurField: field.name,
                               }));
-
-                              // Normalize spaces (avoid "   " issue)
                               const val = globalValues?.[field.name];
                               if (typeof val === "string") {
                                 const trimmed = val.trim();
@@ -334,8 +258,8 @@ export const DynamicForm: React.FC<{
                                 }
                               }
                             }}
-                            globalValues={globalValues}         // 🧩 added
-                            setGlobalValues={setGlobalValues}   // 🧩 added
+                            globalValues={globalValues}
+                            setGlobalValues={setGlobalValues}
                             watchedValues={memoizedWatchedValues}
                             currentValue={currentValue}
                           />
@@ -355,8 +279,8 @@ export const DynamicForm: React.FC<{
                             selectedObjects={selectedObjects}
                             currentFieldCount={0}
                             maxTotalFields={50}
-                            globalValues={globalValues}           // 🧩 Added
-                            setGlobalValues={setGlobalValues}     // ✅ Already there
+                            globalValues={globalValues}
+                            setGlobalValues={setGlobalValues}
                             onUpdateRowGroup={handleUpdateRowGroup}
                           />
                         </div>
@@ -366,7 +290,6 @@ export const DynamicForm: React.FC<{
                     if (item.type === "section") {
                       const section = item.data;
                       const parentVal = globalValues?.[section.dependsOn];
-
                       if (section.dependsOn && parentVal !== section.dependsOnValue) return null;
 
                       return (
@@ -377,8 +300,8 @@ export const DynamicForm: React.FC<{
                             watchedValues={memoizedWatchedValues}
                             selectedObjects={selectedObjects}
                             setConfig={setConfig}
-                            globalValues={globalValues}              // 🧩 added
-                            setGlobalValues={setGlobalValues}        // 🧩 added
+                            globalValues={globalValues}
+                            setGlobalValues={setGlobalValues}
                             setSelectedObjects={setSelectedObjects}
                             handleUpdateRowGroup={handleUpdateRowGroup}
                           />
@@ -399,18 +322,15 @@ export const DynamicForm: React.FC<{
           </Form>
         </CardContent>
       </Card>
-      
-      {isSubmitting
-        &&
+
+      {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
           <div className="flex flex-col items-center p-6 bg-gray-800 text-white rounded-lg shadow-lg">
             <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-3"></div>
             <p>Submitting...</p>
           </div>
         </div>
-
-      }
-
+      )}
     </div>
   );
 };

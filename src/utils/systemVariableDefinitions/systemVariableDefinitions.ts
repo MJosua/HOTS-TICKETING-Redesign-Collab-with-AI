@@ -43,7 +43,6 @@ export const useSystemVariableContext = (): SystemVariableContext => {
   const analyst = useAppSelector(state => state.analyst);
   const country = useAppSelector(state => state.country);
 
-  console.log("srf.factoryplant",srf.factoryplants)
   const srf_todaysweek = useAppSelector(state => state.srf_todaysweek);
   return {
     user: auth.user,

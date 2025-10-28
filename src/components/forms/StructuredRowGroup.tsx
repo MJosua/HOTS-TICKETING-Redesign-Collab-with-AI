@@ -50,7 +50,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 }) => {
   const structure = rowGroup.structure;
 
-  const {toast} = useToast();
+  const { toast } = useToast();
 
   const rows: RowData[] = useMemo(() => {
     const currentRows = globalValues?.[rowGroupId];
@@ -97,13 +97,21 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 
 
   const updateRowField = (rowId: string, field: keyof RowData, value: string) => {
-    const updated = rows.map((r) => (r.id === rowId ? { ...r, [field]: value } : r));
-    syncToGlobal(updated);
+    setGlobalValues((prev) => {
+      // mark the last edited field globally
+      const updated = {
+        ...prev,
+        __lastEditedField: field, // 🧩 mark last edited field
+        [rowGroupId]: prev[rowGroupId].map((r) =>
+          r.id === rowId ? { ...r, [field]: value } : r
+        ),
+      };
+      return updated;
+    });
   };
 
   const addRow = () => {
     if (rowGroup.maxRows > rows.length) {
-
       const newRow: RowData = {
         id: `row_${Date.now()}`,
         firstValue: "",
@@ -111,29 +119,39 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
         thirdValue: "",
       };
 
+      console.log("➕ Adding new row:", newRow);
+
+      // 🧩 Update globalValues safely (no double trigger)
       setGlobalValues((prev) => {
         const existing = Array.isArray(prev[rowGroupId]) ? prev[rowGroupId] : [];
         const updated = [...existing, newRow];
 
-        console.log("➕ Adding new row:", newRow);
+        // 🧠 Initialize the new row’s rule memory (so 'changed' doesn’t trigger)
+        if (typeof window !== "undefined") {
+          window.__ruleTrackers = window.__ruleTrackers || {};
+          window.__ruleTrackers[rowGroupId] = window.__ruleTrackers[rowGroupId] || {};
+          window.__ruleTrackers[rowGroupId][newRow.id] = {
+            lastValues: { firstValue: "", secondValue: "", thirdValue: "" },
+          };
+        }
+
         return { ...prev, [rowGroupId]: updated };
       });
 
+      // 🧠 Sync back to form structure
       onUpdateRowGroup(rowGroupId, [
         ...(globalValues?.[rowGroupId] || []),
         newRow,
       ]);
-
     } else {
-
       toast({
-        title: `Can't Add More Item `,
-        description:  `Failed to add item max is  ${rowGroup.maxRows}`,
+        title: `Can't Add More Item`,
+        description: `Failed to add item, max is ${rowGroup.maxRows}`,
         variant: "destructive",
       });
-
     }
   };
+
 
   const removeRow = (rowId: string) => {
     const updated = rows.filter((r) => r.id !== rowId);
@@ -186,36 +204,58 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     rowId?: string
   ) => {
     let col = structure[column];
+
+
     col = applyFieldRules(col, {
       watchedValues: globalValues,
       selectedObjects: selectedObjects || {},
       rowContext: {
         rowGroupId,
-        columnKey: column, // "firstColumn", "secondColumn", or "thirdColumn"
+        columnKey: column,
+        rowId,  // ✅ already known
+        currentEditingRowId: rowId, // ✅ FIX: use the parameter, not r
+        rowContext: { rowGroupId: "rowgroup_items" },
       },
       setGlobalValues,
       autoSetValue: (fieldName: string, value: any) => {
-        const fieldKey =
-          column === "firstColumn"
-            ? "firstValue"
-            : column === "secondColumn"
-              ? "secondValue"
-              : "thirdValue";
+        const updatedRows = (globalValues?.[rowGroupId] || rows || []).map((r) => {
+          // 🧩 If a rule triggers clearing, clear all fields in the row
+          if (value === "" || value === null) {
+            return {
+              ...r,
+              firstValue: "",
+              secondValue: "",
+              thirdValue: "",
+            };
+          }
 
-        // Normal update logic
-        const updatedRows = (globalValues?.[rowGroupId] || rows || []).map((r) => ({
-          ...r,
-          [fieldKey]: value ?? "",
-        }));
+          // 🧩 Otherwise, only update the related column normally
+          const fieldKey =
+            column === "firstColumn"
+              ? "firstValue"
+              : column === "secondColumn"
+                ? "secondValue"
+                : "thirdValue";
+
+          return {
+            ...r,
+            [fieldKey]: value ?? "",
+          };
+        });
 
         setGlobalValues((prev) => ({
           ...prev,
           [rowGroupId]: updatedRows,
         }));
 
-        console.log(`🧹 Cleared all '${fieldKey}' in ${rowGroupId}`);
+        if (value === "" || value === null) {
+          console.log(`🧹 Cleared ALL columns (first, second, third) in ${rowGroupId}`);
+        } else {
+          console.log(`🧹 Cleared only '${column}' (${fieldName}) in ${rowGroupId}`);
+        }
       },
     });
+
 
     const opts =
       column === "firstColumn"
@@ -250,8 +290,8 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
       case "select":
         return (
           <Select value={value} onValueChange={(v) => onChange(v)} disabled={col.readonly}
-          required={col.required}
-          
+            required={col.required}
+
           >
             <SelectTrigger>
               <SelectValue placeholder={col.placeholder} />
