@@ -22,6 +22,7 @@ import { DynamicSection } from "./DynamicSection";
 import { applyFieldRules } from "@/utils/rulingSystem/applyFieldRules";
 import { ruleActions } from "@/utils/rulingSystem/ruleActions";
 import { WarningDialog } from "../dialog/warningdialoguser";
+import { normalizeSchema } from "@/utils/rulingSystem/schemaNormalizer";
 
 // 🕒 Simple debounce utility
 const debounce = (fn: (...args: any[]) => void, delay = 300) => {
@@ -44,6 +45,8 @@ export const DynamicForm: React.FC<{
   const navigate = useNavigate();
   const form = useForm();
   const { user } = useAppSelector((s) => s.auth);
+
+  const [normalizedSchema, setNormalizedSchema] = useState(null); // 🧩 NEW
 
   // 🌍 Global Form States
   const [globalValues, setGlobalValues] = useState<Record<string, any>>({});
@@ -76,13 +79,22 @@ export const DynamicForm: React.FC<{
     [setConfig]
   );
 
+
+  useEffect(() => {
+    if (config && Array.isArray(config.items)) {
+      const normalized = normalizeSchema(config);
+      setNormalizedSchema(normalized);
+      console.log("🧩 Normalized schema loaded:", normalized);
+    }
+  }, [config]);
+
   // 🧩 Assign service widgets
   const assignedWidgets = useMemo(() => {
     const ids = Array.isArray(serviceWidgetIds)
       ? serviceWidgetIds
       : serviceWidgetIds
-      ? [serviceWidgetIds]
-      : [];
+        ? [serviceWidgetIds]
+        : [];
     return ids
       .map(getWidgetById)
       .filter((w): w is WidgetConfig => !!w)
@@ -185,14 +197,14 @@ export const DynamicForm: React.FC<{
         selectedObjects,
         onFieldOptionsUpdate: handleFieldOptionsUpdate,
         setGlobalValues,
-        rowContext: {}, // only for top-level; rowgroup handles its own
+        rowContext: {},
+        schema: normalizedSchema, // 🧩 important
       });
       return { ...item, data: ruledField };
     });
   }, [transformedItems, globalValues, selectedObjects, handleFieldOptionsUpdate]);
 
-  console.log("🧠 itemsWithRules", itemsWithRules);
-  console.log("🧠 globalValue", globalValues);
+
 
   // 🧩 Render UI
   return (
@@ -215,113 +227,124 @@ export const DynamicForm: React.FC<{
           data={{ formData: globalValues, userData: user, serviceId }}
         />
       ))}
+      {
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{config.title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleOpenWarning)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {itemsWithRules
-                  .sort((a, b) => a.order - b.order)
-                  .map((item) => {
-                    if (item.type === "field") {
-                      const field = item.data as FormField;
-                      const key = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, "_");
-                      if (!shouldShowField(field, globalValues)) return null;
+        !normalizedSchema
+          ?
+          <div className="text-center text-gray-500">Loading form schema...</div>
+          :
 
-                      const currentValue = globalValues?.[field.name] ?? field.value ?? "";
+          <Card>
+            <CardHeader>
+              <CardTitle>{config.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleOpenWarning)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {itemsWithRules
+                      .sort((a, b) => a.order - b.order)
+                      .map((item) => {
+                        if (item.type === "field") {
+                          const field = item.data as FormField;
+                          const key = field.name || field.label.toLowerCase().replace(/[^a-z0-9]/g, "_");
+                          if (!shouldShowField(field, globalValues)) return null;
 
-                      return (
-                        <div key={item.id} className="contents">
-                          <DynamicField
-                            field={field}
-                            setConfig={setConfig}
-                            value={currentValue}
-                            onChange={(val, fullOption) => {
-                              form.setValue(key, val);
-                              setGlobalValues((p) => ({ ...p, [key]: val }));
-                              setSelectedObjects((p) => ({ ...p, [key]: fullOption }));
-                            }}
-                            onBlur={() => {
-                              setSelectedObjects((prev) => ({
-                                ...prev,
-                                __lastBlurField: field.name,
-                              }));
-                              const val = globalValues?.[field.name];
-                              if (typeof val === "string") {
-                                const trimmed = val.trim();
-                                if (trimmed !== val) {
-                                  setGlobalValues((p) => ({ ...p, [field.name]: trimmed }));
-                                }
-                              }
-                            }}
-                            globalValues={globalValues}
-                            setGlobalValues={setGlobalValues}
-                            watchedValues={memoizedWatchedValues}
-                            currentValue={currentValue}
-                          />
-                        </div>
-                      );
-                    }
+                          const currentValue = globalValues?.[field.name] ?? field.value ?? "";
 
-                    if (item.type === "rowgroup") {
-                      const rg = item.data as RowGroup;
-                      return (
-                        <div key={item.id} className="col-span-3">
-                          <StructuredRowGroup
-                            rowGroup={rg}
-                            rowGroupId={item.id}
-                            form={form}
-                            watchedValues={memoizedWatchedValues}
-                            selectedObjects={selectedObjects}
-                            currentFieldCount={0}
-                            maxTotalFields={50}
-                            globalValues={globalValues}
-                            setGlobalValues={setGlobalValues}
-                            onUpdateRowGroup={handleUpdateRowGroup}
-                          />
-                        </div>
-                      );
-                    }
+                          return (
+                            <div key={item.id} className="contents">
+                              <DynamicField
+                                field={field}
+                                setConfig={setConfig}
+                                value={currentValue}
+                                onChange={(val, fullOption) => {
+                                  form.setValue(key, val);
+                                  setGlobalValues((p) => ({ ...p, [key]: val }));
+                                  setSelectedObjects((p) => ({ ...p, [key]: fullOption }));
+                                }}
+                                onBlur={() => {
+                                  setSelectedObjects((prev) => ({
+                                    ...prev,
+                                    __lastBlurField: field.name,
+                                  }));
+                                  const val = globalValues?.[field.name];
+                                  if (typeof val === "string") {
+                                    const trimmed = val.trim();
+                                    if (trimmed !== val) {
+                                      setGlobalValues((p) => ({ ...p, [field.name]: trimmed }));
+                                    }
+                                  }
+                                }}
+                                globalValues={globalValues}
+                                setGlobalValues={setGlobalValues}
+                                watchedValues={memoizedWatchedValues}
+                                currentValue={currentValue}
+                              />
+                            </div>
+                          );
+                        }
 
-                    if (item.type === "section") {
-                      const section = item.data;
-                      const parentVal = globalValues?.[section.dependsOn];
-                      if (section.dependsOn && parentVal !== section.dependsOnValue) return null;
+                        if (item.type === "rowgroup") {
+                          const rg = item.data as RowGroup;
+                          return (
+                            <div key={item.id} className="col-span-3">
+                              <StructuredRowGroup
+                                rowGroup={rg}
+                                rowGroupId={item.id}
+                                form={form}
+                                watchedValues={memoizedWatchedValues}
+                                selectedObjects={selectedObjects}
+                                currentFieldCount={0}
+                                maxTotalFields={50}
+                                globalValues={globalValues}
+                                setGlobalValues={setGlobalValues}
+                                onUpdateRowGroup={handleUpdateRowGroup}
+                                schema={normalizedSchema}
+                              />
+                            </div>
+                          );
+                        }
 
-                      return (
-                        <div key={item.id} className="col-span-3">
-                          <DynamicSection
-                            section={section}
-                            form={form}
-                            watchedValues={memoizedWatchedValues}
-                            selectedObjects={selectedObjects}
-                            setConfig={setConfig}
-                            globalValues={globalValues}
-                            setGlobalValues={setGlobalValues}
-                            setSelectedObjects={setSelectedObjects}
-                            handleUpdateRowGroup={handleUpdateRowGroup}
-                          />
-                        </div>
-                      );
-                    }
+                        if (item.type === "section") {
+                          const section = item.data;
+                          const parentVal = globalValues?.[section.dependsOn];
+                          if (section.dependsOn && parentVal !== section.dependsOnValue) return null;
 
-                    return null;
-                  })}
-              </div>
+                          return (
+                            <div key={item.id} className="col-span-3">
+                              <DynamicSection
+                                section={section}
+                                form={form}
+                                watchedValues={memoizedWatchedValues}
+                                selectedObjects={selectedObjects}
+                                setConfig={setConfig}
+                                globalValues={globalValues}
+                                setGlobalValues={setGlobalValues}
+                                setSelectedObjects={setSelectedObjects}
+                                handleUpdateRowGroup={handleUpdateRowGroup}
+                              />
+                            </div>
+                          );
+                        }
 
-              <div className="flex justify-end pt-6">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : "Submit"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                        return null;
+                      })}
+                  </div>
+
+                  <div className="flex justify-end pt-6">
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? "Submitting..." : "Submit"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+      }
+
+
+
 
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">

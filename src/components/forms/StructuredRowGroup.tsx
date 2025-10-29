@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import {
 import { RowGroup } from "@/types/formTypes";
 import { SuggestionInsertInput } from "./SuggestionInsertInput";
 import { NumberField } from "./NumberField";
-import { compareValues, getNested } from "@/utils/dependencyResolver";
+import { compareValues, getFilteredOptions, getNested } from "@/utils/dependencyResolver";
 import { applyFieldRules } from "@/utils/rulingSystem/applyFieldRules";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,6 +36,7 @@ interface StructuredRowGroupProps {
   selectedObjects?: Record<string, any>;
   globalValues: Record<string, any>;
   setGlobalValues: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  schema?: any;
 }
 
 export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
@@ -47,6 +48,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
   selectedObjects,
   globalValues,
   setGlobalValues,
+  schema,
 }) => {
   const structure = rowGroup.structure;
 
@@ -98,14 +100,30 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
 
   const updateRowField = (rowId: string, field: keyof RowData, value: string) => {
     setGlobalValues((prev) => {
-      // mark the last edited field globally
       const updated = {
         ...prev,
-        __lastEditedField: field, // 🧩 mark last edited field
+        __lastEditedField: field, // mark last edited field
         [rowGroupId]: prev[rowGroupId].map((r) =>
           r.id === rowId ? { ...r, [field]: value } : r
         ),
       };
+
+      // 🧩 if we changed quantity, manually trigger re-evaluation of 'unit'
+      if (field === "secondValue") {
+        const unitCol = structure.thirdColumn;
+        console.log("🧩 unitCol structure before rules:", unitCol);
+        applyFieldRules(unitCol, {
+          watchedValues: updated,
+          selectedObjects: selectedObjects || {},
+          rowContext: { rowGroupId, rowId, columnKey: "thirdColumn" },
+          setGlobalValues,
+          globalValues: updated,
+          schema,
+        });
+        console.log("⚙️ Forced rule evaluation for 'unit' after quantity change", field);
+        console.log("globalvalue", globalValues)
+      }
+
       return updated;
     });
   };
@@ -158,46 +176,36 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
     if (updated.length > 0) syncToGlobal(updated);
   };
 
-  const getFilteredOptions = (col: any, opts: any[]) => {
-    if (!col) return opts || [];
-    const parentVal =
-      selectedObjects?.[col.dependsOn] ?? watchedValues?.[col.dependsOn];
-    const parentFilterVal =
-      typeof parentVal === "object"
-        ? getNested(parentVal, col.dependsOnValue || "value")
-        : parentVal;
-    if (!parentFilterVal) return opts || [];
-    return opts.filter((opt) => {
-      try {
-        const val =
-          col.dependsByValue && typeof opt === "object"
-            ? getNested(opt, col.dependsByValue)
-            : typeof opt === "object" && opt.filter !== undefined
-              ? opt.filter
-              : opt;
-        return compareValues(val, parentFilterVal);
-      } catch {
-        return true;
-      }
-    });
-  };
+ 
 
   const filteredFirstOptions = useMemo(() => {
     const col = structure.firstColumn;
-    return getFilteredOptions(col, Array.isArray(col.options) ? col.options : []);
-  }, [structure.firstColumn.options, watchedValues, selectedObjects]);
-
+    const opts = Array.isArray(col.options) ? col.options : [];
+    return getFilteredOptions(col, opts, {
+      globalValues,
+      selectedObjects,
+    });
+  }, [structure.firstColumn.options, globalValues, selectedObjects]);
+  
   const filteredSecondOptions = useMemo(() => {
     const col = structure.secondColumn;
-    return getFilteredOptions(col, Array.isArray(col.options) ? col.options : []);
-  }, [structure.secondColumn.options, watchedValues, selectedObjects]);
-
+    const opts = Array.isArray(col.options) ? col.options : [];
+    return getFilteredOptions(col, opts, {
+      globalValues,
+      selectedObjects,
+    });
+  }, [structure.secondColumn.options, globalValues, selectedObjects]);
+  
   const filteredThirdOptions = useMemo(() => {
     const col = structure.thirdColumn;
-    return getFilteredOptions(col, Array.isArray(col.options) ? col.options : []);
-  }, [structure.thirdColumn.options, watchedValues, selectedObjects]);
+    const opts = Array.isArray(col.options) ? col.options : [];
+    return getFilteredOptions(col, opts, {
+      globalValues,
+      selectedObjects,
+    });
+  }, [structure.thirdColumn.options, globalValues, selectedObjects]);
 
-  const renderField = (
+  const renderField = useCallback((
     column: "firstColumn" | "secondColumn" | "thirdColumn",
     value: string,
     onChange: (val: string) => void,
@@ -214,9 +222,10 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
         columnKey: column,
         rowId,  // ✅ already known
         currentEditingRowId: rowId, // ✅ FIX: use the parameter, not r
-        rowContext: { rowGroupId: "rowgroup_items" },
+        rowContext: { rowGroupId },
       },
       setGlobalValues,
+      schema,
       autoSetValue: (fieldName: string, value: any) => {
         const updatedRows = (globalValues?.[rowGroupId] || rows || []).map((r) => {
           // 🧩 If a rule triggers clearing, clear all fields in the row
@@ -320,7 +329,7 @@ export const StructuredRowGroup: React.FC<StructuredRowGroupProps> = ({
           />
         );
     }
-  };
+  }, [structure, globalValues, selectedObjects, schema]);
 
   return (
     <div className="space-y-4">

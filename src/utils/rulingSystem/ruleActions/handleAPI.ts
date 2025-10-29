@@ -19,7 +19,6 @@ export async function handleAPI(ruleThen: any, checkVal: any) {
   try {
     const token = localStorage.getItem("tokek") || "";
     let resolvedUrl = ruleThen.api;
-    console.log("checkVal", checkVal)
 
     // 🧠 Normalize checkVal to primitive
     let primitiveVal = checkVal;
@@ -33,7 +32,6 @@ export async function handleAPI(ruleThen: any, checkVal: any) {
         checkVal.filter ??
         "";
     }
-    console.log("primitiveVal", primitiveVal)
 
     // 🧠 Replace placeholders (support both ${value} and ${dependsByValue})
     if (resolvedUrl.includes("${value}")) {
