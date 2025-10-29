@@ -133,9 +133,39 @@ export const DynamicForm: React.FC<{
   };
 
   // 🧩 Confirmation dialog
-  const handleOpenWarning = () => setIsOpenwarning(true);
   const handleCancelWarning = () => setIsOpenwarning(false);
 
+  const handlecheckvalue = useCallback(() => {
+    const items = globalValues?.rowgroup_items;
+
+    // ✅ Validate that rowgroup_items exist
+    if (!Array.isArray(items) || items.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please add at least one item before submitting.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // ✅ Check that all secondValue > 0
+    const invalidRows = items.filter(
+      (row) => Number(row.secondValue) <= 0 || isNaN(Number(row.secondValue))
+    );
+
+    if (invalidRows.length > 0) {
+      toast({
+        title: "Invalid Quantity",
+        description: "Each item’s quantity (second value) must be greater than 0.",
+        variant: "destructive",
+      });
+      return false;
+    } else {
+      setIsOpenwarning(true);
+    }
+
+    return true;
+  }, [globalValues, toast]);
   // 🧩 Conditional field visibility
   const shouldShowField = useCallback(
     (field: FormField, values: Record<string, any>) => {
@@ -205,7 +235,7 @@ export const DynamicForm: React.FC<{
   }, [transformedItems, globalValues, selectedObjects, handleFieldOptionsUpdate]);
 
 
-
+  console.log("glovalbalcue", globalValues)
   // 🧩 Render UI
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -240,7 +270,7 @@ export const DynamicForm: React.FC<{
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleOpenWarning)} className="space-y-6">
+                <form onSubmit={form.handleSubmit(handlecheckvalue)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {itemsWithRules
                       .sort((a, b) => a.order - b.order)

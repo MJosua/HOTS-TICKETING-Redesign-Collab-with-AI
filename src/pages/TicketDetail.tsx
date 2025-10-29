@@ -818,7 +818,7 @@ const TicketDetail = () => {
                     <p className="font-medium">{new Date(ticketDetail.creation_date).toLocaleDateString()}</p>
                   </div>
                 </div>
-                {user && ticketDetail.current_step < 2 && user.user_id === ticketDetail.user_id &&
+                {user && ticketDetail.current_step < 2 && [1,2,3,4,5,6,7].includes(ticketDetail.status_id)  && user.user_id === ticketDetail.user_id &&
                   <div className="flex items-center justify-end  space-x-2">
                     <div className='text-center'>
                       <p className="text-sm text-muted-foreground">Action</p>

@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast"; // assuming your toast hook is here
+import { cn } from "@/lib/utils"; // optional utility for conditional classNames
 
 interface NumberFieldProps {
   value: string;
@@ -16,13 +18,17 @@ export const NumberField: React.FC<NumberFieldProps> = ({
   placeholder,
   readonly,
   maxValue,
-  rounding
+  rounding,
 }) => {
-  const formatNumber = (num: string | number | null | undefined) => {
+  const [display, setDisplay] = useState(formatNumber(value));
+  const [isInvalid, setIsInvalid] = useState(false);
+  const { toast } = useToast();
+
+  function formatNumber(num: string | number | null | undefined) {
     if (num === null || num === undefined || num === "") return "";
-    const numStr = typeof num === 'number' ? num.toString() : num;
+    const numStr = typeof num === "number" ? num.toString() : num;
     return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
+  }
 
   const handleNumberChange = (inputValue: string) => {
     const raw = inputValue.replace(/,/g, ""); // remove commas before parsing
@@ -34,26 +40,34 @@ export const NumberField: React.FC<NumberFieldProps> = ({
       }
 
       if (rounding) {
-        numVal = Math.max(
-          rounding,
-          Math.round(numVal / rounding) * rounding
-        );
+        numVal = Math.max(rounding, Math.round(numVal / rounding) * rounding);
       }
 
       onChange(numVal.toString()); // pass numeric value upward
-      return formatNumber(numVal); // formatted for display
+      return formatNumber(numVal);
     }
 
-    onChange(""); // invalid → clear
+    onChange("");
     return "";
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const formatted = handleNumberChange(e.target.value);
     setDisplay(formatted);
-  };
 
-  const [display, setDisplay] = useState(formatNumber(value));
+    // Validation: show toast + mark red if ≤ 0
+    const rawNum = Number(e.target.value.replace(/,/g, ""));
+    if (rawNum <= 0 || isNaN(rawNum)) {
+      setIsInvalid(true);
+      toast({
+        title: "Invalid value",
+        description: "Value must be greater than 0.",
+        variant: "destructive",
+      });
+    } else {
+      setIsInvalid(false);
+    }
+  };
 
   useEffect(() => {
     setDisplay(formatNumber(value));
@@ -63,13 +77,11 @@ export const NumberField: React.FC<NumberFieldProps> = ({
     <Input
       type="text"
       value={display}
-      onChange={(e) => {
-        // let user type
-        setDisplay(e.target.value);
-      }}
+      onChange={(e) => setDisplay(e.target.value)}
       onBlur={handleBlur}
       placeholder={placeholder}
       readOnly={readonly}
+      className={cn(isInvalid && "border-red-500 text-red-600")}
     />
   );
 };
