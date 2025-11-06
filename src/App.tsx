@@ -47,7 +47,8 @@ import { AppDispatch } from './store';
 import { useAppSelector } from "./hooks/useAppSelector";
 import { fetchSrf_Puprose } from "./store/slices/srf_purpose";
 import { SidebarProvider } from "./components/ui/sidebar";
-
+import { DashboardPage } from "@/pages/dashboard";
+import { useDynamicDashboardRoutes } from "./components/routing/DynamicDashboardRoutes";
 const queryClient = new QueryClient();
 
 
@@ -59,18 +60,12 @@ const AppContentInner = () => {
 
   const { taskCount } = useAppSelector(state => state.tickets);
 
-
-
-  
-
-
-
-
   const handleServiceSubmit = useCallback((data: any) => {
     // console.log("Service form submitted:", data);
   }, []);
 
   const dynamicServiceRoutes = useDynamicServiceRoutes(handleServiceSubmit);
+  const dynamicDashboardRoutes = useDynamicDashboardRoutes(handleServiceSubmit);
 
   return (
     <Router basename="/hots">
@@ -81,7 +76,7 @@ const AppContentInner = () => {
           <Route path="/register" element={<Registerpage />} />
 
           {/* Protected Routes */}
-          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/service-catalog" element={<ProtectedRoute><ServiceCatalog /></ProtectedRoute>} />
           <Route path="/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
           <Route path="/ticket/:id" element={<ProtectedRoute><TicketDetail /></ProtectedRoute>} />
@@ -108,6 +103,8 @@ const AppContentInner = () => {
 
           {/* ✅ Dynamic Service Routes (generated from catalog) */}
           {dynamicServiceRoutes}
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          {dynamicDashboardRoutes}
 
           {/* Catch-all */}
           <Route path="*" element={<AppLayout><NotFound /></AppLayout>} />

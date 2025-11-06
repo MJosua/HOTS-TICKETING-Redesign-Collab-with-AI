@@ -63,11 +63,13 @@ const Index = () => {
   useEffect(() => {
     const loadDashboardData = async () => {
       setIsLoading(true);
+      
       await Promise.all([
         dispatch(fetchTaskCount()),
         dispatch(fetchMyTickets(1)),
         dispatch(fetchAllTickets(1)),
         fetchDashboardStats()
+        
       ]);
       setIsLoading(false);
     };

@@ -178,19 +178,33 @@ const ServiceCatalog = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {category.services.map((service) => (
+
+
+
+
                   <Card key={service.title} className="hover:shadow-md transition-shadow cursor-pointer">
+
                     <CardHeader className="pb-3">
-                      <div className="flex items-start space-x-3">
-                        <div className={`p-2 rounded-lg ${category.color}`}>
+                      <div className="flex items-center space-x-4">
+                        {/* Icon Container */}
+                        <div
+                          className={`flex items-center justify-center w-9 h-9 rounded-lg ${category.color}`}
+                        >
                           <service.icon className="w-5 h-5" />
                         </div>
+
+                        {/* Title Text */}
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-sm font-medium text-gray-900 line-clamp-2">
+                          <CardTitle className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug">
                             {renderHighlightedText(service.title, searchValue)}
                           </CardTitle>
                         </div>
                       </div>
                     </CardHeader>
+
+
+
+
                     <CardContent className="pt-0">
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                         {service.description}

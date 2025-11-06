@@ -15,7 +15,6 @@ interface ClientToServerEvents {
 }
 
 // "undefined" means the URL will be computed from the window.location object
-console.log('Connecting to:', API_URL);
 
 export const socket: Socket = io(API_URL, {
     autoConnect: true, // or false if you want to control when to connect
