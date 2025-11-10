@@ -77,7 +77,6 @@ const AppContentInner = () => {
 
           {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/service-catalog" element={<ProtectedRoute><ServiceCatalog /></ProtectedRoute>} />
           <Route path="/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
           <Route path="/ticket/:id" element={<ProtectedRoute><TicketDetail /></ProtectedRoute>} />
           <Route path="/task-list" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
@@ -102,7 +101,9 @@ const AppContentInner = () => {
           <Route path="/admin/guide" element={<ProtectedRoute><AdminGuide /></ProtectedRoute>} />
 
           {/* ✅ Dynamic Service Routes (generated from catalog) */}
+          <Route path="/service-catalog" element={<ProtectedRoute><ServiceCatalog /></ProtectedRoute>} />
           {dynamicServiceRoutes}
+          
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           {dynamicDashboardRoutes}
 

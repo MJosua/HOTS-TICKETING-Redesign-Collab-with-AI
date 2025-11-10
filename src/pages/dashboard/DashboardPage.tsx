@@ -6,6 +6,7 @@ import DashboardCard from "./DashboardCard";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ArrowLeft, Database, Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const DashboardPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -23,14 +24,9 @@ const DashboardPage: React.FC = () => {
         return acc;
     }, {});
 
-    if (loading) return <div className="p-4">Loading dashboard...</div>;
-    if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
 
     return (
         <AppLayout>
-
-
-
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div>
@@ -39,11 +35,16 @@ const DashboardPage: React.FC = () => {
                     </div>
                 </div>
 
+                {loading && (
+                    
+                <Skeleton className="h-48 w-full">
+
+                </Skeleton>
+                
+                )}
 
 
-
-
-                {Object.entries(grouped).map(([category, functions]) => (
+                {grouped && Object.entries(grouped).map(([category, functions]) => (
                     <div key={category}>
 
                         <div className="flex items-center space-x-3 mb-4">

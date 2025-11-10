@@ -18,10 +18,9 @@ export const useDynamicDashboardRoutes = () => {
   );
 
   useEffect(() => {
-    if (dashboardFunctions.length === 0 && !loading) {
-      dispatch(fetchDashboardFunctions());
-    }
-  }, [dispatch, dashboardFunctions.length, loading]);
+    dispatch(fetchDashboardFunctions());
+}, [dispatch]);
+
 
   const routes = useMemo(() => {
     if (dashboardFunctions.length === 0) return [];

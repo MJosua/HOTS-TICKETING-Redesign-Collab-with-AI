@@ -47,10 +47,8 @@ export const DashboardModuleLoader: React.FC = () => {
 
     // Fetch if not available
     useEffect(() => {
-        if (dashboardFunctions.length === 0 && !loading ) {
             dispatch(fetchDashboardFunctions());
-        }
-    }, [dispatch, dashboardFunctions.length, loading]);
+    }, [dispatch]);
 
     // Match dashboard info by path
     useEffect(() => {
