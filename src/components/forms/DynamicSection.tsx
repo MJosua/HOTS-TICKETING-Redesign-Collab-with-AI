@@ -1,5 +1,4 @@
-// DynamicSection.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DynamicField } from "./DynamicField";
 import { StructuredRowGroup } from "./StructuredRowGroup";
@@ -11,16 +10,14 @@ interface DynamicSectionProps {
   watchedValues: Record<string, any>;
   selectedObjects: Record<string, any>;
   setConfig: React.Dispatch<React.SetStateAction<any>>;
-  setGlobalValues: React.Dispatch<React.SetStateAction<Record<string, any>>>; // 🧩 added
-  globalValues: Record<string, any>; // 🧩 added
+  setGlobalValues: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  globalValues: Record<string, any>;
   setSelectedObjects: React.Dispatch<React.SetStateAction<Record<string, any>>>;
   handleUpdateRowGroup?: (groupId: string, updatedRows: any[]) => void;
+  isSubmitting?: boolean; // 🧩 NEW
+  setIsSubmitting?: React.Dispatch<React.SetStateAction<boolean>>; // 🧩 NEW
 }
 
-/**
- * DynamicSection
- * Handles rendering of grouped fields or rowgroups under a single visual card.
- */
 export const DynamicSection: React.FC<DynamicSectionProps> = ({
   section,
   form,
@@ -31,30 +28,31 @@ export const DynamicSection: React.FC<DynamicSectionProps> = ({
   globalValues,
   setSelectedObjects,
   handleUpdateRowGroup,
+  isSubmitting,
+  setIsSubmitting,
 }) => {
-  const fields = section.fields || [];
+  // 🧩 normalize possible nested structure
+  const rawFields = section.fields || [];
+  const fields = rawFields.map((f: any) => f.data ?? f); // 👈 unwrap data layer if exists
+
   const title = section.title || "Section";
+
+
 
   // 🧩 unified handler for updating field value
   const handleFieldChange = (fieldName: string, value: any, fullOption?: any) => {
     form.setValue(fieldName, value);
 
-    // 🔹 update global state
     setGlobalValues((prev) => ({
       ...prev,
       [fieldName]: value,
     }));
 
-    // 🔹 track selected objects
     setSelectedObjects((p) => ({
       ...p,
-      [fieldName]:
-        fullOption && typeof fullOption === "object"
-          ? fullOption
-          : { value },
+      [fieldName]: fullOption && typeof fullOption === "object" ? fullOption : { value },
     }));
 
-    // 🔹 update config JSON for persistence
     setConfig((prev) => ({
       ...prev,
       items: prev.items.map((item) =>
@@ -85,7 +83,6 @@ export const DynamicSection: React.FC<DynamicSectionProps> = ({
               f.label?.toLowerCase()?.replace(/[^a-z0-9]/g, "_") ||
               `field_${i}`;
 
-            // 🔹 If this is a field
             if ((f as FormField).type && (f as FormField).type !== "rowgroup") {
               const field = f as FormField;
 
@@ -100,11 +97,12 @@ export const DynamicSection: React.FC<DynamicSectionProps> = ({
                   onChange={(val, full) => handleFieldChange(field.name, val, full)}
                   onBlur={() => handleFieldBlur(field.name)}
                   watchedValues={watchedValues}
+                  isSubmitting={isSubmitting}
+                  setIsSubmitting={setIsSubmitting}
                 />
               );
             }
 
-            // 🔹 If this is a rowgroup inside the section
             if ((f as RowGroup).type === "rowgroup") {
               const rg = f as RowGroup;
               return (
@@ -119,7 +117,7 @@ export const DynamicSection: React.FC<DynamicSectionProps> = ({
                     maxTotalFields={50}
                     globalValues={globalValues}
                     setGlobalValues={setGlobalValues}
-                    onUpdateRowGroup={handleUpdateRowGroup || (() => {})}
+                    onUpdateRowGroup={handleUpdateRowGroup || (() => { })}
                   />
                 </div>
               );

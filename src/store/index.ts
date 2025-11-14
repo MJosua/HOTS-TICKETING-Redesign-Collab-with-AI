@@ -13,6 +13,7 @@ import srf_purposeSlideRecuder from './slices/srf_purpose';
 import srf_todaysweekReducer from './slices/srf_todaysweekSlice';
 // import srf_poSlideRecuder from './slices/srf_po_slice';
 import dashboardReducer from "./slices/dashboardSlice";
+import meetingroomReducer from "./slices/meetingroom_slice";
 
 export const store = configureStore({
   reducer: {
@@ -36,6 +37,7 @@ export const store = configureStore({
 
     dashboard: dashboardReducer,
 
+    meetingroom: meetingroomReducer,
   },
 });
 

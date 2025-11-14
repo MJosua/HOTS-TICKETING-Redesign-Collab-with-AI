@@ -29,6 +29,7 @@ export interface SystemVariableContext {
   }
   srf_po?: { po_number: string;[key: string]: any }[];
   srf_todaysweek?: { actualWeek: number;[key: string]: any }[];
+  meetingrooms?: { id: number; name: string; capacity?: number; location?: string }[];
 }
 
 export const useSystemVariableContext = (): SystemVariableContext => {
@@ -42,6 +43,10 @@ export const useSystemVariableContext = (): SystemVariableContext => {
   //ps
   const analyst = useAppSelector(state => state.analyst);
   const country = useAppSelector(state => state.country);
+
+  //meetingbook
+  const meetingroom = useAppSelector((state) => state.meetingroom);
+
 
   const srf_todaysweek = useAppSelector(state => state.srf_todaysweek);
   return {
@@ -75,6 +80,7 @@ export const useSystemVariableContext = (): SystemVariableContext => {
     srf_purpose: (srf_purpose as any)?.data || {},
     srf_po: (srf_po as any)?.data || {},
     srf_todaysweek: (srf_todaysweek as any)?.data || {},
+    meetingrooms: meetingroom?.rooms || [],
   };
 
 
@@ -233,5 +239,27 @@ export const SYSTEM_VARIABLE_ENTRIES: SystemVariableEntry[] = [
     type: 'number[]',
     description: 'Get today`s week',
     resolve: (ctx) => ctx.srf_todaysweek?.actualWeek ?? 0,
+  },
+  {
+    key: '${today}',
+    type: 'string',
+    description: 'Current date (YYYY-MM-DD)',
+    resolve: () => {
+      const now = new Date();
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    },
+  },
+  {
+    key: '${meetingrooms}',
+    type: 'array[]',
+    description: 'List of available meeting rooms',
+    resolve: (ctx) => {
+      if (!Array.isArray(ctx.meetingrooms)) return [];
+      return ctx.meetingrooms.map(room => ({
+        item_name: room.room_name,
+        filter: room.id,
+      }));
+    },
   },
 ];

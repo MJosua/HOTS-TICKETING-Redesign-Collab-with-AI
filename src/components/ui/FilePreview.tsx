@@ -131,7 +131,14 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
             )}
             {uploadDate && (
               <span className="text-xs text-muted-foreground">
-                {new Date(uploadDate).toLocaleDateString()}
+                {new Date(uploadDate).toLocaleString("id-ID", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })}
               </span>
             )}
           </div>

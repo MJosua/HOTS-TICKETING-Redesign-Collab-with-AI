@@ -49,6 +49,8 @@ import { fetchSrf_Puprose } from "./store/slices/srf_purpose";
 import { SidebarProvider } from "./components/ui/sidebar";
 import { DashboardPage } from "@/pages/dashboard";
 import { useDynamicDashboardRoutes } from "./components/routing/DynamicDashboardRoutes";
+import MeetingRoomStandalone from "./standalone/meetingbook/MeetingRoomStandalone";
+import VerifyPage from "./pages/verify/VerifyRegister";
 const queryClient = new QueryClient();
 
 
@@ -74,6 +76,8 @@ const AppContentInner = () => {
           {/* Public Routes */}
           <Route path="/login" element={<Loginpage />} />
           <Route path="/register" element={<Registerpage />} />
+          <Route path="/verify" element={<VerifyPage />} />
+
 
           {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
@@ -103,12 +107,18 @@ const AppContentInner = () => {
           {/* ✅ Dynamic Service Routes (generated from catalog) */}
           <Route path="/service-catalog" element={<ProtectedRoute><ServiceCatalog /></ProtectedRoute>} />
           {dynamicServiceRoutes}
-          
+
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           {dynamicDashboardRoutes}
 
           {/* Catch-all */}
           <Route path="*" element={<AppLayout><NotFound /></AppLayout>} />
+
+
+          {/* //standalone */}
+
+          <Route path="/meetingbook" element={<MeetingRoomStandalone />} />
+
         </Routes>
 
         <TokenExpiredModalWrapper />

@@ -126,35 +126,39 @@ const ReportSRF: React.FC = () => {
 
                 ]}
             />
-
+            {console.log("data", data)}
             {/* 📊 Table */}
-            <DataTableReportPro
-                title="SRF Report Summary"
-                data={data}
-                setData={setData}   // ✅ add this line
-                ticketKey="SRF No."
-                detailKey="detail_id"
-                columns={[
-                    { header: "SRF No.", accessor: "SRF No.", sortable: true },
-                    { header: "Year", accessor: "Year", sortable: true, filterable: true },
-                    { header: "Distributor", accessor: "Distributor", filterable: true },
-                    { header: "Country", accessor: "Country", filterable: true },
-                    { header: "Product Category", accessor: "Product Category", filterable: true },
-                    { header: "Item Name", accessor: "Item Name" },
-                    { header: "QTY Req", accessor: "QTY Req", align: "right", sortable: true },
-                    { header: "Factory", accessor: "Factory", filterable: true },
-                    { header: "Remarks", accessor: "Remarks", editable: true },
-                    { header: "Color", accessor: "Color", editable: true, colorField: "Color" },
-                ]}
-                searchKeys={[
-                    "Distributor",
-                    "Country",
-                    "Product Category",
-                    "Item Name",
-                    "SRF No.",
-                ]}
-            />
-
+            <div className="relative w-full max-w-[90vw] overflow-hidden">
+                <DataTableReportPro
+                    title="SRF Report Summary"
+                    data={data}
+                    setData={setData}   // ✅ add this line
+                    ticketKey="SRF No."
+                    detailKey="detail_id"
+                    columns={[
+                        { header: "SRF No.", accessor: "SRF No.", sortable: true },
+                        { header: "Year", accessor: "Year", sortable: true, filterable: true },
+                        { header: "Distributor", accessor: "Distributor", filterable: true },
+                        { header: "Country", accessor: "Country", filterable: true },
+                        { header: "Product Category", accessor: "Product Category", filterable: true },
+                        { header: "Material Code", accessor: "Material Code", filterable: true },
+                        { header: "Product", accessor: "Product" },
+                        { header: "QTY Req", accessor: "QTY Req", align: "right", sortable: true },
+                        { header: "Satuan", accessor: "Satuan", align: "right", sortable: true },
+                        { header: "Factory", accessor: "Factory", filterable: true },
+                        { header: "Remarks", accessor: "Remarks", editable: true, sticky: "right-[70px]" },
+                        { header: "Color", accessor: "Color", editable: true, sticky: "right-[0px]", colorField: "Color" },
+                    ]}
+                    searchKeys={[
+                        "Distributor",
+                        "Country",
+                        "Product Category",
+                        "Item Name",
+                        "SRF No.",
+                        "Material Code"
+                    ]}
+                />
+            </div>
         </div>
     );
 };

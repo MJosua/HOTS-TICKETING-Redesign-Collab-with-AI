@@ -671,35 +671,82 @@ const TicketDetail = () => {
   // Handle form submit to send comment and image
 
 
-  const renderPreview = (filename: string | string[], fileUrl: string | string[]) => {
-    const safeUrl = extractFirstUrl(fileUrl);
-    const safeFilename = extractFirstUrl(filename);
-    const ext = getFileExtension(safeFilename);
+  const renderPreview = (filename: any, fileUrl: any) => {
+    let parsedFiles = [];
 
-    if (!safeUrl) return <p className="text-gray-400">Preview not available</p>;
-
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
-      return <img src={
-        `${API_URL}${safeUrl.replace(/\\/g, '/')}`}
-        alt="Preview" className="max-h-48 rounded shadow border" />;
+    // 🧠 Try to normalize whatever is stored in `cstm_col`
+    try {
+      if (typeof fileUrl === "string") {
+        const trimmed = fileUrl.trim();
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+          parsedFiles = JSON.parse(trimmed);
+        } else {
+          // fallback: a single file path string
+          parsedFiles = [{ url: fileUrl, name: filename }];
+        }
+      } else if (Array.isArray(fileUrl)) {
+        parsedFiles = fileUrl;
+      }
+    } catch (err) {
+      console.warn("Failed to parse attachment data:", err);
+      parsedFiles = [];
     }
 
-    if (ext === 'pdf') {
-      return <iframe src={
-        `${API_URL}${safeUrl.replace(/\\/g, '/')}`} className="w-full h-64 border rounded" title="PDF preview" />;
-    }
+    // 🔹 If no valid files
+    if (!parsedFiles.length) return <p className="text-gray-400">No attachments found</p>;
 
-    if (ext === 'xlsx' || ext === 'xls') {
-      return <ExcelPreview url={`${API_URL}${safeUrl.replace(/\\/g, '/')}`} />
-    }
-
+    // 🔹 Render all attachments
     return (
-      <a href={
-        `${API_URL}${safeUrl.replace(/\\/g, '/')}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-        Open File
-      </a>
+      <div className="flex flex-wrap gap-4">
+        {parsedFiles.map((file, i) => {
+          const fileUrlFull = `${API_URL}${file.url?.replace(/\\/g, "/")}`;
+          const ext = file.name?.split(".").pop()?.toLowerCase() || "";
+
+          if (["jpg", "jpeg", "png", "gif", "bmp"].includes(ext)) {
+            return (
+              <img
+                key={i}
+                src={fileUrlFull}
+                alt={file.name}
+                className="max-h-48 rounded shadow border cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => window.open(fileUrlFull, "_blank")}
+              />
+            );
+          }
+
+          if (ext === "pdf") {
+            return (
+              <iframe
+                key={i}
+                src={fileUrlFull}
+                className="w-full h-64 border rounded"
+                title={`PDF-${i}`}
+              />
+            );
+          }
+
+          if (["xlsx", "xls"].includes(ext)) {
+            return (
+              <ExcelPreview key={i} url={fileUrlFull} />
+            );
+          }
+
+          return (
+            <a
+              key={i}
+              href={fileUrlFull}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline"
+            >
+              {file.name || "Open File"}
+            </a>
+          );
+        })}
+      </div>
     );
   };
+
 
   if (isLoadingDetail) {
     return (
@@ -779,7 +826,7 @@ const TicketDetail = () => {
   return (
     <AppLayout>
       <div className="space-y-6 relative z-0">
-        <div className="sticky top-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 pb-4">
+        <div className="sticky top-[80px] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
@@ -818,7 +865,7 @@ const TicketDetail = () => {
                     <p className="font-medium">{new Date(ticketDetail.creation_date).toLocaleDateString()}</p>
                   </div>
                 </div>
-                {user && ticketDetail.current_step < 2 && [1,2,3,4,5,6,7].includes(ticketDetail.status_id)  && user.user_id === ticketDetail.user_id &&
+                {user && ticketDetail.current_step < 2 && [1, 2, 3, 4, 5, 6, 7].includes(ticketDetail.status_id) && user.user_id === ticketDetail.user_id &&
                   <div className="flex items-center justify-end  space-x-2">
                     <div className='text-center'>
                       <p className="text-sm text-muted-foreground">Action</p>
@@ -926,11 +973,36 @@ const TicketDetail = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                  window.open(`${API_URL}/${extractFirstUrl(field.value)}`, '_blank');
+                                onClick={async () => {
+                                  try {
+                                    const files = JSON.parse(field.value); // assuming value is JSON string
+                                    const res = await axios.post(
+                                      `${API_URL}/hots_ticket/download/zip/`,
+                                      { files: files.map((f) => f.url) },
+                                      {
+                                        headers: {
+                                          Authorization: `Bearer ${localStorage.getItem("tokek")}`,
+                                        },
+                                        responseType: "blob",
+                                      }
+                                    );
+
+                                    const blob = new Blob([res.data]);
+                                    const url = window.URL.createObjectURL(blob);
+                                    const link = document.createElement("a");
+                                    link.href = url;
+                                    link.download = "attachments.zip";
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    link.remove();
+                                    window.URL.revokeObjectURL(url);
+                                  } catch (err) {
+                                    console.error("ZIP download failed:", err);
+                                    alert("❌ Failed to download ZIP");
+                                  }
                                 }}
                               >
-                                Download
+                                Download ZIP
                               </Button>
                             </TableCell>
                           )}
@@ -1326,6 +1398,18 @@ const TicketDetail = () => {
         taskId={ticketDetail?.ticket_id?.toString() ?? id ?? ''}
 
       />
+
+      {
+        isSubmitting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center p-6 bg-gray-800 text-white rounded-lg shadow-lg">
+              <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p>Submitting...</p>
+            </div>
+          </div>
+        )
+      }
+
     </AppLayout >
   );
 };

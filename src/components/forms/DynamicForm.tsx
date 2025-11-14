@@ -84,7 +84,6 @@ export const DynamicForm: React.FC<{
     if (config && Array.isArray(config.items)) {
       const normalized = normalizeSchema(config);
       setNormalizedSchema(normalized);
-      console.log("🧩 Normalized schema loaded:", normalized);
     }
   }, [config]);
 
@@ -104,7 +103,17 @@ export const DynamicForm: React.FC<{
   // 🧩 Submit handler
   const handleSubmit = async (data: any) => {
     if (!serviceId) {
-      const mappedData = mapUnifiedForm(globalValues, config.items, selectedObjects || []);
+      const fileFields = Object.values(globalValues)
+        .flat()
+        .filter((item: any) => item?.upload_id)
+        .map((item: any) => item.upload_id);
+
+      const mappedData = mapUnifiedForm(
+        globalValues,
+        config.items,
+        fileFields,
+        selectedObjects || [],
+      );
       toast({
         title: "TEST MODE",
         description: JSON.stringify(mappedData, null, 2),
@@ -116,7 +125,17 @@ export const DynamicForm: React.FC<{
     setIsSubmitting(true);
     try {
       const mappedData = mapUnifiedForm(globalValues, config.items, selectedObjects || []);
-      const ticketData = { subject: data.subject || "Service Request", ...mappedData };
+
+      const fileFields = Object.values(globalValues)
+        .flat()
+        .filter((item: any) => item?.upload_id)
+        .map((item: any) => item.upload_id);
+
+      const ticketData = {
+        subject: data.subject || "Service Request",
+        ...mappedData,
+        upload_ids: fileFields,
+      };
 
       console.log("ticketData", ticketData);
 
@@ -138,34 +157,39 @@ export const DynamicForm: React.FC<{
   const handlecheckvalue = useCallback(() => {
     const items = globalValues?.rowgroup_items;
 
-    // ✅ Validate that rowgroup_items exist
-    if (!Array.isArray(items) || items.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "Please add at least one item before submitting.",
-        variant: "destructive",
-      });
-      return false;
-    }
+    if (items) {
+      // ✅ Validate that rowgroup_items exist
+      if ((!Array.isArray(items) || items.length === 0)) {
+        toast({
+          title: "Validation Error",
+          description: "Please add at least one item before submitting.",
+          variant: "destructive",
+        });
+        return false;
+      }
 
-    // ✅ Check that all secondValue > 0
-    const invalidRows = items.filter(
-      (row) => Number(row.secondValue) <= 0 || isNaN(Number(row.secondValue))
-    );
+      // ✅ Check that all secondValue > 0
+      const invalidRows = items.filter(
+        (row) => Number(row.secondValue) <= 0 || isNaN(Number(row.secondValue))
+      );
 
-    if (invalidRows.length > 0) {
-      toast({
-        title: "Invalid Quantity",
-        description: "Each item’s quantity (second value) must be greater than 0.",
-        variant: "destructive",
-      });
-      return false;
+      if (invalidRows.length > 0) {
+        toast({
+          title: "Invalid Quantity",
+          description: "Each item’s quantity (second value) must be greater than 0.",
+          variant: "destructive",
+        });
+        return false;
+      } else {
+        setIsOpenwarning(true);
+      }
     } else {
       setIsOpenwarning(true);
     }
-
     return true;
   }, [globalValues, toast]);
+
+
   // 🧩 Conditional field visibility
   const shouldShowField = useCallback(
     (field: FormField, values: Record<string, any>) => {
@@ -235,7 +259,6 @@ export const DynamicForm: React.FC<{
   }, [transformedItems, globalValues, selectedObjects, handleFieldOptionsUpdate]);
 
 
-  console.log("glovalbalcue", globalValues)
   // 🧩 Render UI
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -254,9 +277,16 @@ export const DynamicForm: React.FC<{
           key={w.id}
           config={w}
           handleReload={handleReload}
-          data={{ formData: globalValues, userData: user, serviceId }}
+          data={{
+            formData: globalValues,
+            setGlobalValues,   // 🧩 ADD THIS
+            userData: user,
+            serviceId
+          }}
         />
       ))}
+
+
       {
 
         !normalizedSchema
@@ -310,6 +340,8 @@ export const DynamicForm: React.FC<{
                                 setGlobalValues={setGlobalValues}
                                 watchedValues={memoizedWatchedValues}
                                 currentValue={currentValue}
+                                isSubmitting={isSubmitting}
+                                setIsSubmitting={setIsSubmitting}
                               />
                             </div>
                           );
@@ -339,7 +371,18 @@ export const DynamicForm: React.FC<{
                         if (item.type === "section") {
                           const section = item.data;
                           const parentVal = globalValues?.[section.dependsOn];
-                          if (section.dependsOn && parentVal !== section.dependsOnValue) return null;
+
+                          // old behavior — remove
+                          // if (section.dependsOn && parentVal !== section.dependsOnValue) return null;
+
+                          // ✅ new, smarter behavior
+                          const shouldShow =
+                            !section.dependsOn ||
+                            (section.dependsOnValue === "__not_empty__"
+                              ? !!parentVal && parentVal.trim() !== ""
+                              : parentVal === section.dependsOnValue);
+
+                          if (!shouldShow) return null;
 
                           return (
                             <div key={item.id} className="col-span-3">
@@ -352,6 +395,8 @@ export const DynamicForm: React.FC<{
                                 globalValues={globalValues}
                                 setGlobalValues={setGlobalValues}
                                 setSelectedObjects={setSelectedObjects}
+                                isSubmitting={isSubmitting}
+                                setIsSubmitting={setIsSubmitting}
                                 handleUpdateRowGroup={handleUpdateRowGroup}
                               />
                             </div>
