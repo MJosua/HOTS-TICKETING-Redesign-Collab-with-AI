@@ -66,6 +66,8 @@ export const loginUser = createAsyncThunk(
         uid: username,
         asin: password,
       });
+
+      console.log("response", response);
       if (response.data.success) {
         const { tokek, userData, current_delv_week } = response.data;
         localStorage.setItem('tokek', tokek);

@@ -1,3 +1,4 @@
+
 /**
  * 🧩 utils/valueComparator.ts
  *
@@ -75,3 +76,52 @@ export function getNested(obj: any, path: string): any {
         .split(".")
         .reduce((acc, key) => (acc && acc[key] != null ? acc[key] : undefined), obj);
 }
+
+
+/**
+ * Filters options based on dependency relations.
+ * Supports both global and rowgroup contexts.
+ * 
+ * @param col - The field/column definition (must include dependsOn / dependsByValue)
+ * @param opts - Array of option objects or primitives
+ * @param context - Optional contextual values (globalValues, selectedObjects)
+ */
+export const getFilteredOptions = (
+  col: any,
+  opts: any[] = [],
+  context: {
+    globalValues?: Record<string, any>;
+    selectedObjects?: Record<string, any>;
+  } = {}
+) => {
+  if (!col) return opts || [];
+
+  const { globalValues = {}, selectedObjects = {} } = context;
+
+  // 1️⃣ Try to resolve the parent dependency value
+  const parentVal =
+    selectedObjects?.[col.dependsOn] ?? globalValues?.[col.dependsOn];
+
+  const parentFilterVal =
+    typeof parentVal === "object"
+      ? getNested(parentVal, col.dependsOnValue || "value")
+      : parentVal;
+
+  if (!parentFilterVal) return opts || [];
+
+  // 2️⃣ Apply the actual filtering logic
+  return opts.filter((opt) => {
+    try {
+      const val =
+        col.dependsByValue && typeof opt === "object"
+          ? getNested(opt, col.dependsByValue)
+          : typeof opt === "object" && opt.filter !== undefined
+          ? opt.filter
+          : opt;
+
+      return compareValues(val, parentFilterVal);
+    } catch {
+      return true;
+    }
+  });
+};

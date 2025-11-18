@@ -360,6 +360,9 @@ export const FieldEditor: React.FC<FieldEditorProps> = ({ field, fields = [], on
         </>
 
       )}
+      
+
+      
 
       <div>
         <Label>Placeholder</Label>

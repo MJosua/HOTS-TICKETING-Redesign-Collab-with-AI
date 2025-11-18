@@ -16,7 +16,7 @@ export const useTokenExpiration = () => {
 
   // Close modal if user becomes unauthenticated
   useEffect(() => {
-    if (!isAuthenticated || token.length < 20 ) {
+    if (!isAuthenticated || token.length < 20) {
       setIsTokenExpiredModalOpen(false);
     }
   }, [isAuthenticated, token]);
@@ -27,6 +27,9 @@ export const useTokenExpiration = () => {
       (response) => response,
       (error) => {
         if (error.response?.status === 401 && token.length > 20 && isAuthenticated) {
+          console.log('🔒 Detected 401 Unauthorized - token may be expired.');
+          console.log('token.length.', token.length);
+          console.log('isAuthenticated', isAuthenticated);
           // Token is expired, show modal
           setIsTokenExpiredModalOpen(true);
         }

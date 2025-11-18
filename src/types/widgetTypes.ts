@@ -16,9 +16,6 @@ export interface ServiceWidgetAssignment {
 
 export interface WidgetProps {
   serviceInfo?: any;
-  formData?: any;
-  userData?: any;
-  serviceId?: string;
   widgetId?: string;
   widgetName?: string;
   ticketData?: any;
@@ -32,6 +29,12 @@ export interface WidgetProps {
   isLoading?: boolean;
   error?: string | null;
   handleReload?: () => void;
+
+  formData?: Record<string, any>;
+  setGlobalValues?: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  userData?: Record<string, any>;
+  serviceId?: string | number;
+
 }
 
 export interface WidgetConfig extends WidgetPreset {

@@ -16,6 +16,7 @@ import { fetchSRF } from '@/store/slices/srf_slice';
 import { fetchsku } from '@/store/slices/SKUslice';
 import { fetchSrf_Puprose } from '@/store/slices/srf_purpose';
 import { useNavigate } from 'react-router-dom';
+import { fetchTodaysweek } from '@/store/slices/srf_todaysweekSlice';
 
 // Sample stock data
 
@@ -40,6 +41,7 @@ const Fetchsrfdata: React.FC<WidgetProps> = ({
             dispatch(fetchSRF());
             dispatch(fetchsku());
             dispatch(fetchSrf_Puprose());
+            dispatch(fetchTodaysweek());
           
             if (dispatch) {
                 setTimeout(() => {
@@ -49,9 +51,7 @@ const Fetchsrfdata: React.FC<WidgetProps> = ({
             }
             
             return;
-        } else {
-            console.log("jalan")
-        }
+        } 
 
 
     }, [dispatch, skulist]);

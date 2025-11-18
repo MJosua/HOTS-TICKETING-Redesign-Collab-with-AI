@@ -75,7 +75,7 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
     setPreviewItems(reorderedWithOrder);
     onUpdate(reorderedWithOrder);
   };
-  
+
   const renderLayoutPreview = () => {
     return (
       <div className="space-y-3">
@@ -85,7 +85,7 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
             const colSpan = field.columnSpan || 1;
             return (
               <div key={item.id} className={`grid grid-cols-3 gap-2`}>
-                <div 
+                <div
                   className={`col-span-${colSpan} p-3 bg-blue-50 border border-blue-200 rounded-lg`}
                   style={{ backgroundColor: '#e0f2fe' }}
                 >
@@ -105,7 +105,7 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {sectionData.fields?.map((field, fieldIndex) => (
-                    <div 
+                    <div
                       key={fieldIndex}
                       className={`col-span-${field.columnSpan || 1} p-2 bg-purple-100 border border-purple-300 rounded`}
                     >
@@ -126,8 +126,20 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
                   Max rows: {rowGroupData.maxRows || 10}
                 </div>
               </div>
-            );
-          }
+            )
+          } else if (item.type === 'specialfunc') {
+            const specialfunc = item.data as specialfunc;
+            return (
+              <div key={item.id} className="p-3 bg-pink-50 border border-orange-200 rounded-lg">
+                <div className="text-sm font-semibold text-orange-800">
+                  🗂️ {specialfunc.title || 'function'}
+                </div>
+                <div className="text-xs text-orange-600 mt-1">
+                  Max rows: {specialfunc.maxRows || 10}
+                </div>
+              </div>
+            )
+          };
           return null;
         })}
       </div>
@@ -136,7 +148,7 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
 
   const renderDatabaseMapping = () => {
     const allFields = getAllFields();
-    
+
     return (
       <div className="space-y-2">
         {allFields.map((item, index) => (
@@ -160,9 +172,10 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
     );
   };
 
+
   const renderDraggablePreview = () => {
     let fieldCounter = 1;
-    
+
     return (
       <DragDropContext onDragEnd={onPreviewDragEnd}>
         <Droppable droppableId="preview-structure">
@@ -183,9 +196,8 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs cursor-move hover:shadow-md transition-shadow ${
-                              field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
-                            }`}
+                            className={`p-2 bg-blue-100 border border-blue-300 rounded text-xs cursor-move hover:shadow-md transition-shadow ${field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
+                              }`}
                           >
                             <div className="font-medium text-gray-700">{field.label}</div>
                             <div className="text-blue-600 mt-1">{cstmCol} → {lblCol}</div>
@@ -213,9 +225,8 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
                                 const lblCol = `lbl_col${fieldCounter}`;
                                 fieldCounter++;
                                 return (
-                                  <div key={fieldIndex} className={`p-1 bg-green-200 rounded text-xs ${
-                                    field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
-                                  }`}>
+                                  <div key={fieldIndex} className={`p-1 bg-green-200 rounded text-xs ${field.columnSpan === 2 ? 'col-span-2' : field.columnSpan === 3 ? 'col-span-3' : 'col-span-1'
+                                    }`}>
                                     <span className="font-medium text-gray-700">{field.label}</span>
                                     <div className="text-green-700">{cstmCol} → {lblCol}</div>
                                   </div>
@@ -239,11 +250,31 @@ export const FormLayoutPreview: React.FC<FormLayoutPreviewProps> = ({ items, onU
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className="col-span-3 p-2 bg-purple-100 border border-purple-300 rounded text-xs cursor-move hover:shadow-md transition-shadow"
+                            className="col-span-3 p-2 bg-orange-100 border border-orange-300 rounded text-xs cursor-move hover:shadow-md transition-shadow"
                           >
                             <div className="font-medium text-gray-700">🗂️ {rowGroup.title || 'Row Group'}</div>
-                            <div className="text-purple-600 mt-1">{cstmCol} → {lblCol} (Dynamic Rows)</div>
+                            <div className="text-orange-600 mt-1">{cstmCol} → {lblCol} (Dynamic Rows)</div>
                             <div className="text-xs text-gray-500">Max rows: {rowGroup.maxRows || 5}</div>
+                          </div>
+                        )}
+                      </Draggable>
+                    );
+                  } else if (item.type === 'specialfunc') {
+                    const specialfunc = item.data as specialfunc;
+                    const cstmCol = `cstm_col${fieldCounter}`;
+                    const lblCol = `lbl_col${fieldCounter}`;
+                    fieldCounter++;
+
+                    return (
+                      <Draggable key={item.id} draggableId={`preview-${item.id}`} index={index}>
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="col-span-3 p-2 bg-pink-100 border border-purple-300 rounded text-xs cursor-move hover:shadow-md transition-shadow"
+                          >
+                            <div className="font-medium text-gray-700">🗂️ {specialfunc.title || 'function'}</div>
                           </div>
                         )}
                       </Draggable>

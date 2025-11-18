@@ -136,46 +136,117 @@ export const validateFormFieldCount = (fieldCount: number): boolean => {
   return fieldCount <= getMaxFormFields();
 };
 
-export const mapUnifiedForm = (data: any, items: any[]) => {
+export const mapUnifiedForm = (
+  data: Record<string, any>,
+  items: any[],
+  selectedObjects: Record<string, any> = {}
+) => {
   if (!data || !Array.isArray(items)) return [];
 
-  return items.map((item) => {
-    if (!item || !item.data) return null;
+  return items
+    .flatMap((item) => {
+      if (!item || !item.data) return null;
 
-    switch (item.type) {
-      case "field":
-        return {
-          id: item.id,
-          name: item.data.name,
-          label: item.data.label || item.data.name,
-          value: data[item.data.name] ?? "",
-        };
+      switch (item.type) {
+        // --- NORMAL FIELD ---
+        case "field": {
+          const name = item.data.name;
+          const label = item.data.label || name;
+          const value = data[name] ?? "";
+          const selectedObject = selectedObjects[name] ?? null;
 
-      case "section":
-        return {
-          id: item.id,
-          type: "section",
-          label: item.data.label || "Section",
-          fields: (item.data.fields || []).map((f) => ({
-            name: f.name,
-            value: data[f.name] ?? "",
-          })),
-        };
+          // 🔹 Primary mapped field
+          const mainField = {
+            id: item.id,
+            name,
+            label: item.data.label || name,
+            value,
+            selectedObject,
+          };
 
-      case "rowgroup":
-        return {
-          id: item.id,
-          type: "rowgroup",
-          label: item.data.label || "Row Group",
-          rows: data[item.id] || item.data.rowGroup || [],
-        };
+          // 🔹 Prepare an array of results (main + maybe generated)
+          const result = [mainField];
 
-      default:
-        return {
-          id: item.id,
-          type: item.type,
-          value: data[item.id] ?? "",
-        };
-    }
-  }).filter(Boolean);
+          const isFactoryField =
+            label.toLowerCase().includes("factory") || name.toLowerCase().includes("factory");
+      
+
+          // ✅ Auto-generate `_id` field if selectedObject.filter exists
+          if (isFactoryField && selectedObject?.filter !== undefined && selectedObject?.filter !== null) {
+            const syntheticField = {
+              id: `${item.id}_id`,
+              name: `${name}_id`,
+              label: `${item.data.label}_id`,
+              value: String(selectedObject.filter),
+              selectedObject: null,
+            };
+            result.push(syntheticField);
+          }
+
+          console.log(`🧩 field mapped →`, result);
+          return result;
+        }
+
+        // --- SECTION FIELD ---
+        case "section":
+          return {
+            id: item.id,
+            type: "section",
+            label: item.data.label || "Section",
+            fields: (item.data.fields || []).map((f) => ({
+              name: f.name,
+              value: data[f.name] ?? "",
+              selectedObject: selectedObjects[f.name] ?? null, // ✅ each sub-field gets its selectedObject
+            })),
+          };
+
+        // --- ROWGROUP FIELD ---
+        case "rowgroup": {
+          const structure = item.data.structure || {};
+          const combinedMapping = structure.combinedMapping || null;
+          const defaultRows = item.data.rowGroup || [];
+          const inputRows = data[item.id] || defaultRows;
+
+          const rows = inputRows.map((row: any) => {
+            const resultRow: Record<string, any> = { id: row.id };
+
+            // 🔹 Copy all default columns
+            if ("firstValue" in row) resultRow.firstValue = row.firstValue;
+            if ("secondValue" in row) resultRow.secondValue = row.secondValue;
+            if ("thirdValue" in row) resultRow.thirdValue = row.thirdValue;
+
+            // 🔹 Handle combined mapping (e.g., "second_third")
+            if (combinedMapping) {
+              const [left, right] = combinedMapping.split("_");
+              const leftVal = row[`${left}Value`] ?? row[left] ?? "";
+              const rightVal = row[`${right}Value`] ?? row[right] ?? "";
+              if (leftVal || rightVal) {
+                resultRow.combinedValue = `${leftVal} ${rightVal}`.trim();
+              }
+            }
+
+            return resultRow;
+          });
+
+          return {
+            id: item.id,
+            type: "rowgroup",
+            label: item.data.label || "Row Group",
+            rows,
+            combinedMapping,
+          };
+        }
+
+        // --- DEFAULT FALLBACK ---
+        default:
+          const name = item.id;
+          return {
+            id: item.id,
+            type: item.type,
+            value: data[item.id] ?? "",
+            selectedObject: selectedObjects[name] ?? null,
+          };
+      }
+    })
+    .filter(Boolean);
 };

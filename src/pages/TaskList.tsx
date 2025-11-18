@@ -104,7 +104,6 @@ const TaskList = () => {
     const bCan = canUserApprove(b);
     return (aCan === bCan) ? 0 : aCan ? -1 : 1;
   });
-  console.log("filteredTasks", filteredTasks)
   const TableView = () => (
     <Card className="border-border shadow-sm">
       <CardContent className="p-0">

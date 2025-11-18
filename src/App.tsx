@@ -47,7 +47,10 @@ import { AppDispatch } from './store';
 import { useAppSelector } from "./hooks/useAppSelector";
 import { fetchSrf_Puprose } from "./store/slices/srf_purpose";
 import { SidebarProvider } from "./components/ui/sidebar";
-
+import { DashboardPage } from "@/pages/dashboard";
+import { useDynamicDashboardRoutes } from "./components/routing/DynamicDashboardRoutes";
+import MeetingRoomStandalone from "./standalone/meetingbook/MeetingRoomStandalone";
+import VerifyPage from "./pages/verify/VerifyRegister";
 const queryClient = new QueryClient();
 
 
@@ -59,18 +62,12 @@ const AppContentInner = () => {
 
   const { taskCount } = useAppSelector(state => state.tickets);
 
-
-
-  
-
-
-
-
   const handleServiceSubmit = useCallback((data: any) => {
     // console.log("Service form submitted:", data);
   }, []);
 
   const dynamicServiceRoutes = useDynamicServiceRoutes(handleServiceSubmit);
+  const dynamicDashboardRoutes = useDynamicDashboardRoutes(handleServiceSubmit);
 
   return (
     <Router basename="/hots">
@@ -79,10 +76,11 @@ const AppContentInner = () => {
           {/* Public Routes */}
           <Route path="/login" element={<Loginpage />} />
           <Route path="/register" element={<Registerpage />} />
+          <Route path="/verify" element={<VerifyPage />} />
+
 
           {/* Protected Routes */}
-          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-          <Route path="/service-catalog" element={<ProtectedRoute><ServiceCatalog /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
           <Route path="/ticket/:id" element={<ProtectedRoute><TicketDetail /></ProtectedRoute>} />
           <Route path="/task-list" element={<ProtectedRoute><TaskList /></ProtectedRoute>} />
@@ -107,10 +105,20 @@ const AppContentInner = () => {
           <Route path="/admin/guide" element={<ProtectedRoute><AdminGuide /></ProtectedRoute>} />
 
           {/* ✅ Dynamic Service Routes (generated from catalog) */}
+          <Route path="/service-catalog" element={<ProtectedRoute><ServiceCatalog /></ProtectedRoute>} />
           {dynamicServiceRoutes}
+
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          {dynamicDashboardRoutes}
 
           {/* Catch-all */}
           <Route path="*" element={<AppLayout><NotFound /></AppLayout>} />
+
+
+          {/* //standalone */}
+
+          <Route path="/meetingbook" element={<MeetingRoomStandalone />} />
+
         </Routes>
 
         <TokenExpiredModalWrapper />

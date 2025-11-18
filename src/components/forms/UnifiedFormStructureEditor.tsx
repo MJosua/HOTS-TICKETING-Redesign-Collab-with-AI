@@ -37,8 +37,8 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
   const [configuringRowGroup, setConfiguringRowGroup] = useState<string | null>(null);
   const [showChainLinkHelper, setShowChainLinkHelper] = useState(false);
 
-  
-  const addItem = (type: 'field' | 'section' | 'rowgroup') => {
+
+  const addItem = (type: 'field' | 'section' | 'rowgroup' | 'specialfunc') => {
     let newItem: FormStructureItem;
 
     switch (type) {
@@ -83,6 +83,18 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
           }
         };
         break;
+
+      case 'specialfunc':
+        newItem = {
+          id: `specialfunc-${Date.now()}`,
+          type: 'specialfunc',
+          order: items.length,
+          data: {
+            title: 'New function',
+            function_id: '',
+          }
+        };
+        break;
     }
 
     onUpdate([...items, newItem]);
@@ -121,6 +133,12 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       clonedItem.data = {
         ...rowGroupData,
         title: `${rowGroupData.title || 'Row Group'} (Copy)`
+      };
+    } else if (item.type === 'specialfunc') {
+      const specialfunc = item.data as specialfunc;
+      clonedItem.data = {
+        ...specialfunc,
+        title: `${specialfunc.title || 'function'} (Copy)`
       };
     }
 
@@ -372,6 +390,8 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
                   dbColumnIndex += (sectionData.fields?.length || 0) + 1; // +1 for section header
                 } else if (item.type === "rowgroup") {
                   dbColumnIndex += 1; // just reserve one column for row group JSON
+                } else if (item.type === "specialfunc") {
+                  dbColumnIndex += 1; // just reserve one column for row group JSON
                 }
 
                 // render inside Draggable
@@ -492,7 +512,7 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
       const sectionDbColumn = `cstm_col${dbColumnStart}`;
 
       return (
-        <div className="p-4 b bg-purple-50 border-l-4 border-l-purple-500 rounded-lg shadow-sm">
+        <div className="p-4 b bg-green-50 border-l-4 border-l-green-500 rounded-lg shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div {...dragHandleProps} className="cursor-move">
@@ -500,8 +520,8 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-purple-800">{sectionData.title}</span>
-                  <div className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                  <span className="font-medium text-green-800">{sectionData.title}</span>
+                  <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                     Section • {sectionData.fields?.length || 0} fields
                   </div>
                 </div>
@@ -701,6 +721,110 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
           )}
         </div>
       );
+    } else if (item.type === 'specialfunc') {
+      const specialfuncData = item.data as specialfunc;
+      const dbColumn = `cstm_col${dbColumnStart}`;
+
+      return (
+        <div className="p-4 bg-pink-50 border-l-4 border-l-pink-500 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div {...dragHandleProps} className="cursor-move">
+                <GripVertical className="w-4 h-4 text-gray-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-pink-800">
+                    {specialfuncData.title || 'Special Function'}
+                  </span>
+                  <div className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded">
+                    Row Group • Max: {specialfuncData.maxRows || 10}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 font-mono">
+                  DB: {dbColumn} (Dynamic Rows JSON)
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfiguringRowGroup(item.id)}
+                className="h-8 px-2"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => cloneItem(item)}
+                className="h-8 px-2"
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingItem(item.id)}
+                className="h-8 px-2"
+              >
+                {editingItem === item.id ? <EyeOff className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => removeItem(item.id)}
+                className="h-8 px-2 text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {editingItem === item.id && (
+            <div className="mt-3 p-3 border-t bg-white rounded-lg">
+              <div className="space-y-4">
+                <div>
+                  <Label>Row Group Title</Label>
+                  <Input
+                    value={specialfuncData.title || ''}
+                    onChange={(e) => updateItem(item.id, { ...specialfuncData, title: e.target.value })}
+                    placeholder="Row group title"
+                  />
+                </div>
+                <div>
+                  <Label>Maximum Rows</Label>
+                  <Input
+                    type="number"
+                    value={specialfuncData.maxRows || 10}
+                    onChange={(e) => updateItem(item.id, { ...specialfuncData, maxRows: parseInt(e.target.value) || 10 })}
+                    min="1"
+                    max="50"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={specialfuncData.isStructuredInput || false}
+                    onCheckedChange={(checked) => updateItem(item.id, { ...specialfuncData, isStructuredInput: checked })}
+                  />
+                  <Label>Structured Input (3-column table)</Label>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => setEditingItem(null)} size="sm">
+                    <Save className="w-4 h-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button variant="outline" onClick={() => setEditingItem(null)} size="sm">
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
     }
 
     return null;
@@ -852,6 +976,10 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
               <Plus className="w-4 h-4 mr-2" />
               Row Group
             </Button>
+            <Button size="sm" variant="outline" onClick={() => addItem('specialfunc')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Special Function
+            </Button>
           </div>
         </div>
       </div>
@@ -894,6 +1022,9 @@ export const UnifiedFormStructureEditor: React.FC<UnifiedFormStructureEditorProp
 
         />
       )}
+
+
+   
     </div>
   );
 };

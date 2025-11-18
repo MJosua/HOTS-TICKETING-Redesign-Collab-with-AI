@@ -93,16 +93,20 @@ interface AppLayoutProps {
   searchPlaceholder?: string;
 }
 
+
 export function AppSidebar() {
   const { taskCount } = useAppSelector(state => state.tickets);
   const { user } = useAppSelector(state => state.auth);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
+
+  // utils/pathUtils.ts
+
   const menuItems = [
     {
       title: "Dashboard",
-      url: "/",
+      url: "/dashboard",
       icon: Home,
     },
     {
