@@ -23,6 +23,8 @@ import { applyFieldRules } from "@/utils/rulingSystem/applyFieldRules";
 import { ruleActions } from "@/utils/rulingSystem/ruleActions";
 import { WarningDialog } from "../dialog/warningdialoguser";
 import { normalizeSchema } from "@/utils/rulingSystem/schemaNormalizer";
+import { API_URL } from "@/config/sourceConfig";
+
 
 // 🕒 Simple debounce utility
 const debounce = (fn: (...args: any[]) => void, delay = 300) => {
@@ -38,14 +40,14 @@ export const DynamicForm: React.FC<{
   setConfig: React.Dispatch<React.SetStateAction<FormConfig>>;
   onSubmit: (data: any) => void;
   serviceId?: string;
+  moduleKey?: string;     // 🟩 ADD THIS
   handleReload?: () => void;
-}> = ({ config, setConfig, onSubmit, serviceId, handleReload }) => {
+}> = ({ config, setConfig, onSubmit, serviceId, moduleKey, handleReload }) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
   const form = useForm();
   const { user } = useAppSelector((s) => s.auth);
-
   const [normalizedSchema, setNormalizedSchema] = useState(null); // 🧩 NEW
 
   // 🌍 Global Form States
@@ -259,6 +261,203 @@ export const DynamicForm: React.FC<{
   }, [transformedItems, globalValues, selectedObjects, handleFieldOptionsUpdate]);
 
 
+  const handleSubmitEngineCore = async () => {
+    try {
+      setIsSubmitting(true);
+
+      // Step 1 – Convert unified form structure
+      const unified = mapUnifiedForm(globalValues, config.items, selectedObjects || []);
+      console.log("🔍 CORE ENGINE unified:", unified);
+
+      // Step 2 – Flatten to EAV
+      const engineEav = {};
+      let c = 1;
+
+      unified.forEach((item) => {
+        // SECTION
+        if (item.type === "section" && item.fields) {
+          item.fields.forEach((f) => {
+            engineEav[c] = {
+              label: f.label || f.name,
+              value: f.value ?? "",
+            };
+            c++;
+          });
+          return;
+        }
+
+        // NORMAL FIELD
+        if (item.value !== undefined && item.label) {
+          engineEav[c] = {
+            label: item.label,
+            value: item.value,
+          };
+          c++;
+          return;
+        }
+
+        // ROWGROUP
+        if (item.type === "rowgroup" && Array.isArray(item.rows)) {
+          item.rows.forEach((row) => {
+            Object.keys(row)
+              .filter((k) => k.endsWith("Value"))
+              .forEach((key) => {
+                engineEav[c] = {
+                  label: key.replace("Value", ""),
+                  value: row[key] ?? "",
+                };
+                c++;
+              });
+          });
+        }
+      });
+
+      console.log("🧩 CORE ENGINE EAV:", engineEav);
+
+      // Step 3 – Prepare payload
+      const payload = {
+        service_name: config?.url?.replace("/", "") || "it-support",
+        company_id: user?.company_id || null,
+        creator_id: user?.id || null,
+        creator_email: user?.email || null,
+        values: engineEav,
+      };
+
+      const res = await fetch(`${API_URL}/engine/ticket/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const text = await res.text();
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        throw new Error(text);
+      }
+
+      if (json.ok) {
+        toast({
+          title: "Core Engine Ticket Created",
+          description: `Ticket ID: ${json.ticketId}`,
+        });
+      } else {
+        toast({
+          title: "Engine Error",
+          description: json.message || "Failed.",
+          variant: "destructive",
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Engine Error",
+        description: e.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+  const handleSubmitEngineModule = async () => {
+    try {
+      setIsSubmitting(true);
+  
+      if (!moduleKey) {
+        toast({
+          title: "Engine Module Error",
+          description: "moduleKey is missing!",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      // Step 1 — unify from DynamicForm
+      const unified = mapUnifiedForm(globalValues, config.items, selectedObjects || []);
+      console.log("🔍 MODULE ENGINE unified:", unified);
+  
+      // Step 2 — map to engine native structure
+      // ******* THE IMPORTANT FIX *******
+      const engineValues = {};
+  
+      unified.forEach((item) => {
+        // Simple fields
+        if (item.name && item.value !== undefined) {
+          engineValues[item.name] = item.value;
+          return;
+        }
+  
+        // Sections
+        if (item.type === "section" && Array.isArray(item.fields)) {
+          item.fields.forEach((f) => {
+            if (f.name) engineValues[f.name] = f.value ?? "";
+          });
+          return;
+        }
+  
+        // Rowgroups → flatten values (optional)
+        if (item.type === "rowgroup" && Array.isArray(item.rows)) {
+          item.rows.forEach((row, idx) => {
+            Object.keys(row)
+              .filter((k) => k.endsWith("Value"))
+              .forEach((key) => {
+                engineValues[`${item.id}_${idx}_${key}`] = row[key] || "";
+              });
+          });
+        }
+      });
+  
+      console.log("🧩 MODULE ENGINE VALUES  (FINAL FIX):", engineValues);
+  
+      const payload = {
+        company_id: user?.company_id || null,
+        creator_id: user?.id || null,
+        creator_email: user?.email || null,
+        values: engineValues, // ******* FIXED HERE *******
+      };
+  
+      const res = await fetch(`${API_URL}/enginemodule/module/${moduleKey}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+  
+      const text = await res.text();
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        throw new Error(text);
+      }
+  
+      if (json.ok) {
+        toast({
+          title: "Module Engine Ticket Created",
+          description: `Ticket ID: ${json.ticketId}`,
+        });
+      } else {
+        toast({
+          title: "Module Engine Error",
+          description: json.message,
+          variant: "destructive",
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Engine Module Error",
+        description: e.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+
+
+
   // 🧩 Render UI
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -407,9 +606,31 @@ export const DynamicForm: React.FC<{
                       })}
                   </div>
 
-                  <div className="flex justify-end pt-6">
+                  <div className="flex flex-col gap-3 pt-6">
+
+                    {/* 1️⃣ Legacy HOTS Ticket */}
                     <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? "Submitting..." : "Submit"}
+                      {isSubmitting ? "Submitting..." : "Submit (Legacy HOTS)"}
+                    </Button>
+
+                    {/* 2️⃣ New Engine Core */}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={isSubmitting}
+                      onClick={handleSubmitEngineCore}
+                    >
+                      {isSubmitting ? "Submitting..." : "Submit (Engine Core)"}
+                    </Button>
+
+                    {/* 3️⃣ Engine Module */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isSubmitting}
+                      onClick={handleSubmitEngineModule}
+                    >
+                      {isSubmitting ? "Submitting..." : "Submit (Engine Module)"}
                     </Button>
                   </div>
                 </form>

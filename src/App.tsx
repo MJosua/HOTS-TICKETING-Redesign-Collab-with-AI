@@ -1,4 +1,5 @@
 
+
 import React, { useCallback, useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Provider, useDispatch } from "react-redux";
@@ -51,6 +52,16 @@ import { DashboardPage } from "@/pages/dashboard";
 import { useDynamicDashboardRoutes } from "./components/routing/DynamicDashboardRoutes";
 import MeetingRoomStandalone from "./standalone/meetingbook/MeetingRoomStandalone";
 import VerifyPage from "./pages/verify/VerifyRegister";
+
+//cms
+import CmsPublicPage from "@/pages/cms/CmsPublicPage";
+import CmsAdminList from "@/pages/cms/CmsAdminList";
+import CmsAdminEditor from "@/pages/cms/CmsAdminEditor";
+
+
+import EngineModulePage from './pages/EngineModulePage';
+import EngineModuleAdminPage from './pages/EngineModuleAdminPage';
+
 const queryClient = new QueryClient();
 
 
@@ -118,6 +129,19 @@ const AppContentInner = () => {
           {/* //standalone */}
 
           <Route path="/meetingbook" element={<MeetingRoomStandalone />} />
+
+
+          {/* CMS Public Page */}
+          <Route path="/page/:slug" element={<AppLayout><CmsPublicPage /></AppLayout>} />
+
+          {/* CMS Admin Pages (role 4 only — enforced by server) */}
+          <Route path="/admin/cms" element={<AppLayout><CmsAdminList /></AppLayout>} />
+          <Route path="/admin/cms/new" element={<AppLayout><CmsAdminEditor /></AppLayout>} />
+          <Route path="/admin/cms/edit/:id" element={<AppLayout><CmsAdminEditor /></AppLayout>} />
+
+          <Route path="/engine-module/:moduleKey" element={<AppLayout><EngineModulePage /></AppLayout>} />
+          <Route path="/engine-modules-admin" element={<AppLayout><EngineModuleAdminPage /></AppLayout>} />
+
 
         </Routes>
 

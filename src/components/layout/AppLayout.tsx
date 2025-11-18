@@ -258,6 +258,35 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {
+          isAdmin && (
+
+
+            <li className="mt-4">
+              <div className="text-xs uppercase font-bold text-gray-400 px-4 mb-1">
+                Engine Modules
+              </div>
+
+              <div className="flex flex-col">
+                <button
+                  onClick={() => navigate("/engine-module/it-support")}
+                  className={`px-4 py-2 text-sm text-left hover:bg-gray-800 hover:text-white transition
+        ${location.pathname.startsWith("/engine-module") ? "bg-gray-800 text-white" : "text-gray-300"}`}
+                >
+                  Engine Module Tester
+                </button>
+
+                <button
+                  onClick={() => navigate("/engine-modules-admin")}
+                  className={`px-4 py-2 text-sm text-left hover:bg-gray-800 hover:text-white transition
+        ${location.pathname.startsWith("/engine-modules-admin") ? "bg-gray-800 text-white" : "text-gray-300"}`}
+                >
+                  Module Manager (Admin)
+                </button>
+              </div>
+            </li>
+          )}
+
         {/* Only show Administration menu for users with role === 4 */}
         {
           isAdmin && (
@@ -302,7 +331,31 @@ export function AppSidebar() {
             </SidebarGroup>
           )
         }
+
+
+        {
+          isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="CMS Pages">
+                <Link
+                  to="/admin/cms"
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    location.pathname.startsWith("/admin/cms") &&
+                    "bg-sidebar-accent text-sidebar-accent-foreground"
+                  )}
+                >
+                  <FileText className="w-5 h-5 flex-shrink-0" />
+                  <span>CMS Pages</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+
       </SidebarContent >
+
+
+
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center space-x-3 mb-3 group-data-[collapsible=icon]:justify-center">
