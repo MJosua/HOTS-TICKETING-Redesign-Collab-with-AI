@@ -279,10 +279,38 @@ export function AppSidebar() {
                 <button
                   onClick={() => navigate("/engine-modules-admin")}
                   className={`px-4 py-2 text-sm text-left hover:bg-gray-800 hover:text-white transition
-        ${location.pathname.startsWith("/engine-modules-admin") ? "bg-gray-800 text-white" : "text-gray-300"}`}
+                  ${location.pathname.startsWith("/engine-modules-admin") ? "bg-gray-800 text-white" : "text-gray-300"}`}
                 >
                   Module Manager (Admin)
                 </button>
+
+                <button
+                  onClick={() => navigate("/admin/workflow")}
+                  className={`px-4 py-2 text-sm text-left hover:bg-gray-800 hover:text-white transition
+                  ${location.pathname.startsWith("/admin/workflow") ? "bg-gray-800 text-white" : "text-gray-300"}`}
+                >
+                  Module Manager (Admin)
+                </button>
+
+                <button
+                  onClick={() => navigate("/tickets")}
+                  className={`px-4 py-2 text-sm text-left hover:bg-gray-800 hover:text-white transition
+                  ${location.pathname.startsWith("/tickets") ? "bg-gray-800 text-white" : "text-gray-300"}`}
+                >
+                  Tickets 
+                </button>
+
+                <button
+                  onClick={() => navigate("/admin/tickets")}
+                  className={`px-4 py-2 text-sm text-left hover:bg-gray-800 hover:text-white transition
+                  ${location.pathname.startsWith("/admin/tickets") ? "bg-gray-800 text-white" : "text-gray-300"}`}
+                >
+                  Tickets (Admin)
+                </button>
+
+
+
+
               </div>
             </li>
           )}

@@ -318,12 +318,14 @@ export const DynamicForm: React.FC<{
       const payload = {
         service_name: config?.url?.replace("/", "") || "it-support",
         company_id: user?.company_id || null,
-        creator_id: user?.id || null,
+        creator_id: user?.user_id || user?.id || null,
         creator_email: user?.email || null,
         values: engineEav,
+        service_id: serviceId,
+        form_data: engineEav
       };
 
-      const res = await fetch(`${API_URL}/engine/ticket/create`, {
+      const res = await fetch(`${API_URL}/engine/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -351,7 +353,7 @@ export const DynamicForm: React.FC<{
       }
     } catch (e: any) {
       toast({
-        title: "Engine Error",
+        title: "Engine submit engine core Error",
         description: e.message,
         variant: "destructive",
       });
@@ -364,7 +366,7 @@ export const DynamicForm: React.FC<{
   const handleSubmitEngineModule = async () => {
     try {
       setIsSubmitting(true);
-  
+
       if (!moduleKey) {
         toast({
           title: "Engine Module Error",
@@ -373,22 +375,22 @@ export const DynamicForm: React.FC<{
         });
         return;
       }
-  
+
       // Step 1 — unify from DynamicForm
       const unified = mapUnifiedForm(globalValues, config.items, selectedObjects || []);
       console.log("🔍 MODULE ENGINE unified:", unified);
-  
+
       // Step 2 — map to engine native structure
       // ******* THE IMPORTANT FIX *******
       const engineValues = {};
-  
+
       unified.forEach((item) => {
         // Simple fields
         if (item.name && item.value !== undefined) {
           engineValues[item.name] = item.value;
           return;
         }
-  
+
         // Sections
         if (item.type === "section" && Array.isArray(item.fields)) {
           item.fields.forEach((f) => {
@@ -396,7 +398,7 @@ export const DynamicForm: React.FC<{
           });
           return;
         }
-  
+
         // Rowgroups → flatten values (optional)
         if (item.type === "rowgroup" && Array.isArray(item.rows)) {
           item.rows.forEach((row, idx) => {
@@ -408,22 +410,22 @@ export const DynamicForm: React.FC<{
           });
         }
       });
-  
+
       console.log("🧩 MODULE ENGINE VALUES  (FINAL FIX):", engineValues);
-  
+
       const payload = {
         company_id: user?.company_id || null,
-        creator_id: user?.id || null,
+        creator_id: user?.user_id || user?.id || null,
         creator_email: user?.email || null,
         values: engineValues, // ******* FIXED HERE *******
       };
-  
+
       const res = await fetch(`${API_URL}/enginemodule/module/${moduleKey}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-  
+
       const text = await res.text();
       let json;
       try {
@@ -431,7 +433,7 @@ export const DynamicForm: React.FC<{
       } catch {
         throw new Error(text);
       }
-  
+
       if (json.ok) {
         toast({
           title: "Module Engine Ticket Created",
@@ -454,7 +456,7 @@ export const DynamicForm: React.FC<{
       setIsSubmitting(false);
     }
   };
-  
+
 
 
 

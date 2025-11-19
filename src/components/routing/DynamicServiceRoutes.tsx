@@ -87,5 +87,5 @@ export const useDynamicServiceRoutes = (onSubmit: (data: any) => void) => {
 // Keep the original component for backward compatibility but mark it as deprecated
 export const DynamicServiceRoutes: React.FC<DynamicServiceRoutesProps> = ({ onSubmit }) => {
   const routes = useDynamicServiceRoutes(onSubmit);
-  return <React.Fragment>{routes}</React.Fragment>;
+  return <>{routes}</>;
 };

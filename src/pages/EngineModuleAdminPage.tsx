@@ -20,7 +20,7 @@ export default function EngineModuleAdminPage(){
       <h1 className="text-2xl font-bold mb-4">Engine Module Manager</h1>
       <ul className="space-y-2">
         {modules.map(m=>(
-          <li key={m.module_id} className="p-3 bg-gray-800 rounded text-white">
+          <li key={m.service_id} className="p-3 bg-gray-800 rounded text-white">
             {m.module_key} — {m.module_name}
           </li>
         ))}

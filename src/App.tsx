@@ -61,6 +61,15 @@ import CmsAdminEditor from "@/pages/cms/CmsAdminEditor";
 
 import EngineModulePage from './pages/EngineModulePage';
 import EngineModuleAdminPage from './pages/EngineModuleAdminPage';
+import WorkflowParamEditorPage from './pages/WorkflowParamEditorPage';
+import WorkflowAdminPage from "./pages/WorkflowAdminPage";
+
+import TicketListPage from "./pages/module/admin/TicketListPage";
+import TicketDetailPage from "./pages/module/admin/TicketDetailPage";
+
+import TicketListViewPage from "./pages/module/view/TicketListViewPage";
+import TicketViewPage from "./pages/module/view/TicketViewPage";
+
 
 const queryClient = new QueryClient();
 
@@ -141,7 +150,15 @@ const AppContentInner = () => {
 
           <Route path="/engine-module/:moduleKey" element={<AppLayout><EngineModulePage /></AppLayout>} />
           <Route path="/engine-modules-admin" element={<AppLayout><EngineModuleAdminPage /></AppLayout>} />
+          <Route path="/admin/workflow" element={<AppLayout><WorkflowAdminPage /></AppLayout>} />
+          <Route path="/admin/workflow/params/:workflow_id" element={<ProtectedRoute><WorkflowParamEditorPage /></ProtectedRoute>} />
 
+
+          <Route path="/admin/tickets" element={<AppLayout><TicketListPage /></AppLayout>} />
+          <Route path="/admin/tickets/:ticket_id" element={<AppLayout><TicketDetailPage /></AppLayout>} />
+
+          <Route path="/tickets" element={<AppLayout><TicketListViewPage /></AppLayout>} />
+          <Route path="/tickets/:ticket_id" element={<AppLayout><TicketViewPage /></AppLayout>} />
 
         </Routes>
 

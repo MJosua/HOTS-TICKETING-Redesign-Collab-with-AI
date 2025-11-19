@@ -509,7 +509,6 @@ const TicketDetail = () => {
 
   const hasFetchedUsersRef = useRef(false);
 
-  console.log("ticket_detail", ticketDetail)
 
 
   const [comment, setComment] = useState("");
